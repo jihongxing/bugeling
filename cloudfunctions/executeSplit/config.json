@@ -1,0 +1,9 @@
+{
+  "triggers": [
+    {
+      "name": "executeSplitTrigger",
+      "type": "timer",
+      "config": "0 0 */1 * * * *"
+    }
+  ]
+}

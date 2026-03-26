@@ -1,0 +1,31 @@
+<!-- pages/index/index.wxml - 首页活动列表 -->
+<view class="page">
+  <!-- 位置栏 -->
+  <view class="location-bar">
+    <text class="location-name">{{locationName}}</text>
+    <view class="refresh-btn" bindtap="refreshLocation">
+      <text class="refresh-icon">↻</text>
+    </view>
+  </view>
+
+  <!-- 活动列表 -->
+  <view class="activity-list" wx:if="{{!isEmpty}}">
+    <activity-card
+      wx:for="{{activityList}}"
+      wx:key="activityId"
+      activity="{{item}}"
+      bind:tap="onCardTap"
+    />
+    <view class="loading-tip" wx:if="{{loading}}">
+      <text>加载中...</text>
+    </view>
+    <view class="no-more-tip" wx:if="{{!hasMore && activityList.length > 0}}">
+      <text>没有更多了</text>
+    </view>
+  </view>
+
+  <!-- 空状态 -->
+  <view class="empty-state" wx:if="{{isEmpty && !loading}}">
+    <text class="empty-text">附近暂无活动，去发起一个？</text>
+  </view>
+</view>

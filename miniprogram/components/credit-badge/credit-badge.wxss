@@ -1,0 +1,12 @@
+/* miniprogram/components/credit-badge/credit-badge.wxss */
+.credit-badge {
+  display: inline-block;
+  font-size: 22rpx;
+  font-weight: 500;
+  padding: 4rpx 12rpx;
+  border-radius: 8rpx;
+}
+.credit-success { color: #10B981; background: rgba(16, 185, 129, 0.1); }
+.credit-primary { color: #FF6B35; background: rgba(255, 107, 53, 0.1); }
+.credit-warning { color: #F59E0B; background: rgba(245, 158, 11, 0.1); }
+.credit-danger { color: #EF4444; background: rgba(239, 68, 68, 0.1); }

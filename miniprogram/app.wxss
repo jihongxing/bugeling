@@ -1,0 +1,99 @@
+/* 全局样式 - 不鸽令 */
+
+/* ========== 全局字体 ========== */
+page {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  background-color: var(--color-bg);
+  color: var(--color-secondary);
+}
+
+/* ========== 设计令牌 - CSS 变量定义 ========== */
+page {
+  /* 颜色 */
+  --color-primary: #FF6B35;
+  --color-secondary: #1A1A2E;
+  --color-success: #10B981;
+  --color-warning: #F59E0B;
+  --color-danger: #EF4444;
+  --color-bg: #F5F5F7;
+  --color-card: #FFFFFF;
+  --color-text-secondary: #6B7280;
+
+  /* 字号 */
+  --font-size-xl: 36rpx;
+  --font-size-lg: 32rpx;
+  --font-size-md: 28rpx;
+  --font-size-sm: 24rpx;
+  --font-size-xs: 22rpx;
+  --font-size-price: 40rpx;
+
+  /* 间距 */
+  --spacing-page: 32rpx;
+  --spacing-card-inner: 24rpx;
+  --spacing-card-gap: 20rpx;
+
+  /* 圆角 */
+  --radius-card: 16rpx;
+  --radius-btn: 12rpx;
+  --radius-tag: 8rpx;
+  --radius-input: 12rpx;
+}
+
+/* ========== 基础组件样式 ========== */
+
+/* 页面容器 */
+.page {
+  min-height: 100vh;
+  padding: var(--spacing-page);
+  box-sizing: border-box;
+}
+
+/* 卡片容器 */
+.card {
+  background-color: var(--color-card);
+  border-radius: var(--radius-card);
+  padding: var(--spacing-card-inner);
+  margin-bottom: var(--spacing-card-gap);
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.04);
+}
+
+/* 主按钮 */
+.btn-primary {
+  background-color: var(--color-primary);
+  color: #FFFFFF;
+  border-radius: var(--radius-btn);
+  padding: 24rpx 48rpx;
+  font-size: var(--font-size-md);
+  font-weight: 500;
+  border: none;
+  text-align: center;
+}
+
+.btn-primary:active {
+  opacity: 0.8;
+}
+
+/* 次按钮 */
+.btn-secondary {
+  background-color: transparent;
+  color: var(--color-primary);
+  border: 2rpx solid var(--color-primary);
+  border-radius: var(--radius-btn);
+  padding: 24rpx 48rpx;
+  font-size: var(--font-size-md);
+  font-weight: 500;
+  text-align: center;
+}
+
+.btn-secondary:active {
+  background-color: rgba(255, 107, 53, 0.1);
+}
+
+/* 状态标签 */
+.tag {
+  display: inline-block;
+  padding: 4rpx 12rpx;
+  border-radius: var(--radius-tag);
+  font-size: var(--font-size-xs);
+  font-weight: 500;
+}

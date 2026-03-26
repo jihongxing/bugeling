@@ -1,0 +1,12 @@
+<!--pages/user/poster/poster.wxml-->
+<view class="page">
+  <view class="poster-container">
+    <canvas type="2d" id="posterCanvas" class="poster-canvas"></canvas>
+  </view>
+  <view class="action-area">
+    <button class="btn-primary save-btn" bindtap="savePoster" disabled="{{!canvasReady || saving}}">
+      {{saving ? '保存中...' : '保存图片到相册'}}
+    </button>
+    <button class="btn-secondary share-btn" open-type="share">分享给好友</button>
+  </view>
+</view>

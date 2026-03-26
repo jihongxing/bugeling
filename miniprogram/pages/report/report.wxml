@@ -1,0 +1,66 @@
+<!-- pages/report/report.wxml - 举报页面 -->
+<view class="page">
+  <!-- 举报类型选择 -->
+  <view class="card">
+    <view class="section-title">举报类型</view>
+    <radio-group class="radio-group" bindchange="onTypeChange">
+      <label class="radio-item">
+        <radio value="initiator_absent" checked="{{reportType === 'initiator_absent'}}" color="#FF6B35" />
+        <text>发起人未到场</text>
+      </label>
+      <label class="radio-item">
+        <radio value="mismatch" checked="{{reportType === 'mismatch'}}" color="#FF6B35" />
+        <text>人货不符</text>
+      </label>
+      <label class="radio-item">
+        <radio value="illegal" checked="{{reportType === 'illegal'}}" color="#FF6B35" />
+        <text>非法交易</text>
+      </label>
+    </radio-group>
+  </view>
+
+  <!-- 描述输入 -->
+  <view class="card">
+    <view class="section-title">补充说明（选填）</view>
+    <textarea
+      class="desc-textarea"
+      placeholder="请描述具体情况..."
+      maxlength="200"
+      value="{{description}}"
+      bindinput="onDescInput"
+    />
+    <view class="char-count">{{descLength}}/200</view>
+  </view>
+
+  <!-- 图片上传 -->
+  <view class="card">
+    <view class="section-title">上传凭证（1-3张）</view>
+    <view class="image-grid">
+      <block wx:for="{{images}}" wx:key="*this">
+        <view class="image-item">
+          <image
+            class="preview-image"
+            src="{{item}}"
+            mode="aspectFill"
+            bindtap="previewImage"
+            data-index="{{index}}"
+          />
+          <view class="delete-btn" catchtap="removeImage" data-index="{{index}}">×</view>
+        </view>
+      </block>
+      <view class="image-add" wx:if="{{images.length < 3}}" bindtap="chooseImage">
+        <text class="add-icon">+</text>
+        <text class="add-text">添加图片</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 提交按钮 -->
+  <button
+    class="btn-primary submit-btn"
+    disabled="{{submitting || !locationReady}}"
+    bindtap="submit"
+  >
+    {{submitting ? '提交中...' : '提交举报'}}
+  </button>
+</view>

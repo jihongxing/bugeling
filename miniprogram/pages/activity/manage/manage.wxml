@@ -1,0 +1,37 @@
+<!-- pages/activity/manage/manage.wxml - 活动管理 -->
+<view class="page" wx:if="{{!loading && activity}}">
+  <!-- 活动基本信息 -->
+  <view class="manage-header card">
+    <text class="manage-title">{{activity.title}}</text>
+    <text class="manage-count">参与人数 {{activity.currentParticipants}}/{{activity.maxParticipants}}</text>
+  </view>
+
+  <!-- 参与者列表 -->
+  <view class="participant-list">
+    <view class="section-title">参与者列表</view>
+    <view wx:if="{{participations.length === 0}}" class="empty-participants">
+      <text class="empty-text">暂无参与者</text>
+    </view>
+    <view
+      wx:for="{{participations}}"
+      wx:key="participationId"
+      class="participant-item card"
+    >
+      <view class="participant-info">
+        <text class="participant-name">{{item.nickName || '用户'}}</text>
+        <view class="tag" style="background-color: {{item.statusConfig.bgColor}}; color: {{item.statusConfig.textColor}};">
+          {{item.statusConfig.label}}
+        </view>
+      </view>
+      <view class="participant-actions" wx:if="{{item.showActions}}">
+        <button class="action-approve" bindtap="approveParticipant" data-id="{{item.participationId}}">同意</button>
+        <button class="action-reject" bindtap="rejectParticipant" data-id="{{item.participationId}}">拒绝</button>
+      </view>
+    </view>
+  </view>
+</view>
+
+<!-- 加载中 -->
+<view class="page loading-state" wx:if="{{loading}}">
+  <text class="loading-text">加载中...</text>
+</view>

@@ -1,0 +1,4 @@
+<!-- miniprogram/components/credit-badge/credit-badge.wxml -->
+<view class="credit-badge {{colorClass}}">
+  契约分 {{score}}
+</view>

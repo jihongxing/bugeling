@@ -1,0 +1,79 @@
+<!-- pages/activity/create/create.wxml - 创建活动 -->
+<view class="page">
+  <!-- 活动主题 -->
+  <view class="form-group">
+    <text class="form-label">活动主题</text>
+    <input class="form-input" placeholder="请输入活动主题（2-50字）" maxlength="50" value="{{title}}" bindinput="onTitleInput" />
+  </view>
+
+  <!-- 地点选择 -->
+  <view class="form-group" bindtap="chooseLocation">
+    <text class="form-label">活动地点</text>
+    <view class="form-picker">
+      <text class="{{location ? 'picker-value' : 'picker-placeholder'}}">{{location.name || '请选择活动地点'}}</text>
+      <text class="picker-arrow">›</text>
+    </view>
+  </view>
+
+  <!-- 见面时间 -->
+  <view class="form-group">
+    <text class="form-label">见面时间</text>
+    <view class="time-picker-row">
+      <picker mode="date" start="{{minDate}}" bindchange="onDateChange">
+        <view class="form-picker half">
+          <text class="{{meetTimeDisplay ? 'picker-value' : 'picker-placeholder'}}">{{meetTimeDisplay || '选择日期'}}</text>
+        </view>
+      </picker>
+      <picker mode="time" start="{{minTime}}" bindchange="onTimeChange">
+        <view class="form-picker half">
+          <text class="{{_timeStr ? 'picker-value' : 'picker-placeholder'}}">{{_timeStr || '选择时间'}}</text>
+        </view>
+      </picker>
+    </view>
+  </view>
+
+  <!-- 参与人数 -->
+  <view class="form-group">
+    <text class="form-label">参与人数</text>
+    <view class="stepper">
+      <view class="stepper-btn" bindtap="adjustParticipants" data-delta="-1">-</view>
+      <text class="stepper-value">{{maxParticipants}}</text>
+      <view class="stepper-btn" bindtap="adjustParticipants" data-delta="1">+</view>
+    </view>
+  </view>
+
+  <!-- 押金档位 -->
+  <view class="form-group">
+    <text class="form-label">鸽子费档位</text>
+    <view class="deposit-options">
+      <view
+        wx:for="{{depositTiers}}"
+        wx:key="*this"
+        class="deposit-option {{depositTier === item ? 'selected' : ''}}"
+        bindtap="onDepositSelect"
+        data-tier="{{item}}"
+      >
+        <text>¥{{item / 100}}</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 接头特征 -->
+  <view class="form-group">
+    <text class="form-label">接头特征</text>
+    <input class="form-input" placeholder="如：穿红色外套，戴黑帽" maxlength="100" value="{{identityHint}}" bindinput="onIdentityInput" />
+  </view>
+
+  <!-- 微信号 -->
+  <view class="form-group">
+    <text class="form-label">微信号</text>
+    <input class="form-input" placeholder="请输入微信号" value="{{wechatId}}" bindinput="onWechatInput" />
+  </view>
+
+  <!-- 提交按钮 -->
+  <view class="submit-area">
+    <button class="btn-primary submit-btn" bindtap="submitForm" disabled="{{submitting}}">
+      {{submitting ? '发布中...' : '发布活动'}}
+    </button>
+  </view>
+</view>

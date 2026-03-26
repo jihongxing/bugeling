@@ -1,0 +1,121 @@
+<!--pages/user/calendar/calendar.wxml-->
+<view class="page">
+  <!-- 加载状态 -->
+  <view wx:if="{{loading}}" class="loading">加载中...</view>
+
+  <block wx:else>
+    <!-- 月份头部 -->
+    <view class="card month-header">
+      <view class="month-nav" bindtap="onSwipeRight">◀</view>
+      <view class="month-title">{{year}}年{{month}}月</view>
+      <view class="month-nav" bindtap="onSwipeLeft">▶</view>
+    </view>
+
+    <!-- 统计摘要 -->
+    <view class="card summary-section" wx:if="{{summary}}">
+      <view class="summary-item">
+        <text class="summary-value">{{summary.complianceRate}}%</text>
+        <text class="summary-label">守约率</text>
+      </view>
+      <view class="summary-item">
+        <text class="summary-value">{{summary.verifiedCount}}</text>
+        <text class="summary-label">守约</text>
+      </view>
+      <view class="summary-item">
+        <text class="summary-value">{{summary.breachedCount}}</text>
+        <text class="summary-label">违约</text>
+      </view>
+    </view>
+
+    <!-- 日历网格 -->
+    <view class="card calendar-grid">
+      <!-- 星期头 -->
+      <view class="weekday-row">
+        <view class="weekday-cell">日</view>
+        <view class="weekday-cell">一</view>
+        <view class="weekday-cell">二</view>
+        <view class="weekday-cell">三</view>
+        <view class="weekday-cell">四</view>
+        <view class="weekday-cell">五</view>
+        <view class="weekday-cell">六</view>
+      </view>
+      <!-- 日期格子 -->
+      <view class="date-row">
+        <view
+          wx:for="{{calendarGrid}}"
+          wx:key="dateKey"
+          class="date-cell {{item.isToday ? 'today' : ''}} {{item.dateKey === selectedDate ? 'selected' : ''}}"
+          data-date-key="{{item.dateKey}}"
+          bindtap="{{item.day ? 'onDateTap' : ''}}"
+        >
+          <text wx:if="{{item.day}}" class="date-num">{{item.day}}</text>
+          <view class="dots-row" wx:if="{{item.dots.length > 0}}">
+            <view
+              wx:for="{{item.dots}}"
+              wx:for-item="dot"
+              wx:key="*this"
+              class="dot dot-{{dot}}"
+            ></view>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 选中日期活动列表 -->
+    <view class="card" wx:if="{{selectedDate && selectedActivities.length > 0}}">
+      <view class="section-title">{{selectedDate}} 活动</view>
+      <view
+        wx:for="{{selectedActivities}}"
+        wx:key="activityId"
+        class="activity-item"
+      >
+        <view class="activity-row">
+          <text class="activity-title">{{item.title}}</text>
+          <view class="tag status-tag-{{item.status}}">{{item.status}}</view>
+        </view>
+        <view class="activity-meta">
+          <text class="meta-text" wx:if="{{item.location.name}}">📍 {{item.location.name}}</text>
+        </view>
+      </view>
+    </view>
+    <view class="card empty-hint" wx:if="{{selectedDate && selectedActivities.length === 0}}">
+      <text class="empty-text">该日期暂无活动</text>
+    </view>
+
+    <!-- 今日任务 -->
+    <view class="card today-section" wx:if="{{todayActivities.length > 0}}">
+      <view class="section-title">📌 今日任务</view>
+      <view
+        wx:for="{{todayActivities}}"
+        wx:key="activityId"
+        class="today-item"
+      >
+        <view class="today-title">{{item.title}}</view>
+        <view class="today-meta" wx:if="{{item.location.name}}">
+          <text class="meta-text">📍 {{item.location.name}}</text>
+        </view>
+        <view class="today-meta" wx:if="{{item.identityHint}}">
+          <text class="meta-text">🔍 {{item.identityHint}}</text>
+        </view>
+        <view class="today-actions" wx:if="{{item.wechatId}}">
+          <view
+            class="copy-btn"
+            data-wechat-id="{{item.wechatId}}"
+            bindtap="onCopyWechat"
+          >复制微信</view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 已计划支出 -->
+    <view class="card planned-expense" wx:if="{{summary && summary.plannedExpense > 0}}">
+      <text class="expense-label">本月已计划支出</text>
+      <text class="expense-value">¥{{summary.plannedExpense / 100}}</text>
+    </view>
+
+    <!-- 分享按钮 -->
+    <view class="share-btn-area">
+      <button class="btn-primary share-btn" bindtap="goToPoster">分享守约月报</button>
+    </view>
+  </block>
+</view>

@@ -1,0 +1,112 @@
+/* pages/activity/create/create.wxss */
+.form-group {
+  margin-bottom: 32rpx;
+}
+
+.form-label {
+  display: block;
+  font-size: var(--font-size-md);
+  color: var(--color-secondary);
+  font-weight: 500;
+  margin-bottom: 12rpx;
+}
+
+.form-input {
+  background-color: var(--color-card);
+  border-radius: var(--radius-input);
+  padding: 20rpx 24rpx;
+  font-size: var(--font-size-md);
+  color: var(--color-secondary);
+}
+
+.form-picker {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: var(--color-card);
+  border-radius: var(--radius-input);
+  padding: 20rpx 24rpx;
+}
+
+.picker-value {
+  font-size: var(--font-size-md);
+  color: var(--color-secondary);
+}
+
+.picker-placeholder {
+  font-size: var(--font-size-md);
+  color: var(--color-text-secondary);
+}
+
+.picker-arrow {
+  font-size: var(--font-size-lg);
+  color: var(--color-text-secondary);
+}
+
+.time-picker-row {
+  display: flex;
+  gap: 16rpx;
+}
+
+.time-picker-row picker {
+  flex: 1;
+}
+
+.half {
+  flex: 1;
+}
+
+.stepper {
+  display: flex;
+  align-items: center;
+  gap: 24rpx;
+}
+
+.stepper-btn {
+  width: 64rpx;
+  height: 64rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--color-card);
+  border-radius: var(--radius-btn);
+  font-size: var(--font-size-lg);
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+.stepper-value {
+  font-size: var(--font-size-lg);
+  color: var(--color-secondary);
+  min-width: 48rpx;
+  text-align: center;
+}
+
+.deposit-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16rpx;
+}
+
+.deposit-option {
+  padding: 16rpx 32rpx;
+  border-radius: var(--radius-btn);
+  background-color: var(--color-card);
+  font-size: var(--font-size-md);
+  color: var(--color-secondary);
+  text-align: center;
+}
+
+.deposit-option.selected {
+  background-color: var(--color-primary);
+  color: #FFFFFF;
+}
+
+.submit-area {
+  margin-top: 48rpx;
+  padding-bottom: 48rpx;
+}
+
+.submit-btn {
+  width: 100%;
+}

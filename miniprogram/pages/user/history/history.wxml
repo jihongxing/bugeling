@@ -1,0 +1,29 @@
+<!-- pages/user/history/history.wxml - 历史活动 -->
+<view class="page">
+  <view class="activity-list" wx:if="{{!isEmpty}}">
+    <view class="activity-item" wx:for="{{list}}" wx:key="_id">
+      <view class="activity-header">
+        <text class="activity-title">{{item.title}}</text>
+        <text class="status-tag status-{{item.status}}">{{item.status}}</text>
+      </view>
+      <view class="activity-meta">
+        <text class="activity-time">{{item.createdAt}}</text>
+      </view>
+      <view class="participation-status" wx:if="{{role === 'participant' && item.participationStatus}}">
+        <text>参与状态：{{item.participationStatus}}</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="empty-state" wx:if="{{isEmpty}}">
+    <text class="empty-text">还没有活动记录</text>
+  </view>
+
+  <view class="loading" wx:if="{{loading}}">
+    <text>加载中...</text>
+  </view>
+
+  <view class="load-more" wx:if="{{!hasMore && list.length > 0 && !loading}}">
+    <text class="load-more-text">没有更多了</text>
+  </view>
+</view>

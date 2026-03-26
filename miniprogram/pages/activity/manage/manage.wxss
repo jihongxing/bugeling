@@ -1,0 +1,89 @@
+/* pages/activity/manage/manage.wxss */
+.manage-header {
+  margin-bottom: 24rpx;
+}
+
+.manage-title {
+  display: block;
+  font-size: var(--font-size-lg);
+  font-weight: 600;
+  color: var(--color-secondary);
+  margin-bottom: 8rpx;
+}
+
+.manage-count {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+}
+
+.section-title {
+  font-size: var(--font-size-md);
+  font-weight: 500;
+  color: var(--color-secondary);
+  margin-bottom: 16rpx;
+}
+
+.participant-item {
+  margin-bottom: 16rpx;
+}
+
+.participant-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12rpx;
+}
+
+.participant-name {
+  font-size: var(--font-size-md);
+  color: var(--color-secondary);
+}
+
+.participant-actions {
+  display: flex;
+  gap: 16rpx;
+}
+
+.action-approve {
+  flex: 1;
+  background-color: var(--color-success);
+  color: #FFFFFF;
+  border-radius: var(--radius-btn);
+  padding: 16rpx 0;
+  font-size: var(--font-size-sm);
+  border: none;
+  text-align: center;
+}
+
+.action-reject {
+  flex: 1;
+  background-color: var(--color-danger);
+  color: #FFFFFF;
+  border-radius: var(--radius-btn);
+  padding: 16rpx 0;
+  font-size: var(--font-size-sm);
+  border: none;
+  text-align: center;
+}
+
+.empty-participants {
+  text-align: center;
+  padding: 48rpx 0;
+}
+
+.empty-text {
+  font-size: var(--font-size-md);
+  color: var(--color-text-secondary);
+}
+
+.loading-state {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 50vh;
+}
+
+.loading-text {
+  font-size: var(--font-size-md);
+  color: var(--color-text-secondary);
+}

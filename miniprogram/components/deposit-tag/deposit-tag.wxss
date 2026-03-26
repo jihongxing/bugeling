@@ -1,0 +1,10 @@
+/* components/deposit-tag/deposit-tag.wxss */
+.deposit-tag {
+  display: inline-block;
+  background-color: var(--primary-color);
+  color: #FFFFFF;
+  padding: 4rpx 12rpx;
+  border-radius: var(--radius-tag);
+  font-size: var(--font-size-tiny);
+  font-weight: 500;
+}

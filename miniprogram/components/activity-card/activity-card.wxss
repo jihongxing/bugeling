@@ -1,0 +1,59 @@
+/* components/activity-card/activity-card.wxss */
+.activity-card {
+  background-color: var(--color-card);
+  border-radius: var(--radius-card);
+  padding: var(--spacing-card-inner);
+  margin-bottom: var(--spacing-card-gap);
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.04);
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16rpx;
+}
+
+.card-title {
+  font-size: var(--font-size-lg);
+  font-weight: 600;
+  color: var(--color-secondary);
+  flex: 1;
+  margin-right: 16rpx;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.card-info {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12rpx 24rpx;
+  margin-bottom: 12rpx;
+}
+
+.info-row {
+  display: flex;
+  align-items: center;
+}
+
+.info-label {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  margin-right: 8rpx;
+}
+
+.info-value {
+  font-size: var(--font-size-sm);
+  color: var(--color-secondary);
+}
+
+.card-footer {
+  border-top: 1rpx solid #F3F4F6;
+  padding-top: 12rpx;
+}
+
+.credit-text {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+}

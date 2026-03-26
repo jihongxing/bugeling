@@ -1,0 +1,24 @@
+<!-- components/activity-card/activity-card.wxml - 活动卡片 -->
+<view class="activity-card" bindtap="onCardTap" wx:if="{{activity}}">
+  <view class="card-header">
+    <text class="card-title">{{activity.title}}</text>
+    <deposit-tag amount="{{activity.depositTier}}" />
+  </view>
+  <view class="card-info">
+    <view class="info-row">
+      <text class="info-label">参与</text>
+      <text class="info-value">{{activity.currentParticipants}}/{{activity.maxParticipants}}人</text>
+    </view>
+    <view class="info-row">
+      <text class="info-label">距离</text>
+      <text class="info-value">{{formattedDistance}}</text>
+    </view>
+    <view class="info-row">
+      <text class="info-label">时间</text>
+      <text class="info-value">{{formattedTime}}</text>
+    </view>
+  </view>
+  <view class="card-footer">
+    <text class="credit-text">契约分 {{activity.initiatorCredit}}</text>
+  </view>
+</view>

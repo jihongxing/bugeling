@@ -1,0 +1,111 @@
+/* pages/activity/detail/detail.wxss */
+.detail-header {
+  margin-bottom: 24rpx;
+}
+
+.detail-title {
+  display: block;
+  font-size: var(--font-size-xl);
+  font-weight: 600;
+  color: var(--color-secondary);
+  margin-bottom: 8rpx;
+}
+
+.credit-score {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+}
+
+.deposit-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 32rpx;
+}
+
+.deposit-label {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  margin-bottom: 8rpx;
+}
+
+.deposit-amount {
+  font-size: var(--font-size-price);
+  font-weight: 700;
+  color: var(--color-primary);
+}
+
+.contract-declaration {
+  background-color: #FEF3C7;
+  border: 1rpx solid #F59E0B;
+  border-radius: var(--radius-card);
+  padding: var(--spacing-card-inner);
+  margin-bottom: var(--spacing-card-gap);
+}
+
+.contract-title {
+  display: block;
+  font-size: var(--font-size-md);
+  font-weight: 600;
+  color: #D97706;
+  margin-bottom: 8rpx;
+}
+
+.contract-text {
+  font-size: var(--font-size-sm);
+  color: #92400E;
+  line-height: 1.6;
+}
+
+.info-section {
+  margin-bottom: var(--spacing-card-gap);
+}
+
+.info-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 16rpx 0;
+  border-bottom: 1rpx solid #F3F4F6;
+}
+
+.info-item:last-child {
+  border-bottom: none;
+}
+
+.info-label {
+  font-size: var(--font-size-md);
+  color: var(--color-text-secondary);
+}
+
+.info-value {
+  font-size: var(--font-size-md);
+  color: var(--color-secondary);
+}
+
+.action-area {
+  margin-top: 32rpx;
+  padding-bottom: 48rpx;
+}
+
+.action-btn {
+  width: 100%;
+  margin-bottom: 16rpx;
+}
+
+.status-display {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 16rpx;
+}
+
+.loading-state {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 50vh;
+}
+
+.loading-text {
+  font-size: var(--font-size-md);
+  color: var(--color-text-secondary);
+}

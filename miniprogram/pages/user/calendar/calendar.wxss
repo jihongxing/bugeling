@@ -1,0 +1,269 @@
+/* pages/user/calendar/calendar.wxss */
+
+.loading {
+  text-align: center;
+  padding: 120rpx 0;
+  font-size: var(--font-size-md);
+  color: var(--color-text-secondary);
+}
+
+/* 月份头部 */
+.month-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.month-nav {
+  padding: 16rpx 24rpx;
+  font-size: var(--font-size-lg);
+  color: var(--color-primary);
+}
+
+.month-title {
+  font-size: var(--font-size-xl);
+  font-weight: 600;
+  color: var(--color-secondary);
+}
+
+/* 统计摘要 */
+.summary-section {
+  display: flex;
+  justify-content: space-around;
+}
+
+.summary-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.summary-value {
+  font-size: var(--font-size-price);
+  font-weight: 700;
+  color: var(--color-secondary);
+}
+
+.summary-label {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  margin-top: 4rpx;
+}
+
+/* 日历网格 */
+.calendar-grid {
+  padding: var(--spacing-card-inner) 16rpx;
+}
+
+.weekday-row {
+  display: flex;
+}
+
+.weekday-cell {
+  flex: 1;
+  text-align: center;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  padding-bottom: 16rpx;
+}
+
+.date-row {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.date-cell {
+  width: calc(100% / 7);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 12rpx 0;
+  min-height: 80rpx;
+  box-sizing: border-box;
+}
+
+.date-num {
+  font-size: var(--font-size-md);
+  color: var(--color-secondary);
+}
+
+.date-cell.today .date-num {
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+.date-cell.selected {
+  background: rgba(255, 107, 53, 0.1);
+  border-radius: var(--radius-tag);
+}
+
+.dots-row {
+  display: flex;
+  gap: 4rpx;
+  margin-top: 4rpx;
+}
+
+.dot {
+  width: 10rpx;
+  height: 10rpx;
+  border-radius: 50%;
+}
+
+.dot-verified {
+  background-color: #10B981;
+}
+
+.dot-upcoming {
+  background-color: #F59E0B;
+}
+
+.dot-breached {
+  background-color: #EF4444;
+}
+
+.dot-cancelled {
+  background-color: #9CA3AF;
+}
+
+/* 区块标题 */
+.section-title {
+  font-size: var(--font-size-md);
+  font-weight: 600;
+  color: var(--color-secondary);
+  margin-bottom: 16rpx;
+}
+
+/* 活动列表 */
+.activity-item {
+  padding: 16rpx 0;
+  border-bottom: 1rpx solid #F3F4F6;
+}
+
+.activity-item:last-child {
+  border-bottom: none;
+}
+
+.activity-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8rpx;
+}
+
+.activity-title {
+  font-size: var(--font-size-md);
+  color: var(--color-secondary);
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.status-tag-verified {
+  color: #10B981;
+  background: rgba(16, 185, 129, 0.1);
+}
+
+.status-tag-upcoming {
+  color: #F59E0B;
+  background: rgba(245, 158, 11, 0.1);
+}
+
+.status-tag-breached {
+  color: #EF4444;
+  background: rgba(239, 68, 68, 0.1);
+}
+
+.status-tag-cancelled {
+  color: #9CA3AF;
+  background: rgba(107, 114, 128, 0.1);
+}
+
+.activity-meta {
+  margin-top: 4rpx;
+}
+
+.meta-text {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+}
+
+.empty-hint {
+  text-align: center;
+  padding: 24rpx;
+}
+
+.empty-text {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+}
+
+/* 今日任务 */
+.today-section {
+  border-left: 6rpx solid var(--color-primary);
+}
+
+.today-item {
+  padding: 16rpx 0;
+  border-bottom: 1rpx solid #F3F4F6;
+}
+
+.today-item:last-child {
+  border-bottom: none;
+}
+
+.today-title {
+  font-size: var(--font-size-md);
+  font-weight: 500;
+  color: var(--color-secondary);
+  margin-bottom: 8rpx;
+}
+
+.today-meta {
+  margin-bottom: 8rpx;
+}
+
+.today-actions {
+  margin-top: 12rpx;
+}
+
+.copy-btn {
+  display: inline-block;
+  font-size: var(--font-size-sm);
+  color: var(--color-primary);
+  border: 2rpx solid var(--color-primary);
+  border-radius: var(--radius-tag);
+  padding: 6rpx 20rpx;
+}
+
+.copy-btn:active {
+  background: rgba(255, 107, 53, 0.1);
+}
+
+/* 已计划支出 */
+.planned-expense {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.expense-label {
+  font-size: var(--font-size-md);
+  color: var(--color-text-secondary);
+}
+
+.expense-value {
+  font-size: var(--font-size-lg);
+  font-weight: 600;
+  color: var(--color-primary);
+}
+
+/* 分享按钮 */
+.share-btn-area {
+  margin-top: var(--spacing-card-gap);
+  padding-bottom: 48rpx;
+}
+
+.share-btn {
+  width: 100%;
+}

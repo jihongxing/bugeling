@@ -1,0 +1,75 @@
+<!-- pages/activity/detail/detail.wxml - 活动详情 -->
+<view class="page" wx:if="{{!loading && activity}}">
+  <!-- 标题区 -->
+  <view class="detail-header">
+    <text class="detail-title">{{activity.title}}</text>
+    <text class="credit-score">契约分 {{activity.initiatorCredit}}</text>
+  </view>
+
+  <!-- 押金卡片 -->
+  <view class="deposit-card card">
+    <text class="deposit-label">鸽子费</text>
+    <text class="deposit-amount">{{depositDisplay}}</text>
+  </view>
+
+  <!-- 契约声明 -->
+  <view class="contract-declaration">
+    <text class="contract-title">契约声明</text>
+    <text class="contract-text">参与本活动即表示同意：按时到场完成约见，未到场者押金将按规则分配给守约方。请认真对待每一次约定。</text>
+  </view>
+
+  <!-- 活动信息 -->
+  <view class="info-section card">
+    <view class="info-item">
+      <text class="info-label">地点</text>
+      <text class="info-value">{{activity.location.name}}</text>
+    </view>
+    <view class="info-item">
+      <text class="info-label">时间</text>
+      <text class="info-value">{{activity.meetTime}}</text>
+    </view>
+    <view class="info-item">
+      <text class="info-label">人数</text>
+      <text class="info-value">{{activity.currentParticipants}}/{{activity.maxParticipants}}人</text>
+    </view>
+    <view class="info-item">
+      <text class="info-label">接头特征</text>
+      <text class="info-value">{{activity.identityHint}}</text>
+    </view>
+  </view>
+
+  <!-- 操作区 -->
+  <view class="action-area">
+    <!-- 报名按钮 -->
+    <button class="btn-primary action-btn" wx:if="{{actionState === 'join'}}" bindtap="goJoin" disabled="{{paying}}">
+      {{paying ? '支付中...' : '支付 ' + depositDisplay + ' 报名'}}
+    </button>
+
+    <!-- 参与状态 -->
+    <view class="status-display" wx:if="{{actionState === 'status' && statusConfig}}">
+      <view class="tag" style="background-color: {{statusConfig.bgColor}}; color: {{statusConfig.textColor}};">
+        {{statusConfig.label}}
+      </view>
+    </view>
+
+    <!-- 管理按钮 -->
+    <button class="btn-primary action-btn" wx:if="{{actionState === 'manage'}}" bindtap="goManage">
+      管理活动
+    </button>
+
+    <!-- 微信号解锁倒计时 -->
+    <view class="countdown-tip" wx:if="{{unlockCountdownText && !wechatUnlocked}}">
+      <text>距解锁微信号还有 {{unlockCountdownText}}</text>
+    </view>
+
+    <!-- 复制微信 -->
+    <button class="btn-secondary action-btn" wx:if="{{showWechatCopy && wechatUnlocked}}" bindtap="copyWechatId">
+      复制发起人微信
+    </button>
+  </view>
+</view>
+
+<!-- 加载中 -->
+<view class="page loading-state" wx:if="{{loading}}">
+  <text class="loading-text">加载中...</text>
+</view>

@@ -1,0 +1,56 @@
+{
+  "pages": [
+    "pages/index/index",
+    "pages/activity/create/create",
+    "pages/activity/detail/detail",
+    "pages/activity/manage/manage",
+    "pages/verify/qrcode/qrcode",
+    "pages/verify/scan/scan",
+    "pages/user/profile/profile",
+    "pages/user/history/history",
+    "pages/user/calendar/calendar",
+    "pages/user/poster/poster",
+    "pages/report/report"
+  ],
+  "tabBar": {
+    "color": "#6B7280",
+    "selectedColor": "#FF6B35",
+    "backgroundColor": "#FFFFFF",
+    "borderStyle": "black",
+    "list": [
+      {
+        "pagePath": "pages/index/index",
+        "text": "首页",
+        "iconPath": "assets/icons/home.png",
+        "selectedIconPath": "assets/icons/home-active.png"
+      },
+      {
+        "pagePath": "pages/activity/create/create",
+        "text": "发布",
+        "iconPath": "assets/icons/add.png",
+        "selectedIconPath": "assets/icons/add-active.png"
+      },
+      {
+        "pagePath": "pages/user/profile/profile",
+        "text": "我的",
+        "iconPath": "assets/icons/user.png",
+        "selectedIconPath": "assets/icons/user-active.png"
+      }
+    ]
+  },
+  "window": {
+    "navigationBarBackgroundColor": "#FFFFFF",
+    "navigationBarTextStyle": "black",
+    "navigationBarTitleText": "不鸽令",
+    "backgroundColor": "#F5F5F7",
+    "backgroundTextStyle": "dark"
+  },
+  "permission": {
+    "scope.userLocation": {
+      "desc": "用于展示附近活动和到场校验"
+    }
+  },
+  "sitemapLocation": "sitemap.json",
+  "style": "v2",
+  "lazyCodeLoading": "requiredComponents"
+}

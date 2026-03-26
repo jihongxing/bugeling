@@ -1,0 +1,47 @@
+/* pages/user/poster/poster.wxss */
+
+.page {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 100vh;
+  background: var(--color-bg);
+  padding: var(--spacing-page);
+}
+
+.poster-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 32rpx;
+}
+
+.poster-canvas {
+  width: 600rpx;
+  height: 800rpx;
+  background: #FFFFFF;
+  border-radius: var(--radius-card);
+  box-shadow: 0 4rpx 24rpx rgba(0, 0, 0, 0.1);
+}
+
+.action-area {
+  width: 100%;
+  margin-top: 48rpx;
+  padding: 0 24rpx;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 24rpx;
+}
+
+.save-btn {
+  width: 100%;
+}
+
+.save-btn[disabled] {
+  opacity: 0.5;
+}
+
+.share-btn {
+  width: 100%;
+}

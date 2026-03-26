@@ -1,0 +1,6 @@
+{
+  "usingComponents": {
+    "deposit-tag": "/components/deposit-tag/deposit-tag"
+  },
+  "navigationBarTitleText": "发布活动"
+}

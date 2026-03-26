@@ -1,0 +1,4 @@
+<!-- components/deposit-tag/deposit-tag.wxml - 押金标签 -->
+<view class="deposit-tag">
+  <text>{{displayAmount}}</text>
+</view>
