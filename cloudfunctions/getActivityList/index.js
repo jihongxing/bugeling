@@ -4,13 +4,10 @@ const cloud = require('wx-server-sdk')
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 
 const { getDb, COLLECTIONS } = require('../_shared/db')
-const { getCredit } = require('../_shared/credit')
 const { successResponse, errorResponse } = require('../_shared/response')
 
 /**
  * 校验 getActivityList 参数
- * @param {object} params - 请求参数
- * @returns {{ valid: boolean, error?: string, parsed: object }}
  */
 function validateParams(params) {
   const { latitude, longitude, radius, page, pageSize } = params || {}
@@ -36,48 +33,45 @@ function validateParams(params) {
   if (!Number.isInteger(parsedPageSize) || parsedPageSize < 1) {
     return { valid: false, error: 'pageSize 必须为正整数' }
   }
-  if (parsedPageSize > 50) {
-    parsedPageSize = 50
-  }
+  if (parsedPageSize > 50) parsedPageSize = 50
 
   return {
     valid: true,
-    parsed: {
-      latitude,
-      longitude,
-      radius: parsedRadius,
-      page: parsedPage,
-      pageSize: parsedPageSize
-    }
+    parsed: { latitude, longitude, radius: parsedRadius, page: parsedPage, pageSize: parsedPageSize }
   }
 }
 
 /**
- * 批量查询发起人信用分
+ * 批量查询发起人信用分 — 使用 db.command.in() 单次查询消除 N+1
+ * @param {object} db - 数据库实例
  * @param {string[]} initiatorIds - 发起人 openId 列表
  * @returns {Promise<Object>} openId -> score 映射
  */
-async function batchGetCredits(initiatorIds) {
+async function batchGetCredits(db, initiatorIds) {
   const uniqueIds = [...new Set(initiatorIds)]
   const creditMap = {}
-  await Promise.all(
-    uniqueIds.map(async (id) => {
-      try {
-        const credit = await getCredit(id)
-        creditMap[id] = credit ? credit.score : null
-      } catch {
-        creditMap[id] = null
-      }
-    })
-  )
+  if (uniqueIds.length === 0) return creditMap
+
+  try {
+    const { data: credits } = await db.collection(COLLECTIONS.CREDITS)
+      .where({ _id: db.command.in(uniqueIds) })
+      .get()
+
+    credits.forEach(c => { creditMap[c._id] = c.score })
+  } catch (err) {
+    console.error('batchGetCredits error:', err)
+  }
+
+  // 未找到记录的用户默认 100 分
+  uniqueIds.forEach(id => {
+    if (creditMap[id] === undefined) creditMap[id] = 100
+  })
+
   return creditMap
 }
 
 /**
  * 将活动记录组装为返回格式
- * @param {object} activity - 数据库活动记录
- * @param {Object} creditMap - 发起人信用分映射
- * @returns {object} 格式化的活动数据
  */
 function formatActivity(activity, creditMap) {
   const location = activity.location || {}
@@ -105,7 +99,6 @@ function formatActivity(activity, creditMap) {
 
 exports.main = async (event, context) => {
   try {
-    // 1. 参数校验
     const validation = validateParams(event)
     if (!validation.valid) {
       return errorResponse(1001, validation.error)
@@ -114,27 +107,7 @@ exports.main = async (event, context) => {
     const { latitude, longitude, radius, page, pageSize } = validation.parsed
     const db = getDb()
 
-    // 2. 使用 aggregate + geoNear 查询总数
-    const countResult = await db.collection(COLLECTIONS.ACTIVITIES).aggregate()
-      .geoNear({
-        distanceField: 'distance',
-        spherical: true,
-        near: db.Geo.Point(longitude, latitude),
-        maxDistance: radius,
-        query: { status: 'pending' }
-      })
-      .count('total')
-      .end()
-
-    const total = (countResult.list && countResult.list.length > 0)
-      ? countResult.list[0].total
-      : 0
-
-    if (total === 0) {
-      return successResponse({ list: [], total: 0, hasMore: false })
-    }
-
-    // 3. GEO 聚合查询：按距离排序 + 分页
+    // GEO 聚合查询：按距离排序 + 分页
     const result = await db.collection(COLLECTIONS.ACTIVITIES).aggregate()
       .geoNear({
         distanceField: 'distance',
@@ -145,27 +118,30 @@ exports.main = async (event, context) => {
       })
       .sort({ distance: 1 })
       .skip((page - 1) * pageSize)
-      .limit(pageSize)
+      .limit(pageSize + 1) // 多取一条判断 hasMore，避免额外 count 查询
       .end()
 
-    const activities = result.list || []
+    const rawList = result.list || []
+    const hasMore = rawList.length > pageSize
+    const activities = hasMore ? rawList.slice(0, pageSize) : rawList
 
-    // 4. 批量查询发起人信用分
+    if (activities.length === 0) {
+      return successResponse({ list: [], total: 0, hasMore: false })
+    }
+
+    // 批量查询发起人信用分（单次 in 查询）
     const initiatorIds = activities.map(a => a.initiatorId)
-    const creditMap = await batchGetCredits(initiatorIds)
+    const creditMap = await batchGetCredits(db, initiatorIds)
 
-    // 5. 组装返回数据
     const list = activities.map(a => formatActivity(a, creditMap))
-    const hasMore = page * pageSize < total
 
-    return successResponse({ list, total, hasMore })
+    return successResponse({ list, hasMore })
   } catch (err) {
     console.error('getActivityList error:', err)
     return errorResponse(5001, err.message)
   }
 }
 
-// 导出内部函数供测试使用
 exports.validateParams = validateParams
 exports.batchGetCredits = batchGetCredits
 exports.formatActivity = formatActivity

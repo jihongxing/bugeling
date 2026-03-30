@@ -9,7 +9,8 @@ var STATUS_MAP = {
   confirmed: { label: '已成行', bgColor: '#DBEAFE', textColor: '#2563EB' },
   verified:  { label: '已核销', bgColor: '#D1FAE5', textColor: '#059669' },
   expired:   { label: '已超时', bgColor: '#FEE2E2', textColor: '#DC2626' },
-  settled:   { label: '已结算', bgColor: '#E5E7EB', textColor: '#6B7280' }
+  settled:   { label: '已结算', bgColor: '#E5E7EB', textColor: '#6B7280' },
+  closed_unverified: { label: '到场未核销', bgColor: '#FEF3C7', textColor: '#D97706' }
 }
 
 /**

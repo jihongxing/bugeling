@@ -66,6 +66,11 @@
     <button class="btn-secondary action-btn" wx:if="{{showWechatCopy && wechatUnlocked}}" bindtap="copyWechatId">
       复制发起人微信
     </button>
+
+    <!-- 举报入口 -->
+    <button class="btn-secondary action-btn report-btn" wx:if="{{myParticipation && myParticipation.status === 'approved'}}" bindtap="goReport">
+      举报
+    </button>
   </view>
 </view>
 

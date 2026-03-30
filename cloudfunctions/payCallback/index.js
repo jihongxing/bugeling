@@ -34,14 +34,19 @@ exports.main = async function(event, context) {
     }
     var transaction = txRes.data[0]
 
-    // 3. 支付失败处理
+    // 3. transaction 幂等检查：非 pending 状态一律跳过
+    if (transaction.status !== 'pending') {
+      return SUCCESS_RESPONSE
+    }
+
+    // 4. 支付失败处理
     if (resultCode !== 'SUCCESS') {
       await database.collection(db.COLLECTIONS.TRANSACTIONS)
         .doc(transaction._id).update({ data: { status: 'failed' } })
       return SUCCESS_RESPONSE
     }
 
-    // 4. 支付成功处理
+    // 5. 支付成功处理
     var participationId = transaction.participationId
 
     // 查找 participation 记录
@@ -53,18 +58,18 @@ exports.main = async function(event, context) {
       return SUCCESS_RESPONSE
     }
 
-    // 幂等检查
-    if (partRes.data.status === 'paid') {
+    // 6. participation 幂等检查：非 pending 状态一律跳过
+    if (partRes.data.status !== 'pending') {
       return SUCCESS_RESPONSE
     }
 
-    // 更新 participation 状态
+    // 7. 更新 participation 状态
     await database.collection(db.COLLECTIONS.PARTICIPATIONS)
       .doc(participationId).update({
         data: { status: 'paid', paymentId: wxPayOrderId }
       })
 
-    // 更新 transaction 状态
+    // 8. 更新 transaction 状态
     await database.collection(db.COLLECTIONS.TRANSACTIONS)
       .doc(transaction._id).update({
         data: { status: 'success', wxPayOrderId: wxPayOrderId }

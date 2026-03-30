@@ -126,6 +126,12 @@ Page({
     })
   },
 
+  goReport: function() {
+    wx.navigateTo({
+      url: '/pages/report/report?activityId=' + this.data.activityId
+    })
+  },
+
   goJoin: function() {
     var self = this
     var activity = self.data.activity

@@ -123,12 +123,13 @@ async function createOrder(params) {
   var description = params.description
   var notifyUrl = params.notifyUrl
 
+  var appId = config.getEnv(config.ENV_KEYS.APPID)
   var mchId = config.getEnv(config.ENV_KEYS.MCH_ID)
   var apiKey = config.getEnv(config.ENV_KEYS.API_KEY)
   var nonceStr = generateNonceStr()
 
   var orderParams = {
-    appid: process.env.WX_APPID || '',
+    appid: appId,
     mch_id: mchId,
     nonce_str: nonceStr,
     body: description,
@@ -191,12 +192,13 @@ async function refund(params) {
   var totalFee = params.totalFee
   var refundFee = params.refundFee
 
+  var appId = config.getEnv(config.ENV_KEYS.APPID)
   var mchId = config.getEnv(config.ENV_KEYS.MCH_ID)
   var apiKey = config.getEnv(config.ENV_KEYS.API_KEY)
   var nonceStr = generateNonceStr()
 
   var refundParams = {
-    appid: process.env.WX_APPID || '',
+    appid: appId,
     mch_id: mchId,
     nonce_str: nonceStr,
     out_trade_no: outTradeNo,
@@ -249,12 +251,13 @@ async function splitBill(params) {
   var outOrderNo = params.outOrderNo
   var receivers = params.receivers
 
+  var appId = config.getEnv(config.ENV_KEYS.APPID)
   var mchId = config.getEnv(config.ENV_KEYS.MCH_ID)
   var apiKey = config.getEnv(config.ENV_KEYS.API_KEY)
   var nonceStr = generateNonceStr()
 
   var splitParams = {
-    appid: process.env.WX_APPID || '',
+    appid: appId,
     mch_id: mchId,
     nonce_str: nonceStr,
     transaction_id: transactionId,

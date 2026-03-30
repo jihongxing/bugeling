@@ -40,7 +40,7 @@ exports.main = async (event, context) => {
       // 2c. 调用 splitDeposit 云函数
       await cloud.callFunction({
         name: 'splitDeposit',
-        data: { participationId: p._id, activityId: p.activityId }
+        data: { participationId: p._id, activityId: p.activityId, _internalCall: true }
       })
 
       // 2d. 分账成功后更新参与记录 status 为 settled

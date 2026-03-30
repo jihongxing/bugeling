@@ -12,6 +12,14 @@
     </button>
   </view>
 
+  <!-- 发起人背书：手动确认到场 -->
+  <view class="manual-confirm-section">
+    <text class="manual-confirm-tip">参与者无法出示码？（如手机没电）</text>
+    <button class="btn-secondary manual-confirm-btn" bindtap="manualConfirm" disabled="{{scanning}}">
+      对方已到场，手动确认
+    </button>
+  </view>
+
   <view class="participants-section">
     <text class="section-title">参与者核销状态</text>
     <view class="participant-list">
@@ -28,5 +36,6 @@
     <button class="arrival-btn {{arrived ? 'arrived' : ''}}" bindtap="handleArrival" disabled="{{arrived}}">
       {{arrived ? '已报告到达 ✓' : '我已到达现场'}}
     </button>
+    <button class="btn-secondary report-btn" bindtap="goReport">举报</button>
   </view>
 </view>

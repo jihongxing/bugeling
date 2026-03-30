@@ -1,0 +1,22 @@
+{
+  "activities": {
+    ".read": false,
+    ".write": false
+  },
+  "participations": {
+    ".read": false,
+    ".write": false
+  },
+  "credits": {
+    ".read": false,
+    ".write": false
+  },
+  "transactions": {
+    ".read": false,
+    ".write": false
+  },
+  "reports": {
+    ".read": false,
+    ".write": false
+  }
+}

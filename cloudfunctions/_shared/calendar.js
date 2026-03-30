@@ -10,8 +10,8 @@ const { getDb, COLLECTIONS } = require('./db')
  * @returns {string} 日历状态：'verified' | 'upcoming' | 'breached' | 'cancelled'
  */
 function mapCalendarStatus(activityStatus, participationStatus, meetTime, role) {
-  // 绿色：参与状态为 verified 或 refunded
-  if (participationStatus === 'verified' || participationStatus === 'refunded') {
+  // 绿色：参与状态为 verified 或 refunded 或 closed_unverified（双方到场已退款）
+  if (participationStatus === 'verified' || participationStatus === 'refunded' || participationStatus === 'closed_unverified') {
     return 'verified'
   }
   // 红色：参与状态为 breached 或 settled

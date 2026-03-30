@@ -96,10 +96,11 @@ exports.main = async (event, context) => {
 
     const { title, depositTier, maxParticipants, location, meetTime, identityHint, wechatId } = event
 
-    // 3. 内容安全检查（title 和 identityHint）
+    // 3. 内容安全检查（title、identityHint 和 wechatId）
     try {
       await cloud.openapi.security.msgSecCheck({ content: title })
       await cloud.openapi.security.msgSecCheck({ content: identityHint })
+      await cloud.openapi.security.msgSecCheck({ content: wechatId })
     } catch (err) {
       if (err.errCode === 87014) {
         return errorResponse(2001, '内容含违规信息，请修改后重试')
