@@ -47,7 +47,7 @@ BugeLing/
 │   │   └── date.js               # 日期工具（日历专用）
 │   └── libs/                     # 第三方 SDK
 │
-├── cloudfunctions/               # 云函数（18个）
+├── cloudfunctions/               # 云函数（25个）
 │   ├── _shared/                  # 共享模块
 │   │   ├── db.js                 # 数据库封装
 │   │   ├── response.js           # 统一响应格式
@@ -81,7 +81,10 @@ BugeLing/
 │   ├── checkImageSafety/         # 图片安全检测
 │   ├── getCalendarActivities/    # 日历活动数据
 │   ├── checkConflict/            # 时间冲突检测
-│   └── getPosterData/            # 海报数据
+│   ├── getPosterData/            # 海报数据
+│   ├── cancelActivity/           # 取消活动
+│   ├── manualVerify/             # 手动确认到场
+│   └── processVerifiedRefunds/   # 已核销退款补偿定时任务
 │
 ├── tests/                        # 测试套件
 │   ├── __tests__/                # 67 个测试文件，713 个测试用例
@@ -95,6 +98,7 @@ BugeLing/
 │   ├── API接口文档-不鸽令.md
 │   ├── UI交互规范-不鸽令.md
 │   ├── 环境配置说明-不鸽令.md
+│   ├── 上线配置Checklist.md
 │   └── 增长策略-微信群转发裂变.md
 │
 ├── .kiro/specs/                  # 功能规格文档（9个模块）
@@ -205,7 +209,7 @@ npm run test:coverage  # 生成覆盖率报告
 
 ## 开发状态
 
-当前为 MVP 阶段，所有 9 个功能模块的代码和测试已完成。待配置 AppID 和云开发环境后即可进行端到端联调。
+当前为 MVP 阶段，核心功能代码已完成，测试套件当前已全量通过。待配置 AppID、云开发环境、数据库索引、支付证书和环境变量后即可进行端到端联调。
 
 ## License
 

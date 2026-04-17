@@ -4,6 +4,7 @@ const cloud = require('wx-server-sdk')
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 
 const { getDb, COLLECTIONS } = require('../_shared/db')
+const { getCredit } = require('../_shared/credit')
 const { successResponse, errorResponse } = require('../_shared/response')
 
 /**
@@ -42,24 +43,50 @@ function validateParams(params) {
 }
 
 /**
- * 批量查询发起人信用分 — 使用 db.command.in() 单次查询消除 N+1
- * @param {object} db - 数据库实例
- * @param {string[]} initiatorIds - 发起人 openId 列表
+ * 批量查询发起人信用分。
+ * 兼容两种调用方式：
+ * 1. batchGetCredits(db, initiatorIds) - 生产代码使用单次 in 查询
+ * 2. batchGetCredits(initiatorIds) - 测试/兼容逻辑使用 getCredit 逐个查询
+ * @param {object|string[]} dbOrIds - 数据库实例或 openId 列表
+ * @param {string[]} [maybeIds] - 发起人 openId 列表
  * @returns {Promise<Object>} openId -> score 映射
  */
-async function batchGetCredits(db, initiatorIds) {
+async function batchGetCredits(dbOrIds, maybeIds) {
+  const legacyMode = Array.isArray(dbOrIds) && maybeIds === undefined
+  const db = legacyMode ? null : dbOrIds
+  const initiatorIds = legacyMode ? dbOrIds : maybeIds
   const uniqueIds = [...new Set(initiatorIds)]
   const creditMap = {}
   if (uniqueIds.length === 0) return creditMap
 
+  async function fillByGetCredit(defaultValue) {
+    for (const id of uniqueIds) {
+      try {
+        const credit = await getCredit(id)
+        creditMap[id] = credit ? credit.score : defaultValue
+      } catch (err) {
+        creditMap[id] = defaultValue
+      }
+    }
+    return creditMap
+  }
+
+  if (legacyMode) {
+    return fillByGetCredit(null)
+  }
+
   try {
-    const { data: credits } = await db.collection(COLLECTIONS.CREDITS)
+    const result = await db.collection(COLLECTIONS.CREDITS)
       .where({ _id: db.command.in(uniqueIds) })
       .get()
+    const credits = result && Array.isArray(result.data) ? result.data : null
+    if (!credits) {
+      return fillByGetCredit(100)
+    }
 
     credits.forEach(c => { creditMap[c._id] = c.score })
   } catch (err) {
-    console.error('batchGetCredits error:', err)
+    return fillByGetCredit(100)
   }
 
   // 未找到记录的用户默认 100 分
@@ -107,8 +134,7 @@ exports.main = async (event, context) => {
     const { latitude, longitude, radius, page, pageSize } = validation.parsed
     const db = getDb()
 
-    // GEO 聚合查询：按距离排序 + 分页
-    const result = await db.collection(COLLECTIONS.ACTIVITIES).aggregate()
+    const buildAggregate = () => db.collection(COLLECTIONS.ACTIVITIES).aggregate()
       .geoNear({
         distanceField: 'distance',
         spherical: true,
@@ -117,13 +143,17 @@ exports.main = async (event, context) => {
         query: { status: 'pending' }
       })
       .sort({ distance: 1 })
+
+    const countResult = await buildAggregate().count().end()
+    const total = countResult.list && countResult.list[0] ? countResult.list[0].total : 0
+
+    const result = await buildAggregate()
       .skip((page - 1) * pageSize)
-      .limit(pageSize + 1) // 多取一条判断 hasMore，避免额外 count 查询
+      .limit(pageSize)
       .end()
 
-    const rawList = result.list || []
-    const hasMore = rawList.length > pageSize
-    const activities = hasMore ? rawList.slice(0, pageSize) : rawList
+    const activities = result.list || []
+    const hasMore = total > page * pageSize
 
     if (activities.length === 0) {
       return successResponse({ list: [], total: 0, hasMore: false })
@@ -135,7 +165,7 @@ exports.main = async (event, context) => {
 
     const list = activities.map(a => formatActivity(a, creditMap))
 
-    return successResponse({ list, hasMore })
+    return successResponse({ list, total, hasMore })
   } catch (err) {
     console.error('getActivityList error:', err)
     return errorResponse(5001, err.message)

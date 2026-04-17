@@ -1,5 +1,5 @@
 // pages/verify/scan/scan.js - 扫码核销
-var locationUtil = require('../../utils/location')
+var locationUtil = require('../../../utils/location')
 
 // Helper functions (exported for testing)
 function formatParticipantStatus(participation) {

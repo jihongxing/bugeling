@@ -70,29 +70,44 @@ exports.main = async (event, context) => {
       .doc(participationId)
       .update({ data: { status: 'rejected' } })
 
-    // 7. 查找正确的商户订单号（outTradeNo），而非微信 transaction_id
-    const { data: txList } = await db.collection(COLLECTIONS.TRANSACTIONS)
-      .where({ participationId, type: 'deposit', status: 'success' })
-      .limit(1)
-      .get()
-
-    // 8. 触发全额退款（使用固定退款单号确保幂等）
-    if (txList && txList.length > 0) {
-      try {
-        await refund({
+    // 7. 优先使用 participation 上的支付信息，兼容旧数据时再回退到 transactions 集合
+    let refundPayload = null
+    if (participation.paymentId && participation.depositAmount) {
+      refundPayload = {
+        outTradeNo: participation.paymentId,
+        totalFee: participation.depositAmount,
+        refundFee: participation.depositAmount
+      }
+    } else {
+      const { data: txList } = await db.collection(COLLECTIONS.TRANSACTIONS)
+        .where({ participationId, type: 'deposit', status: 'success' })
+        .get()
+      if (txList && txList.length > 0) {
+        refundPayload = {
           outTradeNo: txList[0].outTradeNo,
-          outRefundNo: 'BGLR_' + participationId,
           totalFee: txList[0].amount,
           refundFee: txList[0].amount
+        }
+      }
+    }
+
+    // 8. 触发全额退款（退款失败不阻塞主流程）
+    if (refundPayload) {
+      try {
+        await refund({
+          outTradeNo: refundPayload.outTradeNo,
+          outRefundNo: 'refund_' + participationId,
+          totalFee: refundPayload.totalFee,
+          refundFee: refundPayload.refundFee
         })
       } catch (refundErr) {
         console.error('rejectParticipant refund failed:', refundErr)
       }
     } else {
-      console.error('rejectParticipant: 未找到 deposit 交易记录, participationId=' + participationId)
+      console.error('rejectParticipant: 未找到可退款支付记录, participationId=' + participationId)
     }
 
-    // 8. 返回成功
+    // 9. 返回成功
     return successResponse({ success: true })
   } catch (err) {
     console.error('rejectParticipant error:', err)

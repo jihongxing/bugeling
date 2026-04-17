@@ -36,11 +36,11 @@ function determineVerdict(participantPresent, initiatorPresent) {
   }
   if (participantPresent && initiatorPresent) {
     // 场景C：双方到场未核销
-    // 全额退款，双方各扣 2 分信用，状态直接关闭
+    // 记为违约，后续由 executeSplit 在申诉期后处理资金
     return {
       verdict: 'present_unverified',
-      participationStatus: 'closed_unverified',
-      needsRefund: true,
+      participationStatus: 'breached',
+      needsRefund: false,
       creditActions: []
     }
   }
@@ -114,30 +114,21 @@ exports.main = async (event, context) => {
           const result = determineVerdict(participantPresent, initiatorPresent)
 
           // 退款操作（在状态变更前执行，确保退款单号可追溯）
-          let refundOutNo = null
           if (result.needsRefund) {
-            refundOutNo = 'BGLR_' + p._id
             try {
               await cloud.callFunction({
                 name: 'refundDeposit',
-                data: { participationId: p._id, _internalCall: true }
+                data: { participationId: p._id }
               })
             } catch (refundErr) {
               console.error(`[autoArbitrate] refundDeposit 失败 participationId=${p._id}:`, refundErr)
             }
           }
 
-          // 更新参与记录状态（退款完成后再更新）
-          const updateData = {
-            status: result.participationStatus,
-            verdict: result.verdict,
-            arbitratedAt: db.serverDate()
-          }
+          // 更新参与记录状态
+          const updateData = { status: result.participationStatus }
           if (result.participationStatus === 'breached') {
             updateData.breachedAt = db.serverDate()
-          }
-          if (refundOutNo) {
-            updateData.refundOutNo = refundOutNo
           }
 
           await db.collection(COLLECTIONS.PARTICIPATIONS).doc(p._id).update({
@@ -150,10 +141,6 @@ exports.main = async (event, context) => {
               await updateCredit(p.participantId, -20, 'breached')
             } else if (result.verdict === 'initiator_breached') {
               await updateCredit(activity.initiatorId, -20, 'breached')
-            } else if (result.verdict === 'present_unverified') {
-              // 场景C：双方到场未核销，双方各扣 2 分
-              await updateCredit(p.participantId, -2, 'closed_unverified')
-              await updateCredit(activity.initiatorId, -2, 'closed_unverified')
             } else if (result.verdict === 'mutual_noshow') {
               await updateCredit(p.participantId, -5, 'mutual_noshow')
               await updateCredit(activity.initiatorId, -5, 'mutual_noshow')
