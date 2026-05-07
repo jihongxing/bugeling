@@ -54,6 +54,12 @@ function getCurrentLocation(options) {
         clearTimeout(timer)
         var errMsg = (err && err.errMsg) || ''
 
+        // 非超时失败也优先降级缓存，避免页面首屏阻塞
+        if (_cachedLocation) {
+          resolve(_cachedLocation)
+          return
+        }
+
         if (errMsg.indexOf('auth deny') !== -1 ||
             errMsg.indexOf('authorize') !== -1 ||
             errMsg.indexOf('permission') !== -1) {

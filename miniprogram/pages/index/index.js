@@ -3,6 +3,11 @@ var api = require('../../utils/api')
 var location = require('../../utils/location')
 var activityFeedAdapter = require('../../components/activity-card/activity-feed-adapter')
 var templateUtil = require('../../utils/activity-templates')
+var DEFAULT_FALLBACK_LOCATION = {
+  latitude: 31.2304,
+  longitude: 121.4737,
+  name: '未定位（先看默认推荐）'
+}
 
 function buildHeroSubtitle(hasActivities) {
   if (hasActivities) return '先看看附近的小局，也可以顺手发一个同类的'
@@ -117,7 +122,7 @@ Page({
   },
 
   onReachBottom: function() {
-    if (!this.data.hasMore || this.data.loading) return
+    if (!this.data.hasMore || this.data.loading || this.data.isEmpty) return
     this.setData({ page: this.data.page + 1 })
     this.loadActivities()
   },
@@ -132,9 +137,13 @@ Page({
       })
       self.loadActivities()
     }).catch(function(err) {
-      wx.showToast({ title: err.message || '获取位置失败', icon: 'none' })
-      self.setData({ isEmpty: true, loading: false })
-      wx.stopPullDownRefresh()
+      self.setData({
+        latitude: DEFAULT_FALLBACK_LOCATION.latitude,
+        longitude: DEFAULT_FALLBACK_LOCATION.longitude,
+        locationName: DEFAULT_FALLBACK_LOCATION.name
+      })
+      self.loadActivities()
+      wx.showToast({ title: err.message || '定位失败，先按默认位置展示', icon: 'none' })
     })
   },
 
@@ -179,13 +188,15 @@ Page({
           heroSubtitle: buildHeroSubtitle(hasActivities),
           feedTitle: hasActivities ? '附近已经有人在发' : '附近暂时还没有人发，你可以做第一个',
           feedSubtitle: buildFeedSubtitle(feedSummary, false),
-          hasMore: result.data.hasMore,
+          hasMore: Boolean(result.data.hasMore) && incomingList.length > 0,
           isEmpty: !hasActivities,
           loading: false
         })
       } else {
         self.setData({
           loading: false,
+          hasMore: false,
+          isEmpty: self.data.activityList.length === 0,
           heroSubtitle: buildHeroSubtitle(self.data.activityList.length > 0),
           feedTitle: self.data.activityList.length > 0
             ? '附近已经有人在发'
@@ -198,6 +209,8 @@ Page({
     }).catch(function() {
       self.setData({
         loading: false,
+        hasMore: false,
+        isEmpty: self.data.activityList.length === 0,
         heroSubtitle: buildHeroSubtitle(self.data.activityList.length > 0),
         feedTitle: self.data.activityList.length > 0
           ? '附近已经有人在发'

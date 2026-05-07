@@ -127,16 +127,17 @@
 .template-grid {
   display: flex;
   flex-wrap: wrap;
-  gap: 14rpx;
+  justify-content: space-between;
 }
 
 .template-card {
-  width: calc(50% - 7rpx);
+  width: 48.8%;
   background: #F8FAFC;
   border-radius: 22rpx;
   padding: 18rpx 20rpx;
   border: 2rpx solid transparent;
   box-sizing: border-box;
+  margin-bottom: 14rpx;
 }
 
 .template-card:active {
@@ -181,6 +182,7 @@
 
 .template-grid.more {
   margin-top: 12rpx;
+  margin-bottom: -14rpx;
 }
 
 .examples-wrap {
