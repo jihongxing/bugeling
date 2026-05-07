@@ -16,6 +16,14 @@
   color: var(--color-text-secondary);
 }
 
+.manage-note {
+  display: block;
+  margin-top: 12rpx;
+  font-size: var(--font-size-sm);
+  line-height: 1.7;
+  color: var(--color-text-secondary);
+}
+
 .manage-actions {
   display: flex;
   gap: 16rpx;
@@ -47,33 +55,6 @@
 .participant-name {
   font-size: var(--font-size-md);
   color: var(--color-secondary);
-}
-
-.participant-actions {
-  display: flex;
-  gap: 16rpx;
-}
-
-.action-approve {
-  flex: 1;
-  background-color: var(--color-success);
-  color: #FFFFFF;
-  border-radius: var(--radius-btn);
-  padding: 16rpx 0;
-  font-size: var(--font-size-sm);
-  border: none;
-  text-align: center;
-}
-
-.action-reject {
-  flex: 1;
-  background-color: var(--color-danger);
-  color: #FFFFFF;
-  border-radius: var(--radius-btn);
-  padding: 16rpx 0;
-  font-size: var(--font-size-sm);
-  border: none;
-  text-align: center;
 }
 
 .empty-participants {

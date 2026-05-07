@@ -26,7 +26,7 @@ function formatCheckinWindow(startCheckinAt, endCheckinAt) {
   var end = new Date(endCheckinAt)
 
   if (isNaN(start.getTime()) && isNaN(end.getTime())) {
-    return '到场后可随时签到'
+    return '到了之后随时点一下都行'
   }
 
   if (!isNaN(start.getTime()) && isNaN(end.getTime())) {
@@ -89,7 +89,7 @@ function getEligibility(activity) {
     return {
       isInitiator: false,
       eligible: false,
-      reason: '仅发起人或已通过报名的参与者可签到'
+      reason: '只有发起人或已经占上位置的人，才能在这里确认到场'
     }
   }
 
@@ -97,14 +97,14 @@ function getEligibility(activity) {
     return {
       isInitiator: false,
       eligible: false,
-      reason: '报名通过后即可签到'
+      reason: '先占上位置，再来这里点“我到了”'
     }
   }
 
   return {
     isInitiator: false,
     eligible: false,
-    reason: '当前状态暂不支持签到'
+    reason: '你现在这个状态，还不能在这里确认到场'
   }
 }
 
@@ -131,7 +131,7 @@ function getStatusConfigByKey(key) {
 
   if (key === 'ready') {
     return {
-      label: '可签到',
+      label: '可以确认',
       bgColor: '#DBEAFE',
       textColor: '#2563EB'
     }
@@ -154,7 +154,7 @@ function getStatusConfigByKey(key) {
   }
 
   return {
-    label: '暂不可签',
+      label: '暂时不行',
     bgColor: '#F3F4F6',
     textColor: '#6B7280'
   }
@@ -167,40 +167,40 @@ function buildDistanceFeedback(distance) {
 
   var distanceText = formatUtil.formatDistance(distance)
   if (distance <= 300) {
-    return '距集合点约 ' + distanceText + '，已记录为现场到场。'
+    return '离碰头点约 ' + distanceText + '，已经帮你记成到场了。'
   }
 
   if (distance <= 1000) {
-    return '距集合点约 ' + distanceText + '，系统已记录当前位置。'
+    return '离碰头点约 ' + distanceText + '，已经帮你记下当前位置了。'
   }
 
-  return '距集合点约 ' + distanceText + '，如有明显偏差可向对方说明。'
+  return '离碰头点约 ' + distanceText + '，如果差得有点远，最好提前和对方说一声。'
 }
 
 function buildPreviewDistance(distance) {
   if (typeof distance !== 'number' || !isFinite(distance)) {
     return ''
   }
-  return '距集合点约 ' + formatUtil.formatDistance(distance)
+  return '离碰头点约 ' + formatUtil.formatDistance(distance)
 }
 
 function buildTips(activity, eligibility, windowState) {
   var tips = [
-    '签到会读取一次当前位置，仅用于到场校验。'
+    '点一下“我到了”时，会读取一次当前位置，只是为了帮你确认是不是快到碰头点了。'
   ]
 
   if (windowState === 'late') {
-    tips.push('已超过建议签到时段，仍可补签并留下到场记录。')
+    tips.push('已经过了建议时段，如果你现在才到，也还能补一下到场记录。')
   } else {
-    tips.push('建议在约定集合前后完成签到，避免后续争议。')
+    tips.push('最好在差不多碰头的时候点一下，后面也少点误会。')
   }
 
   if (activity && activity.identityHint) {
-    tips.push('识别提示：' + activity.identityHint)
+    tips.push('怎么认人：' + activity.identityHint)
   }
 
   if (activity && activity.meetingPointText) {
-    tips.push('集合说明：' + activity.meetingPointText)
+    tips.push('怎么碰头：' + activity.meetingPointText)
   }
 
   if (!eligibility.eligible && eligibility.reason) {
@@ -246,11 +246,11 @@ function buildState(activity, storedRecord, now) {
   if (checkedIn) {
     return {
       key: 'checked_in',
-      title: '已完成签到',
+      title: '已经确认过到了',
       description: eligibility.isInitiator
-        ? '你作为发起人的到场记录已提交。'
-        : '你的到场记录已提交，可向对方出示此页面。',
-      buttonText: '已完成签到',
+        ? '你这边已经记成到场了。'
+        : '你这边已经记成到场了，需要的话可以给对方看一眼。',
+      buttonText: '已经确认过了',
       canSubmit: false
     }
   }
@@ -258,9 +258,9 @@ function buildState(activity, storedRecord, now) {
   if (!eligibility.eligible) {
     return {
       key: 'disabled',
-      title: '暂不可签到',
+      title: '现在还不能点',
       description: eligibility.reason,
-      buttonText: '暂不可签到',
+      buttonText: '现在还不能点',
       canSubmit: false
     }
   }
@@ -268,9 +268,9 @@ function buildState(activity, storedRecord, now) {
   if (windowState === 'before') {
     return {
       key: 'waiting',
-      title: '签到暂未开始',
-      description: '建议在签到时段内上报位置，到场记录会更准确。',
-      buttonText: '签到未开始',
+      title: '现在先不用着急',
+      description: '等差不多快碰头的时候再点，到场记录会更准一些。',
+      buttonText: '还没到时候',
       canSubmit: false
     }
   }
@@ -278,18 +278,18 @@ function buildState(activity, storedRecord, now) {
   if (windowState === 'late') {
     return {
       key: 'late',
-      title: '已超过建议签到时段',
-      description: '如果你现在刚到现场，仍可以补签并提交当前位置。',
-      buttonText: '补签到并上报位置',
+      title: '已经过了建议时间',
+      description: '如果你现在刚到，也还能补一下到场记录。',
+      buttonText: '补一下到场记录',
       canSubmit: true
     }
   }
 
   return {
     key: 'ready',
-    title: '可以签到',
-    description: '到达现场后点击下方按钮，系统会校验当前位置与集合点距离。',
-    buttonText: '签到并上报位置',
+    title: '差不多可以点了',
+    description: '到了附近就点一下，系统会看看你离碰头点还有多远。',
+    buttonText: '我到了',
     canSubmit: true
   }
 }
@@ -304,8 +304,8 @@ function buildViewModel(activity, storedRecord, now) {
     : null
 
   return {
-    roleText: eligibility.isInitiator ? '发起人签到' : '参与者签到',
-    summaryText: activity.summary || '到场后在这里完成签到，系统会记录位置并反馈与集合点的距离。',
+    roleText: eligibility.isInitiator ? '发起人到场确认' : '参与者到场确认',
+    summaryText: activity.summary || '到了附近就在这里点一下，系统会帮你看看离碰头点还有多远。',
     location: location,
     meetTimeText: formatUtil.formatMeetTime(activity.meetTime) || '待确定',
     checkinWindowText: formatCheckinWindow(activity.startCheckinAt, activity.endCheckinAt),

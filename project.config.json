@@ -1,7 +1,7 @@
 {
   "miniprogramRoot": "miniprogram/",
   "cloudfunctionRoot": "cloudfunctions/",
-  "appid": "<YOUR_APPID>",
+  "appid": "wx28fe6d19a46e6327",
   "projectname": "不鸽令",
   "description": "线下契约引擎 - 消除线下约见的不确定性",
   "setting": {
@@ -11,7 +11,8 @@
     "postcss": true,
     "minified": true,
     "coverView": true,
-    "lazyCodeLoading": "requiredComponents"
+    "lazyCodeLoading": "requiredComponents",
+    "minifyWXML": true
   },
   "compileType": "miniprogram",
   "condition": {}

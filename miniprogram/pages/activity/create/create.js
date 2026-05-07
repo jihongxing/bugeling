@@ -70,6 +70,13 @@ function parseSeed(options) {
   }
 }
 
+function safeReportEvent(eventName, data) {
+  if (!eventName || typeof wx === 'undefined' || !wx || typeof wx.reportEvent !== 'function') return
+  try {
+    wx.reportEvent(eventName, data || {})
+  } catch (err) {}
+}
+
 Page({
   data: {
     templateOptions: TEMPLATE_OPTIONS,
@@ -77,14 +84,15 @@ Page({
     bondOptions: BOND_OPTIONS,
     selectedTemplateIndex: 0,
     templateType: TEMPLATE_OPTIONS[0].type,
-    title: '',
+    title: templateUtil.buildDefaultTitle(TEMPLATE_OPTIONS[0].type, ''),
+    titleTouched: false,
     summary: TEMPLATE_OPTIONS[0].summary,
     location: null,
     meetTime: '',
     meetTimeDisplay: '',
     _timeStr: '',
-    maxParticipants: 4,
-    minParticipants: 3,
+    maxParticipants: TEMPLATE_OPTIONS[0].maxParticipants || 4,
+    minParticipants: TEMPLATE_OPTIONS[0].minParticipants || 2,
     budgetType: TEMPLATE_OPTIONS[0].budgetType,
     serviceFee: TEMPLATE_OPTIONS[0].serviceFee,
     bondAmount: TEMPLATE_OPTIONS[0].bondAmount,
@@ -98,6 +106,7 @@ Page({
     seedSafetyTags: [],
     seedAtmosphereTags: [],
     prefillHintText: '',
+    showMoreFields: false,
     submitting: false,
     minDate: '',
     minTime: '',
@@ -118,6 +127,10 @@ Page({
     this.applyTemplateFromOptions(options)
     this.applySeedFromOptions(options)
     this.refreshPreviewText()
+    safeReportEvent('create_page_entry', {
+      template_type: this.data.templateType || 'other',
+      from_seed: this.data.sourceReportId ? 1 : 0
+    })
   },
 
   applyTemplateFromOptions: function(options) {
@@ -151,7 +164,10 @@ Page({
       updates.selectedTemplateIndex = -1
     }
 
-    if (isPresent(seed.title)) updates.title = decodeText(seed.title)
+    if (isPresent(seed.title)) {
+      updates.title = decodeText(seed.title)
+      updates.titleTouched = true
+    }
     if (isPresent(seed.summary)) updates.summary = decodeText(seed.summary)
     if (isPresent(seed.budgetType)) updates.budgetType = decodeText(seed.budgetType)
     if (serviceFee !== null && serviceFee >= 0) updates.serviceFee = serviceFee
@@ -168,8 +184,8 @@ Page({
 
     updates.sourceReportId = decodeText(seed.sourceReportId || seed.activityId || '')
     updates.prefillHintText = updates.sourceReportId
-      ? '已从上一场活动战报带入模板、人数和费用，你只需要改时间地点后发布。'
-      : '已带入上一场战报的模板和费用配置，你可以继续微调后发布。'
+      ? '已经帮你带入上一次的小局设置，改下时间地点就能再发一次。'
+      : '已带入上一场小局的模板和费用配置，你可以继续微调后发布。'
 
     this.setData(updates)
   },
@@ -184,12 +200,19 @@ Page({
 
   applyTemplateByIndex: function(index) {
     var option = TEMPLATE_OPTIONS[index]
+    var locationName = this.data.location && this.data.location.name
+      ? this.data.location.name
+      : ''
     if (!option) return
 
     this.setData({
       selectedTemplateIndex: index,
       templateType: option.type,
+      title: templateUtil.buildDefaultTitle(option.type, locationName),
+      titleTouched: false,
       summary: option.summary,
+      minParticipants: option.minParticipants || 2,
+      maxParticipants: option.maxParticipants || 4,
       budgetType: option.budgetType,
       serviceFee: option.serviceFee,
       bondAmount: option.bondAmount
@@ -226,7 +249,10 @@ Page({
   },
 
   onTitleInput: function(e) {
-    this.setData({ title: e.detail.value })
+    this.setData({
+      title: e.detail.value,
+      titleTouched: true
+    })
   },
 
   onSummaryInput: function(e) {
@@ -235,9 +261,10 @@ Page({
 
   chooseLocation: function() {
     var self = this
+    var currentTemplate = this.data.templateType
     wx.chooseLocation({
       success: function(res) {
-        self.setData({
+        var updates = {
           location: {
             name: res.name,
             address: res.address,
@@ -245,7 +272,13 @@ Page({
             longitude: res.longitude
           },
           meetingPointText: self.data.meetingPointText || res.name
-        })
+        }
+
+        if (!self.data.titleTouched) {
+          updates.title = templateUtil.buildDefaultTitle(currentTemplate, res.name || '')
+        }
+
+        self.setData(updates)
       }
     })
   },
@@ -320,6 +353,12 @@ Page({
     this.setData({ allowAfterParty: e.detail.value })
   },
 
+  toggleMoreFields: function() {
+    this.setData({
+      showMoreFields: !this.data.showMoreFields
+    })
+  },
+
   submitForm: function() {
     var self = this
     var errors = validate.validateForm(self.data)
@@ -334,6 +373,10 @@ Page({
       .then(function(result) {
         self.setData({ submitting: false })
         if (result.code === 0 && result.data) {
+          safeReportEvent('create_publish_success', {
+            template_type: self.data.templateType || 'other',
+            from_seed: self.data.sourceReportId ? 1 : 0
+          })
           wx.redirectTo({
             url: '/pages/activity/detail/detail?activityId=' + result.data.activityId
           })

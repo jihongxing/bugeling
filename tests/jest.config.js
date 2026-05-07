@@ -1,10 +1,19 @@
 module.exports = {
+  rootDir: '..',
   testEnvironment: 'node',
-  testMatch: ['**/__tests__/**/*.test.js'],
+  testMatch: ['<rootDir>/tests/__tests__/**/*.test.js'],
   collectCoverageFrom: [
-    'miniprogram/utils/**/*.js',
-    'cloudfunctions/_shared/**/*.js'
+    '<rootDir>/miniprogram/utils/**/*.js',
+    '<rootDir>/miniprogram/components/credit-badge/credit-badge.js',
+    '<rootDir>/miniprogram/pages/activity/create/helpers.js',
+    '<rootDir>/miniprogram/pages/activity/create/validate.js',
+    '<rootDir>/miniprogram/pages/activity/detail/helpers.js',
+    '<rootDir>/miniprogram/pages/activity/manage/helpers.js',
+    '<rootDir>/miniprogram/pages/verify/scan/scan.js',
+    '<rootDir>/cloudfunctions/_shared/**/*.js'
   ],
+  coverageDirectory: '<rootDir>/tests/coverage',
+  coverageProvider: 'v8',
   coveragePathIgnorePatterns: ['/node_modules/'],
   verbose: true,
   moduleNameMapper: {

@@ -1,27 +1,27 @@
-<!-- pages/report/report.wxml - 举报页面 -->
+<!-- pages/report/report.wxml - 补充情况页面 -->
 <view class="page">
   <!-- 举报类型选择 -->
   <view class="card">
-    <view class="section-title">举报类型</view>
+    <view class="section-title">主要出了什么问题</view>
     <radio-group class="radio-group" bindchange="onTypeChange">
       <label class="radio-item">
         <radio value="initiator_absent" checked="{{reportType === 'initiator_absent'}}" color="#FF6B35" />
-        <text>发起人未到场</text>
+        <text>发起的人没来</text>
       </label>
       <label class="radio-item">
         <radio value="mismatch" checked="{{reportType === 'mismatch'}}" color="#FF6B35" />
-        <text>人货不符</text>
+        <text>跟说的差太多</text>
       </label>
       <label class="radio-item">
         <radio value="illegal" checked="{{reportType === 'illegal'}}" color="#FF6B35" />
-        <text>非法交易</text>
+        <text>出现了不合适的事</text>
       </label>
     </radio-group>
   </view>
 
   <!-- 描述输入 -->
   <view class="card">
-    <view class="section-title">补充说明（选填）</view>
+    <view class="section-title">想补充的话说两句</view>
     <textarea
       class="desc-textarea"
       placeholder="请描述具体情况..."
@@ -34,7 +34,7 @@
 
   <!-- 图片上传 -->
   <view class="card">
-    <view class="section-title">上传凭证（1-3张）</view>
+    <view class="section-title">如果方便，可以放几张图</view>
     <view class="image-grid">
       <block wx:for="{{images}}" wx:key="*this">
         <view class="image-item">
@@ -61,6 +61,6 @@
     disabled="{{submitting || !locationReady}}"
     bindtap="submit"
   >
-    {{submitting ? '提交中...' : '提交举报'}}
+    {{submitting ? '提交中...' : '补充情况'}}
   </button>
 </view>

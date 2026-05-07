@@ -133,7 +133,7 @@ function buildSeedActivity(source) {
   var title = decodeText(pickFirst(raw, ['title', 'reportTitle']))
   var summary = decodeText(pickFirst(raw, ['summary', 'reportSummary', 'oneLineSummary']))
 
-  if (!title) title = templateMeta.label + '活动战报'
+  if (!title) title = templateMeta.label + '后来怎么样了'
   if (!summary) summary = templateMeta.summary
 
   var activity = {
@@ -199,7 +199,7 @@ function mergeActivity(baseActivity, remoteActivity) {
     merged.participantCountKnown = true
   }
 
-  if (!normalizeText(merged.title)) merged.title = base.title || '活动战报'
+  if (!normalizeText(merged.title)) merged.title = base.title || '这次后来怎么样了'
   if (!normalizeText(merged.summary)) merged.summary = base.summary || getTemplateMeta(merged.templateType).summary
   if (!normalizeText(merged.templateType)) merged.templateType = base.templateType || 'other'
   if (!normalizeText(merged.meetingPointText)) merged.meetingPointText = base.meetingPointText || merged.location.name || '待补充'
@@ -275,7 +275,7 @@ function buildReportView(activity) {
     summaryText: detailView.summaryText,
     reportDateText: safeActivity.meetTime ? formatUtil.formatMeetTime(safeActivity.meetTime) : '',
     infoRows: buildInfoRows(safeActivity, detailView),
-    noteText: '这份摘要已经整理好模板、费用和安全条件，可以直接发起同款。'
+    noteText: '这次的小局信息已经帮你理顺了，顺手就能再发一次。'
   }
 }
 

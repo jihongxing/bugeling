@@ -3,7 +3,6 @@
 }
 
 .hero-card,
-.metric-card,
 .card,
 .note-box {
   background: #FFFFFF;
@@ -78,6 +77,34 @@
   margin-top: 20rpx;
 }
 
+.hero-quick-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12rpx;
+  margin-top: 24rpx;
+}
+
+.hero-quick-item {
+  background: #F8FAFC;
+  border-radius: 20rpx;
+  padding: 18rpx;
+}
+
+.hero-quick-label {
+  display: block;
+  font-size: 22rpx;
+  color: #6B7280;
+}
+
+.hero-quick-value {
+  display: block;
+  margin-top: 8rpx;
+  font-size: 24rpx;
+  line-height: 1.5;
+  color: #111827;
+  font-weight: 600;
+}
+
 .hero-tag,
 .tag-item {
   font-size: 24rpx;
@@ -85,17 +112,6 @@
   background: #F3F4F6;
   border-radius: 999rpx;
   padding: 10rpx 18rpx;
-}
-
-.metric-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 16rpx;
-  margin-bottom: 24rpx;
-}
-
-.metric-card {
-  padding: 24rpx;
 }
 
 .metric-label,
@@ -122,6 +138,13 @@
 
 .section-title {
   font-size: 30rpx;
+  color: #111827;
+  font-weight: 700;
+}
+
+.subsection-title {
+  display: block;
+  font-size: 28rpx;
   color: #111827;
   font-weight: 700;
 }
@@ -233,6 +256,29 @@
   margin-top: 12rpx;
 }
 
+.more-info-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.more-info-text {
+  font-size: 26rpx;
+  color: #C2410C;
+  font-weight: 600;
+}
+
+.more-info-arrow {
+  font-size: 24rpx;
+  color: #C2410C;
+}
+
+.card-section + .card-section {
+  margin-top: 28rpx;
+  padding-top: 28rpx;
+  border-top: 1rpx solid #F3F4F6;
+}
+
 .rule-list {
   margin-top: 20rpx;
 }
@@ -258,6 +304,10 @@
   background: #F8FAFC;
   border-radius: 20rpx;
   padding: 18rpx;
+}
+
+.inline-note {
+  margin-top: 28rpx;
 }
 
 .action-area {

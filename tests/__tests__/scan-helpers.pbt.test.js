@@ -26,7 +26,7 @@ const verifiedAtArb = fc.date({
 //
 // - verified with verifiedAt → output contains ✅ and HH:MM time
 // - verified without verifiedAt → output contains ✅
-// - approved → output contains ⏳ and 待核销
+// - approved → output contains ⏳ and 待确认
 // - nickname appears in output when provided
 // ============================================================
 
@@ -68,7 +68,7 @@ describe('Feature: verification-qrcode, Property 10: 参与者状态格式化', 
     )
   })
 
-  it('approved contains ⏳ and 待核销', () => {
+  it('approved contains ⏳ and 待确认', () => {
     fc.assert(
       fc.property(
         nicknameArb,
@@ -78,7 +78,7 @@ describe('Feature: verification-qrcode, Property 10: 参与者状态格式化', 
             nickname
           })
           expect(result).toContain('⏳')
-          expect(result).toContain('待核销')
+          expect(result).toContain('待确认')
         }
       ),
       { numRuns: PBT_NUM_RUNS }

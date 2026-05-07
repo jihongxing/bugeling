@@ -1,4 +1,4 @@
-// pages/verify/scan/scan.js - 扫码核销
+// pages/verify/scan/scan.js - 扫码确认
 var locationUtil = require('../../../utils/location')
 
 // Helper functions (exported for testing)
@@ -11,13 +11,13 @@ function formatParticipantStatus(participation) {
     }
     return '✅ ' + (participation.nickname || '用户') + ' ' + time
   }
-  return '⏳ ' + (participation.nickname || '用户') + ' 待核销'
+  return '⏳ ' + (participation.nickname || '用户') + ' 待确认'
 }
 
 function getErrorMessage(code) {
   var messages = {
-    4001: '核销码无效或已过期，请让参与者刷新',
-    1002: '仅活动发起人可核销',
+    4001: '确认码无效或已过期，请让对方刷新',
+    1002: '仅活动发起人可确认',
     1004: '参与者状态异常',
     1001: '参数错误',
     5001: '系统繁忙，请稍后重试'
@@ -135,15 +135,15 @@ Page({
 
   manualConfirm: function() {
     var self = this
-    // 获取参与者列表中待核销的
+    // 获取参与者列表中待确认的
     var pending = (self.data.participants || []).filter(function(p) {
       return p.status === 'approved'
     })
     if (pending.length === 0) {
-      wx.showToast({ title: '没有待核销的参与者', icon: 'none' })
+      wx.showToast({ title: '没有待确认的人', icon: 'none' })
       return
     }
-    // 如果只有一个待核销参与者，直接确认；否则让发起人选择
+    // 如果只有一个待确认参与者，直接确认；否则让发起人选择
     var names = pending.map(function(p, i) { return (p.nickname || '用户' + (i + 1)) })
     if (pending.length === 1) {
       wx.showModal({

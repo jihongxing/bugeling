@@ -70,7 +70,7 @@ function formatFeeBreakdown(serviceFee, bondAmount) {
     feeParts.push(formatDeposit(serviceFee) + ' 服务费')
   }
   if (bondAmount > 0) {
-    feeParts.push(formatDeposit(bondAmount) + ' 保证金')
+    feeParts.push(formatDeposit(bondAmount) + ' 小约束')
   }
   if (feeParts.length === 0) {
     return '免费报名'

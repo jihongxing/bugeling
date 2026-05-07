@@ -131,7 +131,7 @@ function buildFeeRows(activity, myParticipation) {
     value: formatYuanFromCent(serviceFee)
   })
   rows.push({
-    label: '鸽子费',
+    label: '小约束',
     value: formatYuanFromCent(bondAmount)
   })
   rows.push({
@@ -262,7 +262,7 @@ function buildSafetySection(activity) {
   addUnique(tags, getGenderLimitLabel(activity.genderLimit))
   addUnique(tags, getRiskLevelLabel(activity.riskLevel))
 
-  if (!tags.length) addUnique(tags, '平台留痕')
+  if (!tags.length) addUnique(tags, '有基本约束')
 
   if (Array.isArray(activity.rules) && activity.rules.length > 0) {
     for (i = 0; i < activity.rules.length; i++) {
@@ -271,11 +271,11 @@ function buildSafetySection(activity) {
   }
 
   if (!rules.length) {
-    addUnique(rules, '按约定时间到场，迟到请提前沟通')
-    addUnique(rules, '默认在公共地点集合，结束后自由离开')
-    addUnique(rules, '未到场或违约将按鸽子费规则处理')
+    addUnique(rules, '尽量按约好的时间到，赶不上提前说一声')
+    addUnique(rules, '默认在公共地点碰头，结束后自由散')
+    addUnique(rules, '如果临时来不了，系统会按这次的小约束处理')
     if (activity.realNameRequired === true) {
-      addUnique(rules, '入局需完成实名信息校验')
+      addUnique(rules, '这局会多看一眼实名信息')
     }
   }
 
@@ -298,38 +298,38 @@ function buildCreditSection(activity) {
   if (score === null) score = toNumber(summary.score) || 100
 
   items.push({
-    label: '契约分',
+    label: '靠谱分',
     value: String(score)
   })
   items.push({
-    label: '发起局数',
+    label: '开过几次局',
     value: String(summary.totalInitiated || 0)
   })
   items.push({
-    label: '参与局数',
+    label: '去过几次局',
     value: String(summary.totalJoined || 0)
   })
   items.push({
-    label: '守约完成',
+    label: '顺利碰头',
     value: String(summary.totalCompleted || 0)
   })
   items.push({
-    label: '爽约记录',
+    label: '临时没来',
     value: String(summary.noShowCount || 0)
   })
   items.push({
-    label: '投诉记录',
+    label: '被反馈过',
     value: String(summary.complaintsCount || 0)
   })
   items.push({
-    label: '实名状态',
-    value: realNameVerified ? '已要求实名' : '未强制实名'
+    label: '实名情况',
+    value: realNameVerified ? '会显示' : '默认不显示'
   })
 
   return {
     score: score,
     levelText: level || 'active',
-    summaryText: score >= 100 ? '信用稳定，适合优先报名' : '请先查看信用详情',
+    summaryText: score >= 100 ? '最近看起来比较稳，顺手加入问题不大' : '先看看对不对味，再决定要不要去',
     items: items
   }
 }
@@ -352,7 +352,7 @@ function buildDetailView(activity, myParticipation) {
   var safety = buildSafetySection(safeActivity)
   var credit = buildCreditSection(safeActivity)
   var paragraphs = buildDescriptionParagraphs(safeActivity)
-  var summaryText = normalizeText(safeActivity.summary) || normalizeText(safeActivity.description) || '时间地点已确认，欢迎守约参加。'
+  var summaryText = normalizeText(safeActivity.summary) || normalizeText(safeActivity.description) || '时间地点差不多定了，觉得合适就顺手来。'
   var depositText = formatUtil.formatDeposit(toNumber(safeActivity.depositTier || safeActivity.bondAmount || 0) || 0)
   var heroBadges = []
 
@@ -377,7 +377,7 @@ function buildDetailView(activity, myParticipation) {
     credit: credit,
     contractText: buildContractText(safeActivity, fee),
     participationNote: myParticipation && ['paid', 'approved', 'confirmed', 'checked_in', 'completed'].indexOf(myParticipation.status) !== -1
-      ? '你已报名，页面会在临近见面时间解锁发起人微信'
+      ? '你已经占上位置了，临近见面时间会解锁对方的微信'
       : ''
   }
 }
@@ -391,10 +391,10 @@ function buildContractText(activity, fee) {
   if (bondText !== '¥0') parts.push('鸽子费 ' + bondText)
 
   if (!parts.length) {
-    return '参与本活动即表示同意按约定时间到场，并遵守平台规则。'
+    return '如果你决定加入，就默认按约好的时间尽量到。'
   }
 
-  return '报名需先支付 ' + parts.join(' + ') + '。守约后按平台规则处理，违约将影响信用。'
+  return '加入前需要先付 ' + parts.join(' + ') + '。如果最后顺利碰头，系统会按这次的小约束处理。'
 }
 
 function getActionState(activityOrIsInitiator, isInitiatorOrParticipation, maybeParticipation) {
@@ -419,10 +419,10 @@ function getActionState(activityOrIsInitiator, isInitiatorOrParticipation, maybe
 
 function getParticipationStatusConfig(status) {
   var customMap = {
-    approved: { label: '已报名', bgColor: '#DBEAFE', textColor: '#2563EB' },
+    approved: { label: '已占位', bgColor: '#DBEAFE', textColor: '#2563EB' },
     rejected: { label: '未通过', bgColor: '#FEE2E2', textColor: '#DC2626' },
     cancelled: { label: '已取消', bgColor: '#F3F4F6', textColor: '#6B7280' },
-    checked_in: { label: '已到场', bgColor: '#D1FAE5', textColor: '#059669' },
+    checked_in: { label: '已碰头', bgColor: '#D1FAE5', textColor: '#059669' },
     completed: { label: '已完成', bgColor: '#E0E7FF', textColor: '#4F46E5' }
   }
 

@@ -37,7 +37,7 @@ function validateForm(data) {
   }
 
   if (!data.bondAmount) {
-    errors.push('请选择保证金')
+    errors.push('请选择一个小约束金额')
   }
 
   if (!data.budgetType) {

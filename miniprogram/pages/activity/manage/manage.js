@@ -1,7 +1,6 @@
-// pages/activity/manage/manage.js - 活动管理
+// pages/activity/manage/manage.js - 这局现在怎么样
 var api = require('../../../utils/api')
 var statusUtil = require('../../../utils/status')
-var manageHelpers = require('./helpers')
 
 function parseTime(value) {
   var time = new Date(value).getTime()
@@ -19,7 +18,7 @@ function shouldCheckLock(activity) {
 }
 
 function getFlowSyncLabel(activity) {
-  return shouldCheckLock(activity) ? '检查锁局' : '刷新成局'
+  return shouldCheckLock(activity) ? '看看是不是该锁局了' : '刷新一下人数'
 }
 
 Page({
@@ -55,8 +54,7 @@ Page({
         var data = result.data
         var participations = (data.participations || []).map(function(p) {
           return Object.assign({}, p, {
-            statusConfig: statusUtil.getStatusConfig(p.status),
-            showActions: manageHelpers.shouldShowActions(p)
+            statusConfig: statusUtil.getStatusConfig(p.status)
           })
         })
         self.setData({
@@ -101,7 +99,7 @@ Page({
         if (functionName === 'lockActivity') {
           message = result.data && result.data.locked ? '已同步为锁局' : '暂未到锁局时间'
         } else if (result.data && result.data.activityStatus === 'confirmed') {
-          message = '已同步成局'
+          message = '已经成局了'
         }
         wx.showToast({ title: message, icon: 'success' })
         self.loadData()
@@ -112,42 +110,6 @@ Page({
     }).catch(function(err) {
       self.setData({ flowSyncing: false })
       wx.showToast({ title: err.message || '同步失败', icon: 'none' })
-    })
-  },
-
-  approveParticipant: function(e) {
-    var self = this
-    var participationId = e.currentTarget.dataset.id
-    api.callFunction('approveParticipant', {
-      activityId: self.data.activityId,
-      participationId: participationId
-    }).then(function(result) {
-      if (result.code === 0) {
-        wx.showToast({ title: '已同意', icon: 'success' })
-        self.loadData()
-      } else {
-        wx.showToast({ title: result.message || '操作失败', icon: 'none' })
-      }
-    }).catch(function(err) {
-      wx.showToast({ title: err.message || '操作失败', icon: 'none' })
-    })
-  },
-
-  rejectParticipant: function(e) {
-    var self = this
-    var participationId = e.currentTarget.dataset.id
-    api.callFunction('rejectParticipant', {
-      activityId: self.data.activityId,
-      participationId: participationId
-    }).then(function(result) {
-      if (result.code === 0) {
-        wx.showToast({ title: '已拒绝', icon: 'success' })
-        self.loadData()
-      } else {
-        wx.showToast({ title: result.message || '操作失败', icon: 'none' })
-      }
-    }).catch(function(err) {
-      wx.showToast({ title: err.message || '操作失败', icon: 'none' })
     })
   }
 })

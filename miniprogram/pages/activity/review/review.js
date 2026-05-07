@@ -1,21 +1,18 @@
 var api = require('../../../utils/api')
 
-var POSITIVE_TAGS = [
-  '守时靠谱',
-  '沟通顺畅',
-  '气氛轻松',
-  '真人相符',
-  '消费透明',
-  '组织周到'
+var MOOD_OPTIONS = [
+  { value: 'smooth', label: '挺顺' },
+  { value: 'okay', label: '还行' },
+  { value: 'issue', label: '有点问题' }
 ]
 
-var NEGATIVE_TAGS = [
-  '迟到放鸽',
-  '沟通冷淡',
-  '描述不符',
-  '临时加价',
-  '气氛尴尬',
-  '不守规则'
+var ISSUE_TAGS = [
+  '迟到了',
+  '沟通有点费劲',
+  '跟说的不太一样',
+  '临时加价了',
+  '气氛有点尴尬',
+  '有点不舒服'
 ]
 
 function buildTagOptions(labels) {
@@ -52,17 +49,15 @@ function formatSubmitTime(date) {
 Page({
   data: {
     activityId: '',
-    activityTitle: '活动互评',
+    activityTitle: '这次还顺利吗',
     reviewRole: 'host',
     reviewTargetText: '发起人',
     introText: '',
     isMockMode: false,
-    maxPositiveCount: 3,
-    maxNegativeCount: 3,
-    positiveTagOptions: buildTagOptions(POSITIVE_TAGS),
-    negativeTagOptions: buildTagOptions(NEGATIVE_TAGS),
-    selectedPositiveTags: [],
-    selectedNegativeTags: [],
+    moodOptions: MOOD_OPTIONS,
+    selectedMood: '',
+    issueTagOptions: buildTagOptions(ISSUE_TAGS),
+    selectedIssueTags: [],
     comment: '',
     commentLength: 0,
     canSubmit: false,
@@ -76,7 +71,7 @@ Page({
 
   onLoad: function(options) {
     var activityId = options.activityId || ''
-    var activityTitle = options.activityTitle || options.title || '活动互评'
+    var activityTitle = options.activityTitle || options.title || '这次还顺利吗'
     var reviewRole = options.role || 'host'
     var reviewTargetText = options.targetText || '发起人'
     var isMockMode = !activityId
@@ -88,11 +83,11 @@ Page({
       reviewTargetText: reviewTargetText,
       isMockMode: isMockMode,
       submitRuleText: isMockMode
-        ? '当前原型要求正向标签和负向标签各至少 1 个，提交后会展示一次本地模拟结果，方便联调页面结构与交互。'
-        : '当前要求正向标签和负向标签各至少 1 个，提交后会进入活动互评记录，后续可继续接入信用标签统计。',
+        ? '现在是原型预览。随便点一点，看看这个轻反馈页的感觉对不对。'
+        : '如果你愿意，留几句很短的真实感受就够了，不用写得太完整。',
       introText: isMockMode
-        ? '当前为原型预览模式。接入路由时传入 activityId，可选携带 activityTitle 或 title。'
-        : '活动结束后，参与者可以从这里给' + reviewTargetText + '留下简短、克制的真实反馈。'
+        ? '现在是原型预览模式，主要看看页面气质和交互轻不轻。'
+        : '如果这次有点感受，可以在这里轻轻补一句；如果没什么问题，也不用太认真写。'
     })
 
     this.refreshSubmitState()
@@ -105,13 +100,20 @@ Page({
     }
   },
 
-  onToggleTag: function(e) {
-    var group = e.currentTarget.dataset.group
+  onSelectMood: function(e) {
+    var mood = e.currentTarget.dataset.value
+    this.setData({
+      selectedMood: mood,
+      submitted: false,
+      draftPreview: null,
+      lastSubmittedAt: ''
+    })
+    this.refreshSubmitState()
+  },
+
+  onToggleIssueTag: function(e) {
     var index = e.currentTarget.dataset.index
-    var listKey = group === 'positive' ? 'positiveTagOptions' : 'negativeTagOptions'
-    var selectedKey = group === 'positive' ? 'selectedPositiveTags' : 'selectedNegativeTags'
-    var maxCount = group === 'positive' ? this.data.maxPositiveCount : this.data.maxNegativeCount
-    var nextOptions = this.data[listKey].map(function(item) {
+    var nextOptions = this.data.issueTagOptions.map(function(item) {
       return {
         label: item.label,
         selected: item.selected
@@ -121,25 +123,15 @@ Page({
 
     if (!option) return
 
-    if (!option.selected && collectSelectedTags(nextOptions).length >= maxCount) {
-      wx.showToast({
-        title: '最多选择 ' + maxCount + ' 个标签',
-        icon: 'none'
-      })
-      return
-    }
-
     option.selected = !option.selected
 
-    var updates = {
+    this.setData({
+      issueTagOptions: nextOptions,
+      selectedIssueTags: collectSelectedTags(nextOptions),
       submitted: false,
       draftPreview: null,
       lastSubmittedAt: ''
-    }
-    updates[listKey] = nextOptions
-    updates[selectedKey] = collectSelectedTags(nextOptions)
-
-    this.setData(updates)
+    })
     this.refreshSubmitState()
   },
 
@@ -157,8 +149,7 @@ Page({
   },
 
   refreshSubmitState: function() {
-    var canSubmit = this.data.selectedPositiveTags.length > 0
-      && this.data.selectedNegativeTags.length > 0
+    var canSubmit = !!this.data.selectedMood
       && !this.data.submitting
 
     this.setData({
@@ -166,32 +157,59 @@ Page({
     })
   },
 
+  buildReviewPayload: function() {
+    var mood = this.data.selectedMood
+    var issueTags = this.data.selectedIssueTags.slice()
+    var comment = this.data.comment.trim()
+
+    if (mood === 'smooth') {
+      return {
+        moodLabel: '挺顺',
+        positiveTags: ['整体挺顺'],
+        negativeTags: ['无明显问题'],
+        issueTags: []
+      }
+    }
+
+    if (mood === 'okay') {
+      return {
+        moodLabel: '还行',
+        positiveTags: ['整体还行'],
+        negativeTags: ['有点小卡'],
+        issueTags: []
+      }
+    }
+
+    return {
+      moodLabel: '有点问题',
+      positiveTags: ['愿意继续沟通'],
+      negativeTags: issueTags.length ? issueTags : ['有点问题'],
+      issueTags: issueTags
+    }
+  },
+
   submitReview: function() {
     var self = this
 
     if (self.data.submitting) return
 
-    if (!self.data.selectedPositiveTags.length) {
+    if (!self.data.selectedMood) {
       wx.showToast({
-        title: '请至少选择 1 个正向标签',
+        title: '先选一下这次整体感觉',
         icon: 'none'
       })
       return
     }
 
-    if (!self.data.selectedNegativeTags.length) {
-      wx.showToast({
-        title: '请至少选择 1 个负向标签',
-        icon: 'none'
-      })
-      return
-    }
+    var reviewPayload = self.buildReviewPayload()
 
     var payload = {
       activityId: self.data.activityId,
       activityTitle: self.data.activityTitle,
-      positiveTags: self.data.selectedPositiveTags.slice(),
-      negativeTags: self.data.selectedNegativeTags.slice(),
+      moodLabel: reviewPayload.moodLabel,
+      positiveTags: reviewPayload.positiveTags,
+      negativeTags: reviewPayload.negativeTags,
+      issueTags: reviewPayload.issueTags,
       comment: self.data.comment.trim(),
       source: self.data.isMockMode ? 'prototype-preview' : 'review-page'
     }
@@ -225,7 +243,7 @@ Page({
             draftPreview: payload
           })
           wx.showToast({
-            title: '评价已提交',
+            title: '已经记下你的感受',
             icon: 'success'
           })
           return
@@ -258,7 +276,7 @@ Page({
       self.refreshSubmitState()
 
       wx.showToast({
-        title: '评价已模拟提交',
+        title: '已经模拟记下一句感受',
         icon: 'success'
       })
     }, 700)
@@ -266,10 +284,9 @@ Page({
 
   resetForm: function() {
     this.setData({
-      positiveTagOptions: buildTagOptions(POSITIVE_TAGS),
-      negativeTagOptions: buildTagOptions(NEGATIVE_TAGS),
-      selectedPositiveTags: [],
-      selectedNegativeTags: [],
+      selectedMood: '',
+      issueTagOptions: buildTagOptions(ISSUE_TAGS),
+      selectedIssueTags: [],
       comment: '',
       commentLength: 0,
       submitting: false,

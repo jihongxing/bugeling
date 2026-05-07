@@ -8,78 +8,63 @@
     </view>
     <text class="hero-title">{{activity.title}}</text>
     <text class="hero-summary">{{viewModel.summaryText}}</text>
-  </view>
 
-  <view class="card">
-    <view class="section-head">
-      <text class="section-title">签到状态</text>
-      <text class="section-side" wx:if="{{viewModel.checkedAtText}}">{{viewModel.checkedAtText}}</text>
-    </view>
     <view class="status-panel">
       <text class="status-title">{{viewModel.stateTitle}}</text>
       <text class="status-desc">{{viewModel.stateDescription}}</text>
       <text class="status-meta" wx:if="{{viewModel.distanceFeedbackText}}">{{viewModel.distanceFeedbackText}}</text>
     </view>
+
+    <view class="hero-quick-grid">
+      <view class="hero-quick-item">
+        <text class="hero-quick-label">什么时候见</text>
+        <text class="hero-quick-value">{{viewModel.meetTimeText}}</text>
+      </view>
+      <view class="hero-quick-item">
+        <text class="hero-quick-label">这会儿还赶得上吗</text>
+        <text class="hero-quick-value">{{viewModel.checkinWindowText}}</text>
+      </view>
+    </view>
   </view>
 
   <view class="card">
     <view class="section-head">
-      <text class="section-title">签到信息</text>
+      <text class="section-title">怎么碰头</text>
+      <text class="section-side" wx:if="{{viewModel.checkedAtText}}">{{viewModel.checkedAtText}}</text>
     </view>
 
     <view class="info-item">
-      <text class="info-label">活动时间</text>
-      <text class="info-value">{{viewModel.meetTimeText}}</text>
-    </view>
-
-    <view class="info-item">
-      <text class="info-label">签到时段</text>
-      <text class="info-value">{{viewModel.checkinWindowText}}</text>
-    </view>
-
-    <view class="info-item">
-      <text class="info-label">集合点</text>
+      <text class="info-label">碰头点</text>
       <text class="info-value">{{activity.meetingPointText || viewModel.location.name || '待补充'}}</text>
     </view>
 
     <view class="info-item">
-      <text class="info-label">活动地点</text>
+      <text class="info-label">大概位置</text>
       <text class="info-value">{{viewModel.location.name || '待补充'}}</text>
     </view>
 
     <view class="info-item" wx:if="{{viewModel.location.address}}">
-      <text class="info-label">详细地址</text>
+      <text class="info-label">再具体一点</text>
       <text class="info-value">{{viewModel.location.address}}</text>
     </view>
 
-    <view class="info-item">
-      <text class="info-label">识别提示</text>
+    <view class="info-item" wx:if="{{activity.identityHint}}">
+      <text class="info-label">怎么认人</text>
       <text class="info-value">{{activity.identityHint || '无'}}</text>
     </view>
-  </view>
-
-  <view class="card">
-    <view class="section-head">
-      <text class="section-title">距离反馈</text>
-      <text class="section-side" wx:if="{{refreshingLocation}}">更新中...</text>
-    </view>
-    <text class="distance-text">{{locationHintText}}</text>
-    <text class="distance-subtext">点击签到时会再次获取一次当前位置并上报到场。</text>
-  </view>
-
-  <view class="card" wx:if="{{viewModel.tips.length}}">
-    <view class="section-head">
-      <text class="section-title">签到说明</text>
-    </view>
-    <view class="tip-item" wx:for="{{viewModel.tips}}" wx:key="index">
-      <text class="tip-dot">•</text>
-      <text class="tip-text">{{item}}</text>
+    <view class="distance-box">
+      <view class="distance-head">
+        <text class="distance-title">你现在离得还远吗</text>
+        <text class="distance-side" wx:if="{{refreshingLocation}}">更新中...</text>
+      </view>
+      <text class="distance-text">{{locationHintText}}</text>
+      <text class="distance-subtext">点一下“我到了”时，会再拿一次位置帮你确认是不是快到碰头点了。</text>
     </view>
   </view>
 
   <view class="action-area">
     <button class="btn-primary action-btn {{viewModel.canSubmit ? '' : 'is-disabled'}}" bindtap="handleCheckin" disabled="{{!viewModel.canSubmit || submitting}}">
-      {{submitting ? '签到中...' : viewModel.actionText}}
+      {{submitting ? '确认中...' : viewModel.actionText}}
     </button>
     <button class="btn-secondary action-btn" wx:if="{{canOpenLocation}}" bindtap="openLocation">查看地图位置</button>
   </view>
@@ -91,7 +76,7 @@
 
 <view class="page empty-state" wx:if="{{!loading && error}}">
   <view class="card empty-card">
-    <text class="empty-title">签到页加载失败</text>
+    <text class="empty-title">到场确认页没加载出来</text>
     <text class="empty-desc">{{error}}</text>
     <button class="btn-primary retry-btn" bindtap="retryLoad">重新加载</button>
   </view>

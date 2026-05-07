@@ -1,4 +1,4 @@
-// pages/activity/report-detail/report-detail.js - 活动战报页
+// pages/activity/report-detail/report-detail.js - 这次后来怎么样页
 
 var api = require('../../../utils/api')
 var helpers = require('./helpers')
@@ -86,14 +86,14 @@ Page({
 
         self.applyActivity(baseActivity, false)
         wx.showToast({
-          title: (detailResult && detailResult.message) || '战报已显示本地摘要',
+          title: (detailResult && detailResult.message) || '先给你看这次的小局摘要',
           icon: 'none'
         })
       })
     }).catch(function() {
       self.applyActivity(baseActivity, false)
       wx.showToast({
-        title: '战报已显示本地摘要',
+        title: '先给你看这次的小局摘要',
         icon: 'none'
       })
     })

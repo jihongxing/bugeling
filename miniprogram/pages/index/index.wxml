@@ -2,9 +2,9 @@
 <view class="page index-page">
   <view class="hero-card">
     <view class="hero-copy">
-      <text class="hero-kicker">UGC 同城低成本组局</text>
-      <text class="hero-title">附近有哪些局，先看清再决定加不加</text>
-      <text class="hero-subtitle">{{feedSubtitle}}</text>
+      <text class="hero-kicker">先发，再看</text>
+      <text class="hero-title">{{heroTitle}}</text>
+      <text class="hero-subtitle">{{heroSubtitle}}</text>
     </view>
 
     <view class="hero-toolbar">
@@ -18,62 +18,103 @@
         <text class="refresh-text">刷新附近</text>
       </view>
     </view>
+  </view>
 
-    <view class="hero-stats">
-      <view class="stat-card">
-        <text class="stat-value">{{feedSummary.total}}</text>
-        <text class="stat-label">附近可选</text>
-      </view>
-      <view class="stat-card">
-        <text class="stat-value">{{feedSummary.almostReadyCount}}</text>
-        <text class="stat-label">临近成局</text>
-      </view>
-      <view class="stat-card">
-        <text class="stat-value">{{feedSummary.lowBudgetCount}}</text>
-        <text class="stat-label">预算友好</text>
+  <view class="template-section">
+    <view class="section-head">
+      <text class="section-title">今天想约点什么</text>
+      <text class="section-desc">先选方向，时间地点稍后再补</text>
+    </view>
+
+    <view class="template-grid">
+      <view
+        wx:for="{{primaryTemplateList}}"
+        wx:key="type"
+        class="template-card"
+        bindtap="createByTemplate"
+        data-type="{{item.type}}"
+      >
+        <text class="template-label">{{item.label}}</text>
+        <text class="template-desc">{{item.desc}}</text>
       </view>
     </view>
 
-    <view class="hero-tags">
-      <text class="hero-tag">模板化发局</text>
-      <text class="hero-tag">低成本优先</text>
-      <text class="hero-tag">安全信息透明</text>
+    <view class="more-templates-toggle" bindtap="toggleMoreTemplates">
+      <text class="more-templates-text">{{showMoreTemplates ? '收起更多灵感' : '更多灵感'}}</text>
+      <text class="more-templates-arrow">{{showMoreTemplates ? '︿' : '﹀'}}</text>
+    </view>
+
+    <view class="template-grid more" wx:if="{{showMoreTemplates}}">
+      <view
+        wx:for="{{moreTemplateList}}"
+        wx:key="type"
+        class="template-card secondary"
+        bindtap="createByTemplate"
+        data-type="{{item.type}}"
+      >
+        <text class="template-label">{{item.label}}</text>
+        <text class="template-desc">{{item.desc}}</text>
+      </view>
+    </view>
+
+    <view class="examples-wrap">
+      <view class="section-head">
+        <text class="section-title small">照着发一个</text>
+        <text class="section-desc">平台示例只做参考，不是用户真实活动</text>
+      </view>
+      <view class="example-list">
+        <view
+          wx:for="{{officialExamples}}"
+          wx:key="id"
+          class="example-card"
+          bindtap="createByExample"
+          data-url="{{item.createUrl}}"
+          data-type="{{item.templateType}}"
+        >
+          <view class="example-head">
+            <text class="example-badge">{{item.badge}}</text>
+            <text class="example-cta">照着发一个 ›</text>
+          </view>
+          <text class="example-title">{{item.title}}</text>
+          <text class="example-summary">{{item.summary}}</text>
+        </view>
+      </view>
     </view>
   </view>
 
-  <view class="feed-section" wx:if="{{activityList.length > 0}}">
+  <view class="feed-section">
     <view class="feed-head">
       <view class="feed-head-copy">
-        <text class="feed-title">附近活动流</text>
-        <text class="feed-desc">优先展示信息更完整、组局目标更清楚的局</text>
+        <text class="feed-title">{{feedTitle}}</text>
+        <text class="feed-desc">{{feedSubtitle}}</text>
       </view>
-      <text class="feed-count">{{activityList.length}} 个局</text>
+      <text class="feed-count" wx:if="{{activityList.length > 0}}">{{activityList.length}} 个局</text>
     </view>
 
-    <view class="activity-list">
+    <view class="activity-list" wx:if="{{activityList.length > 0}}">
       <activity-card
         wx:for="{{activityList}}"
         wx:key="activityId"
         activity="{{item}}"
         bind:tap="onCardTap"
       />
+
+      <view class="loading-tip" wx:if="{{loading}}">
+        <text>正在加载更多组局...</text>
+      </view>
+      <view class="no-more-tip" wx:if="{{!hasMore && activityList.length > 0}}">
+        <text>附近就这些了，换个位置再看看</text>
+      </view>
     </view>
 
-    <view class="loading-tip" wx:if="{{loading}}">
-      <text>正在加载更多组局...</text>
-    </view>
-    <view class="no-more-tip" wx:if="{{!hasMore && activityList.length > 0}}">
-      <text>附近就这些了，换个位置再看看</text>
+    <view class="feed-empty-card" wx:if="{{activityList.length === 0 && !loading}}">
+      <text class="feed-empty-title">附近暂时还没有人发，你可以做第一个</text>
+      <text class="feed-empty-desc">先从上面选一个模板，补下时间地点，马上就能发出去。</text>
     </view>
   </view>
 
   <view class="loading-state" wx:if="{{loading && activityList.length === 0}}">
     <text class="loading-title">正在查找附近组局</text>
     <text class="loading-desc">优先拉取离你更近、更容易成局的活动</text>
-  </view>
-
-  <view class="empty-state" wx:if="{{isEmpty && !loading}}">
-    <text class="empty-title">附近暂时还没有在招募的局</text>
-    <text class="empty-text">可以稍后刷新位置，或者先去发起一个更清楚、更容易成局的组局。</text>
   </view>
 </view>

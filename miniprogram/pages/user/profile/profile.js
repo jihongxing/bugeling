@@ -4,7 +4,9 @@ const { callFunction } = require('../../../utils/api')
 Page({
   data: {
     creditInfo: null,
-    loading: true
+    loading: true,
+    summaryTitle: '最近的小局',
+    summaryText: '看看最近约过什么，顺手再来一次。'
   },
 
   onShow() {
@@ -15,7 +17,13 @@ Page({
     this.setData({ loading: true })
     try {
       const res = await callFunction('getCreditInfo')
-      this.setData({ creditInfo: res.data, loading: false })
+      const creditInfo = res.data || {}
+      this.setData({
+        creditInfo,
+        loading: false,
+        summaryTitle: '最近的小局',
+        summaryText: '最近顺利碰头 ' + (creditInfo.totalVerified || 0) + ' 次，想再来一次的话也方便。'
+      })
     } catch (err) {
       this.setData({ loading: false })
       wx.showToast({ title: '加载失败', icon: 'none' })
@@ -27,15 +35,8 @@ Page({
     wx.navigateTo({ url: '/pages/user/history/history?role=' + role })
   },
 
-  goToCalendar() {
-    wx.navigateTo({ url: '/pages/user/calendar/calendar' })
-  },
-
-  goToPoster() {
-    const now = new Date()
-    wx.navigateTo({
-      url: `/pages/user/poster/poster?year=${now.getFullYear()}&month=${now.getMonth() + 1}`
-    })
+  goToTemplateSelect() {
+    wx.navigateTo({ url: '/pages/activity/template-select/template-select' })
   },
 
   goToSettings() {

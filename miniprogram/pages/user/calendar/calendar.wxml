@@ -15,15 +15,15 @@
     <view class="card summary-section" wx:if="{{summary}}">
       <view class="summary-item">
         <text class="summary-value">{{summary.complianceRate}}%</text>
-        <text class="summary-label">守约率</text>
+        <text class="summary-label">顺利碰头率</text>
       </view>
       <view class="summary-item">
         <text class="summary-value">{{summary.verifiedCount}}</text>
-        <text class="summary-label">守约</text>
+        <text class="summary-label">顺利碰头</text>
       </view>
       <view class="summary-item">
         <text class="summary-value">{{summary.breachedCount}}</text>
-        <text class="summary-label">违约</text>
+        <text class="summary-label">临时没来</text>
       </view>
     </view>
 
@@ -115,7 +115,7 @@
 
     <!-- 分享按钮 -->
     <view class="share-btn-area">
-      <button class="btn-primary share-btn" bindtap="goToPoster">分享守约月报</button>
+      <button class="btn-primary share-btn" bindtap="goToPoster">做张最近小局海报</button>
     </view>
   </block>
 </view>

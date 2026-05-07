@@ -1,8 +1,8 @@
 <view class="page template-page">
   <view class="hero-card">
-    <text class="hero-kicker">模板广场</text>
-    <text class="hero-title">先决定要组什么局，再去补时间地点</text>
-    <text class="hero-desc">优先推荐公共空间、低预算、弱社交负担的组局模板。</text>
+    <text class="hero-kicker">今天想发个什么小局</text>
+    <text class="hero-title">先挑一个你现在最愿意顺手发出去的</text>
+    <text class="hero-desc">散步、坐坐、吃点便宜的，别太正式就行。</text>
   </view>
 
   <view class="template-list">
@@ -20,7 +20,7 @@
       <text class="template-desc">{{item.desc}}</text>
       <text class="template-summary">{{item.summary}}</text>
       <view class="template-footer">
-        <text class="template-action">用这个模板发起 ›</text>
+        <text class="template-action">就发这个 ›</text>
       </view>
     </view>
   </view>

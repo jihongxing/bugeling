@@ -1,4 +1,4 @@
-// pages/report/report.js - 举报页面
+// pages/report/report.js - 补充情况页面
 var api = require('../../utils/api')
 var location = require('../../utils/location')
 
@@ -26,7 +26,7 @@ Page({
     location.getCurrentLocation().then(function (res) {
       that.setData({ latitude: res.latitude, longitude: res.longitude, locationReady: true })
     }).catch(function () {
-      wx.showToast({ title: '请开启位置权限以提交举报', icon: 'none' })
+      wx.showToast({ title: '先打开位置权限，才能补充这次的情况', icon: 'none' })
     })
   },
 
@@ -87,7 +87,7 @@ Page({
   submit: function () {
     var that = this
     if (!that.data.reportType) {
-      wx.showToast({ title: '请选择举报类型', icon: 'none' })
+      wx.showToast({ title: '先选一下这次主要出了什么问题', icon: 'none' })
       return
     }
     if (that.data.fileIDs.length < 1) {
@@ -109,15 +109,15 @@ Page({
       longitude: that.data.longitude
     }).then(function (res) {
       if (res.code === 0) {
-        wx.showToast({ title: '举报已提交', icon: 'success' })
+        wx.showToast({ title: '已经补充上去了', icon: 'success' })
         setTimeout(function () { wx.navigateBack() }, 1500)
       } else if (res.code === 2001) {
         wx.showToast({ title: '图片包含违规内容', icon: 'none' })
       } else {
-        wx.showToast({ title: '举报提交失败，请重试', icon: 'none' })
+        wx.showToast({ title: '这次没补充成功，再试一次', icon: 'none' })
       }
     }).catch(function () {
-      wx.showToast({ title: '举报提交失败，请重试', icon: 'none' })
+      wx.showToast({ title: '这次没补充成功，再试一次', icon: 'none' })
     }).then(function () {
       that.setData({ submitting: false })
     })

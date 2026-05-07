@@ -15,30 +15,26 @@
     <view class="hero-badges" wx:if="{{detailView.heroBadges.length}}">
       <text class="hero-tag" wx:for="{{detailView.heroBadges}}" wx:key="index">{{item}}</text>
     </view>
-  </view>
 
-  <view class="metric-grid">
-    <view class="metric-card">
-      <text class="metric-label">人均预算</text>
-      <text class="metric-value">{{detailView.budgetRangeText}}</text>
-    </view>
-    <view class="metric-card">
-      <text class="metric-label">报名结构</text>
-      <text class="metric-value">{{detailView.totalFeeText}}</text>
-    </view>
-    <view class="metric-card">
-      <text class="metric-label">集合时间</text>
-      <text class="metric-value">{{detailView.meeting.timeText}}</text>
-    </view>
-    <view class="metric-card">
-      <text class="metric-label">发起人信用</text>
-      <text class="metric-value">{{detailView.credit.score}} 分</text>
+    <view class="hero-quick-grid">
+      <view class="hero-quick-item">
+        <text class="hero-quick-label">什么时候见</text>
+        <text class="hero-quick-value">{{detailView.meeting.timeText}}</text>
+      </view>
+      <view class="hero-quick-item">
+        <text class="hero-quick-label">大概会花</text>
+        <text class="hero-quick-value">{{detailView.budgetRangeText}}</text>
+      </view>
+      <view class="hero-quick-item">
+        <text class="hero-quick-label">加入要付</text>
+        <text class="hero-quick-value">{{detailView.totalFeeText}}</text>
+      </view>
     </view>
   </view>
 
   <view class="card progress-card">
     <view class="section-head">
-      <text class="section-title">成局进度</text>
+      <text class="section-title">现在这局到哪了</text>
       <text class="section-side">{{detailView.progress.detailText}}</text>
     </view>
     <view class="progress-chip progress-{{detailView.progress.state}}">
@@ -52,75 +48,76 @@
 
   <view class="card">
     <view class="section-head">
-      <text class="section-title">活动信息</text>
+      <text class="section-title">这局怎么约</text>
     </view>
     <view class="info-item" wx:for="{{detailView.meeting.rows}}" wx:key="label">
       <text class="info-label">{{item.label}}</text>
       <text class="info-value">{{item.value}}</text>
-    </view>
-  </view>
-
-  <view class="card">
-    <view class="section-head">
-      <text class="section-title">费用与规则</text>
     </view>
     <view class="info-item" wx:for="{{detailView.feeRows}}" wx:key="label">
       <text class="info-label">{{item.label}}</text>
       <text class="info-value">{{item.value}}</text>
     </view>
     <view class="contract-box">
-      <text class="contract-title">报名说明</text>
+      <text class="contract-title">先看一眼</text>
       <text class="contract-text">{{detailView.contractText}}</text>
     </view>
   </view>
 
-  <view class="card" wx:if="{{detailView.descriptionParagraphs.length}}">
-    <view class="section-head">
-      <text class="section-title">活动说明</text>
+  <view class="card more-info-card" wx:if="{{detailView.descriptionParagraphs.length || detailView.safety.tags.length || detailView.credit.items.length || detailView.participationNote}}">
+    <view class="more-info-toggle" bindtap="toggleMoreInfo">
+      <text class="more-info-text">{{showMoreInfo ? '先收起来' : '想多看一点再展开'}}</text>
+      <text class="more-info-arrow">{{showMoreInfo ? '︿' : '﹀'}}</text>
     </view>
-    <text class="paragraph" wx:for="{{detailView.descriptionParagraphs}}" wx:key="index">{{item}}</text>
-  </view>
 
-  <view class="card">
-    <view class="section-head">
-      <text class="section-title">安全条件</text>
-      <text class="section-side">{{detailView.safety.riskText}}</text>
-    </view>
-    <view class="tag-list" wx:if="{{detailView.safety.tags.length}}">
-      <text class="tag-item" wx:for="{{detailView.safety.tags}}" wx:key="index">{{item}}</text>
-    </view>
-    <view class="rule-list">
-      <view class="rule-item" wx:for="{{detailView.safety.rules}}" wx:key="index">
-        <text class="rule-dot">•</text>
-        <text class="rule-text">{{item}}</text>
+    <view wx:if="{{showMoreInfo}}">
+      <view class="card-section" wx:if="{{detailView.descriptionParagraphs.length}}">
+        <text class="subsection-title">再补几句</text>
+        <text class="paragraph" wx:for="{{detailView.descriptionParagraphs}}" wx:key="index">{{item}}</text>
+      </view>
+
+      <view class="card-section" wx:if="{{detailView.safety.tags.length || detailView.safety.rules.length}}">
+        <view class="section-head">
+          <text class="subsection-title">几个小提醒</text>
+          <text class="section-side">{{detailView.safety.riskText}}</text>
+        </view>
+        <view class="tag-list" wx:if="{{detailView.safety.tags.length}}">
+          <text class="tag-item" wx:for="{{detailView.safety.tags}}" wx:key="index">{{item}}</text>
+        </view>
+        <view class="rule-list" wx:if="{{detailView.safety.rules.length}}">
+          <view class="rule-item" wx:for="{{detailView.safety.rules}}" wx:key="index">
+            <text class="rule-dot">•</text>
+            <text class="rule-text">{{item}}</text>
+          </view>
+        </view>
+      </view>
+
+      <view class="card-section" wx:if="{{detailView.credit.items.length}}">
+        <view class="section-head">
+          <text class="subsection-title">发起人情况</text>
+          <text class="section-side">{{detailView.credit.summaryText}}</text>
+        </view>
+        <view class="credit-grid">
+          <view class="credit-item" wx:for="{{detailView.credit.items}}" wx:key="label">
+            <text class="credit-label">{{item.label}}</text>
+            <text class="credit-value">{{item.value}}</text>
+          </view>
+        </view>
+      </view>
+
+      <view class="note-box inline-note" wx:if="{{detailView.participationNote}}">
+        <text class="note-text">{{detailView.participationNote}}</text>
       </view>
     </view>
-  </view>
-
-  <view class="card">
-    <view class="section-head">
-      <text class="section-title">发起人信用</text>
-      <text class="section-side">{{detailView.credit.summaryText}}</text>
-    </view>
-    <view class="credit-grid">
-      <view class="credit-item" wx:for="{{detailView.credit.items}}" wx:key="label">
-        <text class="credit-label">{{item.label}}</text>
-        <text class="credit-value">{{item.value}}</text>
-      </view>
-    </view>
-  </view>
-
-  <view class="note-box" wx:if="{{detailView.participationNote}}">
-    <text class="note-text">{{detailView.participationNote}}</text>
   </view>
 
   <view class="action-area">
     <button class="btn-primary action-btn" wx:if="{{actionState === 'join'}}" bindtap="goJoin" disabled="{{paying}}">
-      {{paying ? '支付中...' : '支付 ' + totalFeeText + ' 报名'}}
+      {{paying ? '先等等...' : '花 ' + totalFeeText + ' 先占个位置'}}
     </button>
 
     <button class="btn-primary action-btn" wx:if="{{actionState === 'manage'}}" bindtap="goManage">
-      管理这个组局
+      看看这局现在怎么样
     </button>
 
     <view class="status-tip" wx:if="{{actionState === 'status' && statusConfig}}">
@@ -136,19 +133,15 @@
     </view>
 
     <button class="btn-secondary action-btn" wx:if="{{showCheckinAction}}" bindtap="goCheckin">
-      {{isInitiator ? '查看签到页' : '去现场签到'}}
+      {{isInitiator ? '到场确认' : '我到了'}}
     </button>
 
     <button class="btn-secondary action-btn" bindtap="goReportDetail">
-      查看活动战报
+      看看这次后来怎么样
     </button>
 
     <button class="btn-secondary action-btn" wx:if="{{showWechatCopy && wechatUnlocked}}" bindtap="copyWechatId">
       复制发起人微信
-    </button>
-
-    <button class="btn-secondary action-btn report-btn" wx:if="{{myParticipation && (myParticipation.status === 'confirmed' || myParticipation.status === 'approved' || myParticipation.status === 'checked_in')}}" bindtap="goReport">
-      举报或反馈异常
     </button>
   </view>
 </view>

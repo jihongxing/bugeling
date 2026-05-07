@@ -40,7 +40,7 @@ Page({
       .exec((res) => {
         const canvas = res[0].node
         const ctx = canvas.getContext('2d')
-        const dpr = wx.getSystemInfoSync().pixelRatio
+        const dpr = getPixelRatio()
         canvas.width = res[0].width * dpr
         canvas.height = res[0].height * dpr
         ctx.scale(dpr, dpr)
@@ -60,7 +60,7 @@ Page({
         ctx.fillStyle = '#1A1A2E'
         ctx.font = 'bold 18px sans-serif'
         ctx.textAlign = 'center'
-        ctx.fillText(`${year}年${month}月 守约月报`, width / 2, 40)
+        ctx.fillText(`${year}年${month}月 最近小局`, width / 2, 40)
 
         // 3. 日历缩略图（简化版网格 + 颜色点）
         this.drawCalendarThumbnail(ctx, posterData.calendarDots, width, year, month)
@@ -71,10 +71,10 @@ Page({
         ctx.textAlign = 'center'
         ctx.fillText(posterData.slogan, width / 2, 260)
 
-        // 5. 契约分
+        // 5. 最近状态分
         ctx.font = 'bold 24px sans-serif'
         ctx.fillStyle = '#FF6B35'
-        ctx.fillText(`契约分：${posterData.creditScore}`, width / 2, 300)
+        ctx.fillText(`靠谱分：${posterData.creditScore}`, width / 2, 300)
 
         // 6. 击败百分比
         ctx.font = '14px sans-serif'
@@ -87,7 +87,7 @@ Page({
         ctx.fillText('── 不鸽令 ──', width / 2, 370)
         ctx.font = '12px sans-serif'
         ctx.fillStyle = '#9CA3AF'
-        ctx.fillText('这就是我的契约精神。', width / 2, 395)
+        ctx.fillText('最近又攒了几个轻松小局。', width / 2, 395)
 
         this.setData({ canvasReady: true })
       })
@@ -171,8 +171,15 @@ Page({
   // 分享给好友
   onShareAppMessage() {
     return {
-      title: `${this.data.posterData?.slogan || '我的守约月报'}`,
+      title: `${this.data.posterData?.slogan || '我的最近小局海报'}`,
       path: `/pages/user/poster/poster?year=${this.data.year}&month=${this.data.month}`
     }
   }
 })
+
+function getPixelRatio() {
+  if (wx.getWindowInfo) {
+    return wx.getWindowInfo().pixelRatio || 1
+  }
+  return wx.getSystemInfoSync().pixelRatio || 1
+}

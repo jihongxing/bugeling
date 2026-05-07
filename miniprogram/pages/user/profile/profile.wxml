@@ -1,23 +1,26 @@
 <!-- pages/user/profile/profile.wxml - 个人中心 -->
 <view class="page">
+  <view class="hero-card" wx:if="{{creditInfo}}">
+    <text class="hero-kicker">最近的小局</text>
+    <text class="hero-title">{{summaryTitle}}</text>
+    <text class="hero-desc">{{summaryText}}</text>
+  </view>
+
   <view class="credit-card" wx:if="{{creditInfo}}">
     <view class="score-section">
-      <text class="score-label">契约信用分</text>
+      <text class="score-label">这阵子整体感觉</text>
       <text class="score-value">{{creditInfo.score}}</text>
       <credit-badge score="{{creditInfo.score}}" />
     </view>
     <view class="stats-section">
       <view class="stat-item">
         <text class="stat-value">{{creditInfo.totalVerified}}</text>
-        <text class="stat-label">累计守约</text>
+        <text class="stat-label">顺利碰成</text>
       </view>
       <view class="stat-item">
         <text class="stat-value">{{creditInfo.totalBreached}}</text>
-        <text class="stat-label">累计违约</text>
+        <text class="stat-label">临时没来</text>
       </view>
-    </view>
-    <view class="level-section">
-      <text class="level-text">{{creditInfo.level}}</text>
     </view>
   </view>
 
@@ -27,23 +30,15 @@
 
   <view class="nav-list">
     <view class="nav-item" bindtap="goToHistory" data-role="initiator">
-      <text>我发起的活动</text>
+      <text>我开过的局</text>
       <text class="nav-arrow">></text>
     </view>
     <view class="nav-item" bindtap="goToHistory" data-role="participant">
-      <text>我参与的活动</text>
+      <text>我去过的局</text>
       <text class="nav-arrow">></text>
     </view>
-    <view class="nav-item" bindtap="goToCalendar">
-      <text>我的契约日程</text>
-      <text class="nav-arrow">></text>
-    </view>
-    <view class="nav-item" bindtap="goToPoster">
-      <text>守约月报海报</text>
-      <text class="nav-arrow">></text>
-    </view>
-    <view class="nav-item" bindtap="goToSettings">
-      <text>设置</text>
+    <view class="nav-item" bindtap="goToTemplateSelect">
+      <text>再发一个小局</text>
       <text class="nav-arrow">></text>
     </view>
   </view>

@@ -1,4 +1,4 @@
-// pages/verify/qrcode/qrcode.js - 核销码展示
+// pages/verify/qrcode/qrcode.js - 到场确认码
 var location = require('../../../utils/location')
 
 Page({
@@ -46,7 +46,7 @@ Page({
         self.drawQrCode(data.qrToken)
         self.startCountdown()
       } else {
-        self.setData({ loading: false, error: (res.result && res.result.message) || '获取核销码失败' })
+        self.setData({ loading: false, error: (res.result && res.result.message) || '获取确认码失败' })
       }
     }).catch(function () {
       self.setData({ loading: false, error: '网络错误，请重试' })
@@ -62,7 +62,7 @@ Page({
         if (!res || !res[0] || !res[0].node) return
         var canvas = res[0].node
         var ctx = canvas.getContext('2d')
-        var dpr = wx.getSystemInfoSync().pixelRatio
+        var dpr = getPixelRatio()
         var width = res[0].width
         var height = res[0].height
         canvas.width = width * dpr
@@ -462,3 +462,10 @@ function placeFormatInfo(matrix, size, maskNum) {
 }
 
 module.exports = { generateQrMatrix: generateQrMatrix }
+
+function getPixelRatio() {
+  if (wx.getWindowInfo) {
+    return wx.getWindowInfo().pixelRatio || 1
+  }
+  return wx.getSystemInfoSync().pixelRatio || 1
+}

@@ -1,5 +1,11 @@
 <!-- pages/user/history/history.wxml - 历史活动 -->
 <view class="page">
+  <view class="hero-card">
+    <text class="hero-kicker">最近的局</text>
+    <text class="hero-title">{{pageTitle}}</text>
+    <text class="hero-desc">{{pageDesc}}</text>
+  </view>
+
   <view class="activity-list" wx:if="{{!isEmpty}}">
     <view class="activity-item" wx:for="{{list}}" wx:key="_id">
       <view class="activity-header">
@@ -10,17 +16,17 @@
         <text class="activity-time">{{item.createdAt}}</text>
       </view>
       <view class="participation-status" wx:if="{{role === 'participant' && item.participationStatus}}">
-        <text>参与状态：{{item.participationStatus}}</text>
+        <text>这次后来：{{item.participationStatus}}</text>
       </view>
       <view class="activity-actions">
-        <button class="btn-secondary mini-action" bindtap="goDetail" data-id="{{item._id}}">查看详情</button>
-        <button class="btn-secondary mini-action" bindtap="goReportDetail" data-id="{{item._id}}">活动战报</button>
+        <button class="btn-secondary mini-action" bindtap="goDetail" data-id="{{item._id}}">再看看</button>
+        <button class="btn-secondary mini-action" bindtap="goReportDetail" data-id="{{item._id}}">看看后来怎么样</button>
       </view>
     </view>
   </view>
 
   <view class="empty-state" wx:if="{{isEmpty}}">
-    <text class="empty-text">还没有活动记录</text>
+    <text class="empty-text">你最近还没有留下什么小局记录</text>
   </view>
 
   <view class="loading" wx:if="{{loading}}">

@@ -4,6 +4,8 @@ const { callFunction } = require('../../../utils/api')
 Page({
   data: {
     role: '',
+    pageTitle: '最近的局',
+    pageDesc: '看看最近约过什么，想再来一次也方便。',
     list: [],
     total: 0,
     hasMore: false,
@@ -14,7 +16,16 @@ Page({
   },
 
   onLoad(options) {
-    this.setData({ role: options.role || '' })
+    const role = options.role || ''
+    this.setData({
+      role,
+      pageTitle: role === 'initiator' ? '我最近开的局' : (role === 'participant' ? '我最近去过的局' : '最近的局'),
+      pageDesc: role === 'initiator'
+        ? '看看最近发出去的几个小局，顺手再开一次。'
+        : (role === 'participant'
+          ? '看看最近去过哪几个局，合适的话再来一次。'
+          : '看看最近约过什么，想再来一次也方便。')
+    })
     this.loadActivities()
   },
 

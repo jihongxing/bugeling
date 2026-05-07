@@ -20,7 +20,8 @@ Page({
     paying: false,
     unlockCountdownText: '',
     wechatUnlocked: false,
-    showCheckinAction: false
+    showCheckinAction: false,
+    showMoreInfo: false
   },
 
   _countdownTimer: null,
@@ -112,7 +113,8 @@ Page({
           showWechatCopy: data.wechatId != null,
           totalFeeText: detailView.totalFeeText || formatUtil.formatFeeBreakdown(data.serviceFee, data.bondAmount),
           statusConfig: statusUtil.getStatusConfig(participationStatus),
-          loading: false
+          loading: false,
+          showMoreInfo: false
         })
 
         self._updateCountdown()
@@ -159,6 +161,12 @@ Page({
     })
   },
 
+  toggleMoreInfo: function() {
+    this.setData({
+      showMoreInfo: !this.data.showMoreInfo
+    })
+  },
+
   goJoin: function() {
     var self = this
     var activity = self.data.activity
@@ -200,8 +208,8 @@ Page({
     if (hasRouteRisk && routeWarning) {
       wx.showModal({
         title: '行程过紧',
-        content: routeWarning + '，如果赶不到现场，保证金会按规则处理。',
-        confirmText: '继续报名',
+        content: routeWarning + '，如果最后确实赶不上，这次的小约束会按规则处理。',
+        confirmText: '还是加入',
         cancelText: '取消',
         success: function(res) {
           if (res.confirm) {
@@ -231,7 +239,7 @@ Page({
           signType: params.signType,
           paySign: params.paySign,
           success: function() {
-            wx.showToast({ title: '报名成功', icon: 'success' })
+            wx.showToast({ title: '已经帮你占上位置', icon: 'success' })
             self.setData({ paying: false })
             self.loadDetail()
           },
@@ -245,7 +253,7 @@ Page({
         })
       } else if (result.code === 2002) {
         self.setData({ paying: false })
-        wx.showToast({ title: '信用分不足，无法报名', icon: 'none' })
+        wx.showToast({ title: '你现在暂时不能加入这局', icon: 'none' })
       } else {
         self.setData({ paying: false })
         wx.showToast({ title: result.message || '报名失败，请重试', icon: 'none' })

@@ -12,26 +12,26 @@
 
   <view class="metrics-grid" wx:if="{{card}}">
     <view class="metric-card metric-strong">
-      <text class="metric-label">模板预算</text>
+      <text class="metric-label">大概花费</text>
       <text class="metric-value">{{card.budgetText}}</text>
     </view>
     <view class="metric-card">
-      <text class="metric-label">参与费用</text>
+      <text class="metric-label">加入要付</text>
       <text class="metric-value">{{card.feeText}}</text>
     </view>
     <view class="metric-card">
-      <text class="metric-label">集合时间</text>
+      <text class="metric-label">什么时候见</text>
       <text class="metric-value">{{card.meetTimeText}}</text>
     </view>
     <view class="metric-card">
-      <text class="metric-label">距离位置</text>
+      <text class="metric-label">离你多远</text>
       <text class="metric-value">{{card.distanceText}}</text>
     </view>
   </view>
 
   <view class="progress-section" wx:if="{{card}}">
     <view class="progress-head">
-      <text class="progress-title">成局进度</text>
+      <text class="progress-title">现在这局到哪了</text>
       <text class="progress-detail">{{card.progressDetail}}</text>
     </view>
     <view class="progress-track">
@@ -46,6 +46,6 @@
 
   <view class="card-footer" wx:if="{{card}}">
     <text class="location-text">{{card.locationText}}</text>
-    <text class="credit-text">发起人信用 {{card.creditText}}</text>
+    <text class="credit-text">最近看起来 {{card.creditText}}</text>
   </view>
 </view>

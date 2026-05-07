@@ -84,6 +84,14 @@
   margin-bottom: 24rpx;
 }
 
+.section-tip {
+  display: block;
+  margin: -6rpx 0 22rpx;
+  font-size: 24rpx;
+  line-height: 1.6;
+  color: #6B7280;
+}
+
 .template-grid,
 .option-grid {
   display: flex;
@@ -277,6 +285,38 @@
   align-items: center;
   justify-content: space-between;
   padding: 12rpx 0 20rpx;
+}
+
+.more-toggle {
+  margin-top: 20rpx;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 22rpx 24rpx;
+  border-radius: 22rpx;
+  background: #FFF7ED;
+  border: 2rpx solid rgba(255, 107, 53, 0.12);
+}
+
+.more-toggle-text {
+  font-size: 26rpx;
+  color: #C2410C;
+  font-weight: 600;
+}
+
+.more-toggle-arrow {
+  font-size: 24rpx;
+  color: #C2410C;
+}
+
+.optional-wrap {
+  margin-top: 20rpx;
+}
+
+.optional-divider {
+  height: 2rpx;
+  background: #F1F5F9;
+  margin-bottom: 24rpx;
 }
 
 .segmented {

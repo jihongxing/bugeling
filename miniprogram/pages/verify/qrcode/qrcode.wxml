@@ -1,4 +1,4 @@
-<!-- pages/verify/qrcode/qrcode.wxml - 核销码展示 -->
+<!-- pages/verify/qrcode/qrcode.wxml - 到场确认码 -->
 <view class="page">
   <view class="header" wx:if="{{activityTitle}}">
     <text class="title">{{activityTitle}}</text>
@@ -22,7 +22,7 @@
   </view>
 
   <view class="tips">
-    <text class="tip-text">请向发起人出示此码</text>
+    <text class="tip-text">碰头时给发起人看一下这个码</text>
     <text class="tip-text warning">截图无效，请使用实时码</text>
   </view>
 
@@ -30,6 +30,6 @@
     <button class="arrival-btn {{arrived ? 'arrived' : ''}}" bindtap="handleArrival" disabled="{{arrived}}">
       {{arrived ? '已报告到达 ✓' : '我已到达现场'}}
     </button>
-    <button class="btn-secondary report-btn" bindtap="goReport">举报</button>
+    <button class="btn-secondary report-btn" bindtap="goReport">补充情况</button>
   </view>
 </view>

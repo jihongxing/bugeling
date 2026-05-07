@@ -107,7 +107,7 @@ Page({
     if (!activity || !helpers.hasLocationCoordinates(activity)) {
       self.setData({
         previewDistanceText: '',
-        locationHintText: '活动地点暂未补充地图坐标'
+        locationHintText: '这局还没补充地图位置'
       })
       return Promise.resolve()
     }
@@ -128,7 +128,7 @@ Page({
       self.setData({
         refreshingLocation: false,
         previewDistanceText: '',
-        locationHintText: '未获取到当前位置，签到时会再次请求'
+        locationHintText: '还没拿到你的位置，点“我到了”时会再试一次'
       })
 
       if (!silent) {
@@ -142,8 +142,8 @@ Page({
     if (err && err.code === 'AUTH_DENIED') {
       wx.showModal({
         title: '需要位置权限',
-        content: '签到需要读取当前位置，用于判断是否到达集合点。',
-        confirmText: '去开启',
+        content: '点“我到了”前，需要读一下你现在的位置，好帮你判断是不是快到碰头点了。',
+        confirmText: '去打开',
         success: function(res) {
           if (res.confirm) {
             wx.openSetting({})
@@ -187,7 +187,7 @@ Page({
     }).then(function(result) {
       if (result.code !== 0) {
         wx.showToast({
-          title: result.message || '签到失败，请稍后重试',
+          title: result.message || '这次没确认上，再试一次',
           icon: 'none'
         })
         return
@@ -208,7 +208,7 @@ Page({
       })
 
       wx.showToast({
-        title: '签到成功',
+        title: '已经帮你记为到场',
         icon: 'success'
       })
     }).catch(function(err) {

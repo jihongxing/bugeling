@@ -1,8 +1,8 @@
 <view class="page rules-page">
   <view class="hero-card">
-    <text class="hero-kicker">组局规则</text>
-    <text class="hero-title">先把边界说清楚，再更安心地发局和参加</text>
-    <text class="hero-desc">这些规则优先服务低成本、公共空间、弱社交负担的组局场景。</text>
+    <text class="hero-kicker">几个小提醒</text>
+    <text class="hero-title">不用背规则，知道这些默认默契就差不多了</text>
+    <text class="hero-desc">都是为了让大家更轻松地发局、加入和碰头。</text>
   </view>
 
   <view class="section-card" wx:for="{{sections}}" wx:key="title">
