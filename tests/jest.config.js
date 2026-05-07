@@ -17,6 +17,7 @@ module.exports = {
   coveragePathIgnorePatterns: ['/node_modules/'],
   verbose: true,
   moduleNameMapper: {
+    '^\\./_shared/(?!activityLifecycle$)(.*)$': '<rootDir>/scripts/cloudfunction-shared-template/$1',
     '^jsonwebtoken$': require.resolve('jsonwebtoken')
   }
 }
