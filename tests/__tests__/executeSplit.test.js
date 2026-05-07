@@ -6,7 +6,7 @@ const fc = require('fast-check')
 const PBT_NUM_RUNS = 100
 
 // --- Mock setup ---
-jest.mock('../../cloudfunctions/_shared/db', () => ({
+jest.mock('../../scripts/cloudfunction-shared-template/db', () => ({
   getDb: jest.fn(),
   COLLECTIONS: {
     ACTIVITIES: 'activities',
@@ -17,7 +17,7 @@ jest.mock('../../cloudfunctions/_shared/db', () => ({
   }
 }))
 
-const { getDb, COLLECTIONS } = require('../../cloudfunctions/_shared/db')
+const { getDb, COLLECTIONS } = require('../../scripts/cloudfunction-shared-template/db')
 const cloud = require('wx-server-sdk')
 const { main: executeSplitMain } = require('../../cloudfunctions/executeSplit/index')
 
@@ -247,3 +247,4 @@ describe('Feature: auto-arbitration, Property 9: executeSplit 申诉检查', () 
     )
   })
 })
+

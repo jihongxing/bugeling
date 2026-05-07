@@ -1,10 +1,10 @@
-// cloudfunctions/getCalendarActivities/index.js
+﻿// cloudfunctions/getCalendarActivities/index.js
 const cloud = require('wx-server-sdk')
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 
-const { getDb, COLLECTIONS } = require('../_shared/db')
-const { successResponse, errorResponse } = require('../_shared/response')
-const { mapCalendarStatus, queryMonthActivities } = require('../_shared/calendar')
+const { getDb, COLLECTIONS } = require('./_shared/db')
+const { successResponse, errorResponse } = require('./_shared/response')
+const { mapCalendarStatus, queryMonthActivities } = require('./_shared/calendar')
 
 exports.main = async (event, context) => {
   const { OPENID } = cloud.getWXContext()
@@ -96,3 +96,4 @@ function formatDateKey(dateValue) {
 }
 
 module.exports = { formatDateKey }
+

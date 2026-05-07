@@ -1,10 +1,10 @@
-const cloud = require('wx-server-sdk')
+﻿const cloud = require('wx-server-sdk')
 
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 
-const { getDb, COLLECTIONS } = require('../_shared/db')
-const { successResponse } = require('../_shared/response')
-const activityStatus = require('../_shared/activityStatus')
+const { getDb, COLLECTIONS } = require('./_shared/db')
+const { successResponse } = require('./_shared/response')
+const activityStatus = require('./_shared/activityStatus')
 
 const DEFAULT_BATCH_SIZE = 20
 const MAX_BATCH_SIZE = 100
@@ -79,3 +79,4 @@ exports.main = async function(event) {
 
 exports.normalizeBatchSize = normalizeBatchSize
 exports.normalizeNow = normalizeNow
+

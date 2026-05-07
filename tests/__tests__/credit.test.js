@@ -1,4 +1,4 @@
-const { calculateNewScore, calculateStatus } = require('../../cloudfunctions/_shared/credit')
+const { calculateNewScore, calculateStatus } = require('../../scripts/cloudfunction-shared-template/credit')
 
 describe('calculateNewScore', () => {
   test('adds positive delta to current score', () => {
@@ -77,7 +77,7 @@ const mockAdd = mockCollection().add
 
 // We need to re-require credit module after mocks are set up
 // Jest auto-mocks wx-server-sdk via __mocks__ directory
-const { getCredit } = require('../../cloudfunctions/_shared/credit')
+const { getCredit } = require('../../scripts/cloudfunction-shared-template/credit')
 
 describe('getCredit', () => {
   beforeEach(() => {
@@ -146,7 +146,7 @@ describe('getCredit', () => {
 })
 
 // --- updateCredit unit tests ---
-const { updateCredit } = require('../../cloudfunctions/_shared/credit')
+const { updateCredit } = require('../../scripts/cloudfunction-shared-template/credit')
 const mockUpdate = mockDoc().update
 
 describe('updateCredit', () => {
@@ -261,7 +261,7 @@ describe('updateCredit', () => {
 
 
 // --- checkAccess unit tests ---
-const { checkAccess } = require('../../cloudfunctions/_shared/credit')
+const { checkAccess } = require('../../scripts/cloudfunction-shared-template/credit')
 
 describe('checkAccess', () => {
   beforeEach(() => {
@@ -339,3 +339,4 @@ describe('checkAccess', () => {
     expect(result).toEqual({ allowed: true, reason: '', score: 80 })
   })
 })
+

@@ -1,6 +1,6 @@
 jest.mock('wx-server-sdk')
 
-jest.mock('../../cloudfunctions/_shared/response', () => ({
+jest.mock('../../scripts/cloudfunction-shared-template/response', () => ({
   successResponse: (data) => ({ code: 0, message: 'success', data }),
   errorResponse: (code, message) => ({ code, message, data: null })
 }))
@@ -52,3 +52,4 @@ describe('previewActivityDraft', () => {
     expect(result.data.description).toBe('自定义描述')
   })
 })
+

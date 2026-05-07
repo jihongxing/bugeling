@@ -1,10 +1,10 @@
-// cloudfunctions/processVerifiedRefunds/index.js
+﻿// cloudfunctions/processVerifiedRefunds/index.js
 // 定时任务：扫描 verified + needsRefund=true 的参与记录，重试退款
 const cloud = require('wx-server-sdk')
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 
-const { getDb, COLLECTIONS } = require('../_shared/db')
-const { updateCredit } = require('../_shared/credit')
+const { getDb, COLLECTIONS } = require('./_shared/db')
+const { updateCredit } = require('./_shared/credit')
 
 const BATCH_SIZE = 20
 
@@ -43,3 +43,4 @@ exports.main = async (event, context) => {
 
   return { code: 0, data: { processed }, message: 'success' }
 }
+

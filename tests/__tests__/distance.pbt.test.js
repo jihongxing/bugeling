@@ -2,7 +2,7 @@
 // **Validates: Requirements 2.1, 2.2, 2.3, 2.4, 2.5**
 
 const fc = require('fast-check')
-const { calculateDistance, isPresent } = require('../../cloudfunctions/_shared/distance')
+const { calculateDistance, isPresent } = require('../../scripts/cloudfunction-shared-template/distance')
 
 const PBT_NUM_RUNS = 100
 
@@ -140,3 +140,4 @@ describe('Feature: auto-arbitration, Property 2: 到场判定正确性', () => {
     )
   })
 })
+

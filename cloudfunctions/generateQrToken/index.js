@@ -1,13 +1,13 @@
-// cloudfunctions/generateQrToken/index.js
+﻿// cloudfunctions/generateQrToken/index.js
 const cloud = require('wx-server-sdk')
 const jwt = require('jsonwebtoken')
 const crypto = require('crypto')
 
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 
-const { getDb, COLLECTIONS } = require('../_shared/db')
-const { getEnv, ENV_KEYS } = require('../_shared/config')
-const { successResponse, errorResponse } = require('../_shared/response')
+const { getDb, COLLECTIONS } = require('./_shared/db')
+const { getEnv, ENV_KEYS } = require('./_shared/config')
+const { successResponse, errorResponse } = require('./_shared/response')
 
 exports.main = async (event, context) => {
   try {
@@ -62,3 +62,4 @@ exports.main = async (event, context) => {
     return errorResponse(5001, err.message)
   }
 }
+

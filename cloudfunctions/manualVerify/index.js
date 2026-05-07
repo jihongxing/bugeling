@@ -1,12 +1,12 @@
-// cloudfunctions/manualVerify/index.js
+﻿// cloudfunctions/manualVerify/index.js
 // 发起人背书：手动确认参与者到场（适用于参与者手机没电等无法出示核销码的情况）
 const cloud = require('wx-server-sdk')
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 
-const { getDb, COLLECTIONS } = require('../_shared/db')
-const { successResponse, errorResponse } = require('../_shared/response')
-const { updateCredit } = require('../_shared/credit')
-const { RETRY_BACKOFF_MS, ensureActivityLifecycle } = require('../_shared/activityLifecycle')
+const { getDb, COLLECTIONS } = require('./_shared/db')
+const { successResponse, errorResponse } = require('./_shared/response')
+const { updateCredit } = require('./_shared/credit')
+const { RETRY_BACKOFF_MS, ensureActivityLifecycle } = require('./_shared/activityLifecycle')
 
 exports.main = async (event, context) => {
   const { OPENID: openId } = cloud.getWXContext()
@@ -114,3 +114,4 @@ exports.main = async (event, context) => {
     return errorResponse(5001, err.message || '系统内部错误')
   }
 }
+

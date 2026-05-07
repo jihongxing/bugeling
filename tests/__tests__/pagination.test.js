@@ -1,5 +1,5 @@
 // tests/__tests__/pagination.test.js - pagination.js 单元测试
-const { paginate } = require('../../cloudfunctions/_shared/pagination')
+const { paginate } = require('../../scripts/cloudfunction-shared-template/pagination')
 
 describe('Pagination - Unit Tests', () => {
   describe('paginate', () => {
@@ -61,3 +61,4 @@ describe('Pagination - Unit Tests', () => {
     })
   })
 })
+

@@ -1,11 +1,11 @@
-// cloudfunctions/submitReport/index.js
+﻿// cloudfunctions/submitReport/index.js
 const cloud = require('wx-server-sdk')
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 
-const { getDb, COLLECTIONS } = require('../_shared/db')
-const { checkImage } = require('../_shared/safety')
-const { successResponse, errorResponse } = require('../_shared/response')
-const { validateEnum } = require('../_shared/validator')
+const { getDb, COLLECTIONS } = require('./_shared/db')
+const { checkImage } = require('./_shared/safety')
+const { successResponse, errorResponse } = require('./_shared/response')
+const { validateEnum } = require('./_shared/validator')
 
 const REPORT_TYPES = ['initiator_absent', 'mismatch', 'illegal']
 
@@ -74,3 +74,4 @@ exports.main = async (event, context) => {
     return errorResponse(5001, err.message)
   }
 }
+

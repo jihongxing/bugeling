@@ -43,3 +43,4 @@ tests/package-lock.json
 
 # 敏感信息
 project.private.config.json
+miniprogram/config/local.private.js

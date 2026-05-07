@@ -1,9 +1,9 @@
-const cloud = require('wx-server-sdk')
+﻿const cloud = require('wx-server-sdk')
 
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 
-const { getDb, COLLECTIONS } = require('../_shared/db')
-const { successResponse, errorResponse } = require('../_shared/response')
+const { getDb, COLLECTIONS } = require('./_shared/db')
+const { successResponse, errorResponse } = require('./_shared/response')
 
 function normalizeTags(tags, maxCount) {
   if (!Array.isArray(tags)) return []
@@ -79,3 +79,4 @@ exports.main = async function(event) {
 }
 
 exports.normalizeRole = normalizeRole
+

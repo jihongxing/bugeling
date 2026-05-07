@@ -3,7 +3,7 @@
 // **Validates: Requirements 2.5, 2.7**
 
 const fc = require('fast-check')
-const { paginate } = require('../../cloudfunctions/_shared/pagination')
+const { paginate } = require('../../scripts/cloudfunction-shared-template/pagination')
 
 const PBT_NUM_RUNS = 100
 
@@ -96,3 +96,4 @@ describe('Feature: activity-crud, Property 6: 分页逻辑正确性', () => {
     )
   })
 })
+

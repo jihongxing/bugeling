@@ -3,7 +3,7 @@
 
 jest.mock('wx-server-sdk')
 
-jest.mock('../../cloudfunctions/_shared/db', () => {
+jest.mock('../../scripts/cloudfunction-shared-template/db', () => {
   var _mockDb = null
   return {
     getDb: () => _mockDb,
@@ -18,11 +18,11 @@ jest.mock('../../cloudfunctions/_shared/db', () => {
   }
 })
 
-jest.mock('../../cloudfunctions/_shared/pay', () => ({
+jest.mock('../../scripts/cloudfunction-shared-template/pay', () => ({
   verifyCallbackSign: jest.fn()
 }))
 
-jest.mock('../../cloudfunctions/_shared/config', () => ({
+jest.mock('../../scripts/cloudfunction-shared-template/config', () => ({
   getEnv: jest.fn(() => 'test-api-key'),
   ENV_KEYS: {
     MCH_ID: 'WX_MCH_ID',
@@ -32,8 +32,8 @@ jest.mock('../../cloudfunctions/_shared/config', () => ({
 }))
 
 var fc = require('fast-check')
-var pay = require('../../cloudfunctions/_shared/pay')
-var db = require('../../cloudfunctions/_shared/db')
+var pay = require('../../scripts/cloudfunction-shared-template/pay')
+var db = require('../../scripts/cloudfunction-shared-template/db')
 var { main } = require('../../cloudfunctions/payCallback/index')
 
 var PBT_NUM_RUNS = 100
@@ -383,3 +383,4 @@ describe('payCallback unit tests', function() {
     expect(txUpdate.data.wxPayOrderId).toBe('4200001234202301010000000001')
   })
 })
+

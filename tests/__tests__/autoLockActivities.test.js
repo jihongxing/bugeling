@@ -1,18 +1,18 @@
 jest.mock('wx-server-sdk')
 
-jest.mock('../../cloudfunctions/_shared/db', () => ({
+jest.mock('../../scripts/cloudfunction-shared-template/db', () => ({
   getDb: jest.fn(),
   COLLECTIONS: {
     ACTIVITIES: 'activities'
   }
 }))
 
-jest.mock('../../cloudfunctions/_shared/response', () => ({
+jest.mock('../../scripts/cloudfunction-shared-template/response', () => ({
   successResponse: (data) => ({ code: 0, message: 'success', data })
 }))
 
 const cloud = require('wx-server-sdk')
-const { getDb, COLLECTIONS } = require('../../cloudfunctions/_shared/db')
+const { getDb, COLLECTIONS } = require('../../scripts/cloudfunction-shared-template/db')
 const { main, normalizeBatchSize } = require('../../cloudfunctions/autoLockActivities/index')
 
 let mockGet
@@ -121,3 +121,4 @@ describe('autoLockActivities', () => {
     expect(normalizeBatchSize(999)).toBe(100)
   })
 })
+

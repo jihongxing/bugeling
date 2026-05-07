@@ -1,11 +1,11 @@
-var cloud = require('wx-server-sdk')
+﻿var cloud = require('wx-server-sdk')
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 
-var db = require('../_shared/db')
-var pay = require('../_shared/pay')
-var response = require('../_shared/response')
-var config = require('../_shared/config')
-var activityStatus = require('../_shared/activityStatus')
+var db = require('./_shared/db')
+var pay = require('./_shared/pay')
+var response = require('./_shared/response')
+var config = require('./_shared/config')
+var activityStatus = require('./_shared/activityStatus')
 
 function isJoinableStatus(status) {
   return activityStatus.isJoinableActivityStatus(status)
@@ -139,3 +139,4 @@ exports.main = async function(event) {
     return response.errorResponse(5001, '系统内部错误')
   }
 }
+

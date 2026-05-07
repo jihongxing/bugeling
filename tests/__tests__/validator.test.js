@@ -5,7 +5,7 @@ const {
   validateIntRange,
   validateLocation,
   validateFutureTime
-} = require('../../cloudfunctions/_shared/validator')
+} = require('../../scripts/cloudfunction-shared-template/validator')
 
 describe('Validator - Unit Tests', () => {
   describe('validateString', () => {
@@ -200,3 +200,4 @@ describe('Validator - Unit Tests', () => {
     })
   })
 })
+

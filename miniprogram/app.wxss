@@ -2,7 +2,7 @@
 
 /* ========== 全局字体 ========== */
 page {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  font-family: 'Avenir Next', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
   background-color: var(--color-bg);
   color: var(--color-secondary);
 }
@@ -10,33 +10,67 @@ page {
 /* ========== 设计令牌 - CSS 变量定义 ========== */
 page {
   /* 颜色 */
-  --color-primary: #FF6B35;
-  --color-secondary: #1A1A2E;
-  --color-success: #10B981;
-  --color-warning: #F59E0B;
-  --color-danger: #EF4444;
-  --color-bg: #F5F5F7;
+  --color-primary: #D6542A;
+  --color-primary-deep: #9F3616;
+  --color-secondary: #181A24;
+  --color-ink-soft: #2B3042;
+  --color-success: #17886A;
+  --color-warning: #BE7A1F;
+  --color-danger: #C13B30;
+  --color-bg: #F2EFEA;
+  --color-bg-elevated: #F8F5F0;
   --color-card: #FFFFFF;
-  --color-text-secondary: #6B7280;
+  --color-text-secondary: #61687B;
+  --color-border-soft: #E5DED2;
+  --color-accent-cool: #1F5C63;
+  --color-shadow: rgba(25, 28, 40, 0.10);
+  --color-overlay-soft: rgba(214, 84, 42, 0.12);
+  --color-overlay-cool: rgba(31, 92, 99, 0.10);
 
   /* 字号 */
-  --font-size-xl: 36rpx;
-  --font-size-lg: 32rpx;
+  --font-size-xl: 44rpx;
+  --font-size-lg: 34rpx;
   --font-size-md: 28rpx;
   --font-size-sm: 24rpx;
   --font-size-xs: 22rpx;
-  --font-size-price: 40rpx;
+  --font-size-price: 48rpx;
 
   /* 间距 */
-  --spacing-page: 32rpx;
-  --spacing-card-inner: 24rpx;
+  --spacing-page: 28rpx;
+  --spacing-card-inner: 26rpx;
   --spacing-card-gap: 20rpx;
 
   /* 圆角 */
-  --radius-card: 16rpx;
-  --radius-btn: 12rpx;
-  --radius-tag: 8rpx;
-  --radius-input: 12rpx;
+  --radius-card: 24rpx;
+  --radius-btn: 20rpx;
+  --radius-tag: 999rpx;
+  --radius-input: 18rpx;
+
+  /* 动效 */
+  --motion-fast: 160ms;
+  --motion-normal: 280ms;
+  --motion-slow: 420ms;
+  --ease-standard: cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+@keyframes cardRiseIn {
+  from {
+    transform: translateY(18rpx);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes fadeInSoft {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 /* ========== 基础组件样式 ========== */
@@ -46,6 +80,7 @@ page {
   min-height: 100vh;
   padding: var(--spacing-page);
   box-sizing: border-box;
+  background: linear-gradient(180deg, var(--color-bg) 0%, var(--color-bg-elevated) 100%);
 }
 
 /* 卡片容器 */
@@ -54,39 +89,46 @@ page {
   border-radius: var(--radius-card);
   padding: var(--spacing-card-inner);
   margin-bottom: var(--spacing-card-gap);
-  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.04);
+  border: 1rpx solid var(--color-border-soft);
+  box-shadow: 0 14rpx 34rpx rgba(25, 28, 40, 0.06);
+  animation: cardRiseIn var(--motion-slow) var(--ease-standard);
 }
 
 /* 主按钮 */
 .btn-primary {
-  background-color: var(--color-primary);
+  background: linear-gradient(130deg, var(--color-primary) 0%, var(--color-primary-deep) 100%);
   color: #FFFFFF;
   border-radius: var(--radius-btn);
   padding: 24rpx 48rpx;
   font-size: var(--font-size-md);
-  font-weight: 500;
+  font-weight: 700;
+  letter-spacing: 1rpx;
   border: none;
   text-align: center;
+  box-shadow: 0 12rpx 24rpx rgba(159, 54, 22, 0.25);
+  transition: transform var(--motion-fast) var(--ease-standard), opacity var(--motion-fast) var(--ease-standard);
 }
 
 .btn-primary:active {
-  opacity: 0.8;
+  opacity: 0.9;
+  transform: translateY(1rpx);
 }
 
 /* 次按钮 */
 .btn-secondary {
   background-color: transparent;
-  color: var(--color-primary);
-  border: 2rpx solid var(--color-primary);
+  color: var(--color-primary-deep);
+  border: 2rpx solid rgba(159, 54, 22, 0.35);
   border-radius: var(--radius-btn);
   padding: 24rpx 48rpx;
   font-size: var(--font-size-md);
-  font-weight: 500;
+  font-weight: 600;
   text-align: center;
+  transition: background-color var(--motion-fast) var(--ease-standard), border-color var(--motion-fast) var(--ease-standard);
 }
 
 .btn-secondary:active {
-  background-color: rgba(255, 107, 53, 0.1);
+  background-color: rgba(214, 84, 42, 0.08);
 }
 
 /* 状态标签 */
@@ -96,4 +138,33 @@ page {
   border-radius: var(--radius-tag);
   font-size: var(--font-size-xs);
   font-weight: 500;
+}
+
+@media (prefers-color-scheme: dark) {
+  page {
+    --color-primary: #F07B4E;
+    --color-primary-deep: #C65B33;
+    --color-secondary: #F6F2E9;
+    --color-ink-soft: #D9D3C6;
+    --color-success: #46B494;
+    --color-warning: #E0AA54;
+    --color-danger: #E07268;
+    --color-bg: #13151D;
+    --color-bg-elevated: #1A1D28;
+    --color-card: #202432;
+    --color-text-secondary: #B1B7CA;
+    --color-border-soft: #2E3448;
+    --color-accent-cool: #76BAC1;
+    --color-shadow: rgba(0, 0, 0, 0.42);
+    --color-overlay-soft: rgba(240, 123, 78, 0.16);
+    --color-overlay-cool: rgba(118, 186, 193, 0.14);
+  }
+
+  .card {
+    box-shadow: 0 14rpx 34rpx rgba(0, 0, 0, 0.34);
+  }
+
+  .btn-primary {
+    box-shadow: 0 12rpx 24rpx rgba(0, 0, 0, 0.28);
+  }
 }

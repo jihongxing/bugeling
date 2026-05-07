@@ -1,11 +1,11 @@
-const cloud = require('wx-server-sdk')
+﻿const cloud = require('wx-server-sdk')
 
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 
-const db = require('../_shared/db')
-const response = require('../_shared/response')
-const activityStatus = require('../_shared/activityStatus')
-const activityFlow = require('../_shared/activityFlow')
+const db = require('./_shared/db')
+const response = require('./_shared/response')
+const activityStatus = require('./_shared/activityStatus')
+const activityFlow = require('./_shared/activityFlow')
 
 function parseTime(value) {
   const time = new Date(value).getTime()
@@ -92,3 +92,4 @@ exports.main = async function(event) {
 }
 
 exports.shouldLock = shouldLock
+

@@ -1,6 +1,6 @@
 // tests/__tests__/social.test.js - social.js 单元测试
 
-const { shouldUnlockWechatId, getUnlockCountdown, TWO_HOURS_MS } = require('../../cloudfunctions/_shared/social')
+const { shouldUnlockWechatId, getUnlockCountdown, TWO_HOURS_MS } = require('../../scripts/cloudfunction-shared-template/social')
 
 describe('TWO_HOURS_MS 常量', () => {
   test('等于 7200000 毫秒', () => {
@@ -127,3 +127,4 @@ describe('getUnlockCountdown', () => {
     expect(getUnlockCountdown(meetTime, now)).toBeGreaterThanOrEqual(0)
   })
 })
+

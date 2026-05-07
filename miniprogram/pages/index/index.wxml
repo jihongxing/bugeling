@@ -1,6 +1,8 @@
 <!-- pages/index/index.wxml - 首页活动列表 -->
 <view class="page index-page">
   <view class="hero-card">
+    <view class="hero-glow hero-glow-left"></view>
+    <view class="hero-glow hero-glow-right"></view>
     <view class="hero-copy">
       <text class="hero-kicker">先发，再看</text>
       <text class="hero-title">{{heroTitle}}</text>
@@ -22,6 +24,7 @@
 
   <view class="template-section">
     <view class="section-head">
+      <text class="section-mark">01</text>
       <text class="section-title">今天想约点什么</text>
       <text class="section-desc">先选方向，时间地点稍后再补</text>
     </view>
@@ -36,6 +39,7 @@
       >
         <text class="template-label">{{item.label}}</text>
         <text class="template-desc">{{item.desc}}</text>
+        <text class="template-action">立刻发起</text>
       </view>
     </view>
 
@@ -54,11 +58,13 @@
       >
         <text class="template-label">{{item.label}}</text>
         <text class="template-desc">{{item.desc}}</text>
+        <text class="template-action">立刻发起</text>
       </view>
     </view>
 
     <view class="examples-wrap">
       <view class="section-head">
+        <text class="section-mark">02</text>
         <text class="section-title small">照着发一个</text>
         <text class="section-desc">平台示例只做参考，不是用户真实活动</text>
       </view>
@@ -85,6 +91,7 @@
   <view class="feed-section">
     <view class="feed-head">
       <view class="feed-head-copy">
+        <text class="section-mark">03</text>
         <text class="feed-title">{{feedTitle}}</text>
         <text class="feed-desc">{{feedSubtitle}}</text>
       </view>

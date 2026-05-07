@@ -1,12 +1,12 @@
-var cloud = require('wx-server-sdk')
+﻿var cloud = require('wx-server-sdk')
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 
-var db = require('../_shared/db')
-var pay = require('../_shared/pay')
-var config = require('../_shared/config')
-var activityStatus = require('../_shared/activityStatus')
-var activityFlow = require('../_shared/activityFlow')
-var activityLifecycle = require('../_shared/activityLifecycle')
+var db = require('./_shared/db')
+var pay = require('./_shared/pay')
+var config = require('./_shared/config')
+var activityStatus = require('./_shared/activityStatus')
+var activityFlow = require('./_shared/activityFlow')
+var activityLifecycle = require('./_shared/activityLifecycle')
 
 var SUCCESS_RESPONSE = { errcode: 0, errmsg: 'SUCCESS' }
 var FAIL_RESPONSE = { errcode: -1, errmsg: 'FAIL' }
@@ -133,3 +133,4 @@ exports.main = async function(event) {
     return FAIL_RESPONSE
   }
 }
+

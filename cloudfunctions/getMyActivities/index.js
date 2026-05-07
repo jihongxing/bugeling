@@ -1,9 +1,9 @@
-// cloudfunctions/getMyActivities/index.js
+﻿// cloudfunctions/getMyActivities/index.js
 const cloud = require('wx-server-sdk')
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 
-const { getDb, COLLECTIONS } = require('../_shared/db')
-const { successResponse, errorResponse } = require('../_shared/response')
+const { getDb, COLLECTIONS } = require('./_shared/db')
+const { successResponse, errorResponse } = require('./_shared/response')
 
 exports.main = async (event, context) => {
   const { OPENID } = cloud.getWXContext()
@@ -135,3 +135,4 @@ async function queryParticipantActivitiesAll(db, openId) {
     participationStatus: p.status
   })).filter(item => item._id)
 }
+

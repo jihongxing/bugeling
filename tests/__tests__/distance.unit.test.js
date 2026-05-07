@@ -1,4 +1,4 @@
-const { calculateDistance, haversineDistance, isPresent } = require('../../cloudfunctions/_shared/distance')
+const { calculateDistance, haversineDistance, isPresent } = require('../../scripts/cloudfunction-shared-template/distance')
 
 describe('haversineDistance', () => {
   it('should be exported and callable', () => {
@@ -40,3 +40,4 @@ describe('existing exports still work', () => {
     expect(typeof isPresent).toBe('function')
   })
 })
+

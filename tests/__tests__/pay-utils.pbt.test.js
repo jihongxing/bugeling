@@ -3,7 +3,7 @@
 // **Validates: Requirements 5.7, 2.11, 4.6, 3.1**
 
 // Mock config module
-jest.mock('../../cloudfunctions/_shared/config', () => ({
+jest.mock('../../scripts/cloudfunction-shared-template/config', () => ({
   getEnv: jest.fn(() => 'test-value'),
   ENV_KEYS: { MCH_ID: 'WX_MCH_ID', API_KEY: 'WX_API_KEY', API_V3_KEY: 'WX_API_V3_KEY', NOTIFY_URL: 'WX_NOTIFY_URL' }
 }))
@@ -15,7 +15,7 @@ const {
   generateOutRefundNo,
   generateSign,
   verifyCallbackSign
-} = require('../../cloudfunctions/_shared/pay')
+} = require('../../scripts/cloudfunction-shared-template/pay')
 
 const PBT_NUM_RUNS = 100
 const VALID_DEPOSITS = [990, 1990, 2990, 3990, 4990]
@@ -152,3 +152,4 @@ describe('Feature: payment-settlement, Property 8: payCallback 签名验证', ()
     expect(verifyCallbackSign({ appid: 'wx123' }, 'key')).toBe(false)
   })
 })
+

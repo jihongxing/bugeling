@@ -9,7 +9,7 @@ const {
   validateIntRange,
   validateLocation,
   validateFutureTime
-} = require('../../cloudfunctions/_shared/validator')
+} = require('../../scripts/cloudfunction-shared-template/validator')
 
 // --- Constants matching createActivity spec ---
 const DEPOSIT_TIERS = [990, 1990, 2990, 3990, 4990]
@@ -463,3 +463,4 @@ describe('Feature: activity-crud, Property 1: createActivity 参数校验正确�
     })
   })
 })
+

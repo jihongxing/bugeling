@@ -3,7 +3,7 @@
 
 jest.mock('wx-server-sdk')
 
-jest.mock('../../cloudfunctions/_shared/db', () => ({
+jest.mock('../../scripts/cloudfunction-shared-template/db', () => ({
   getDb: () => require('wx-server-sdk').database(),
   COLLECTIONS: {
     ACTIVITIES: 'activities',
@@ -14,17 +14,17 @@ jest.mock('../../cloudfunctions/_shared/db', () => ({
   }
 }))
 
-jest.mock('../../cloudfunctions/_shared/response', () => ({
+jest.mock('../../scripts/cloudfunction-shared-template/response', () => ({
   successResponse: (data) => ({ code: 0, message: 'success', data }),
   errorResponse: (code, message) => ({ code, message, data: null })
 }))
 
-jest.mock('../../cloudfunctions/_shared/pay', () => ({
+jest.mock('../../scripts/cloudfunction-shared-template/pay', () => ({
   createOrder: jest.fn(),
   generateOutTradeNo: jest.fn(() => 'BGL-mock-trade-no')
 }))
 
-jest.mock('../../cloudfunctions/_shared/config', () => ({
+jest.mock('../../scripts/cloudfunction-shared-template/config', () => ({
   getEnv: jest.fn(() => 'https://mock-notify-url.com/callback'),
   ENV_KEYS: {
     MCH_ID: 'WX_MCH_ID',
@@ -35,7 +35,7 @@ jest.mock('../../cloudfunctions/_shared/config', () => ({
 
 const fc = require('fast-check')
 const cloud = require('wx-server-sdk')
-const pay = require('../../cloudfunctions/_shared/pay')
+const pay = require('../../scripts/cloudfunction-shared-template/pay')
 const { main } = require('../../cloudfunctions/createDeposit/index')
 
 const PBT_NUM_RUNS = 100
@@ -447,3 +447,4 @@ describe('createDeposit unit tests', () => {
     expect(result.data.paymentParams).toHaveProperty('paySign')
   })
 })
+

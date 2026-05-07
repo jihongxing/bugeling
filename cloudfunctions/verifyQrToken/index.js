@@ -1,11 +1,11 @@
-// cloudfunctions/verifyQrToken/index.js
+﻿// cloudfunctions/verifyQrToken/index.js
 const cloud = require('wx-server-sdk')
 const jwt = require('jsonwebtoken')
-const { getDb, COLLECTIONS } = require('../_shared/db')
-const { getEnv, ENV_KEYS } = require('../_shared/config')
-const { successResponse, errorResponse } = require('../_shared/response')
-const { updateCredit } = require('../_shared/credit')
-const { RETRY_BACKOFF_MS, ensureActivityLifecycle } = require('../_shared/activityLifecycle')
+const { getDb, COLLECTIONS } = require('./_shared/db')
+const { getEnv, ENV_KEYS } = require('./_shared/config')
+const { successResponse, errorResponse } = require('./_shared/response')
+const { updateCredit } = require('./_shared/credit')
+const { RETRY_BACKOFF_MS, ensureActivityLifecycle } = require('./_shared/activityLifecycle')
 
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 
@@ -139,3 +139,4 @@ exports.main = async (event, context) => {
     return errorResponse(5001, err.message)
   }
 }
+

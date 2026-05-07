@@ -6,7 +6,7 @@ const fc = require('fast-check')
 const {
   calculateNewScore,
   calculateStatus
-} = require('../../cloudfunctions/_shared/credit')
+} = require('../../scripts/cloudfunction-shared-template/credit')
 
 const PBT_NUM_RUNS = 100
 
@@ -149,7 +149,7 @@ describe('Feature: credit-system, Property 4: 信用分到状态映射一致性�
 // **Validates: Requirements 2.3, 2.4**
 
 const cloud = require('wx-server-sdk')
-const { updateCredit } = require('../../cloudfunctions/_shared/credit')
+const { updateCredit } = require('../../scripts/cloudfunction-shared-template/credit')
 
 // Access mock functions from the cloud mock
 const mockDb = cloud.database()
@@ -295,7 +295,7 @@ describe('Feature: credit-system, Property 3: updateCredit 计数器递增正确
 // Feature: credit-system, Property 4: 信用分到状态映射一致性（checkAccess 部分）
 // **Validates: Requirements 3.1, 3.2, 3.3**
 
-const { checkAccess } = require('../../cloudfunctions/_shared/credit')
+const { checkAccess } = require('../../scripts/cloudfunction-shared-template/credit')
 
 describe('Feature: credit-system, Property 4: 信用分到状态映射一致性（checkAccess 部分）', () => {
 
@@ -389,3 +389,4 @@ describe('Feature: credit-system, Property 4: 信用分到状态映射一致性�
     )
   })
 })
+

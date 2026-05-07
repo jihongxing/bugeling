@@ -1,10 +1,10 @@
-// cloudfunctions/refundDeposit/index.js
+﻿// cloudfunctions/refundDeposit/index.js
 var cloud = require('wx-server-sdk')
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 
-var db = require('../_shared/db')
-var pay = require('../_shared/pay')
-var response = require('../_shared/response')
+var db = require('./_shared/db')
+var pay = require('./_shared/pay')
+var response = require('./_shared/response')
 
 exports.main = async function(event, context) {
   var participationId = event.participationId
@@ -86,3 +86,4 @@ exports.main = async function(event, context) {
     return response.errorResponse(5001, '系统内部错误')
   }
 }
+

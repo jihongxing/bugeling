@@ -3,7 +3,7 @@
 
 jest.mock('wx-server-sdk')
 
-jest.mock('../../cloudfunctions/_shared/db', () => ({
+jest.mock('../../scripts/cloudfunction-shared-template/db', () => ({
   getDb: () => require('wx-server-sdk').database(),
   COLLECTIONS: {
     ACTIVITIES: 'activities',
@@ -14,14 +14,14 @@ jest.mock('../../cloudfunctions/_shared/db', () => ({
   }
 }))
 
-jest.mock('../../cloudfunctions/_shared/config', () => ({
+jest.mock('../../scripts/cloudfunction-shared-template/config', () => ({
   getEnv: jest.fn(() => 'test-jwt-secret'),
   ENV_KEYS: {
     JWT_SECRET: 'JWT_SECRET'
   }
 }))
 
-jest.mock('../../cloudfunctions/_shared/response', () => ({
+jest.mock('../../scripts/cloudfunction-shared-template/response', () => ({
   successResponse: (data) => ({ code: 0, message: 'success', data }),
   errorResponse: (code, message) => ({ code, message, data: null })
 }))
@@ -197,3 +197,4 @@ describe('Feature: verification-qrcode, Property 3: 参与状态门控', () => {
     )
   })
 })
+

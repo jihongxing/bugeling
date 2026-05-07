@@ -56,15 +56,15 @@ const mockDb = cloud.database()
 const mockDoc = mockDb.collection().doc
 const mockGet = mockDoc().get
 
-jest.mock('../../cloudfunctions/_shared/credit', () => {
-  const original = jest.requireActual('../../cloudfunctions/_shared/credit')
+jest.mock('../../scripts/cloudfunction-shared-template/credit', () => {
+  const original = jest.requireActual('../../scripts/cloudfunction-shared-template/credit')
   return {
     ...original,
     getCredit: jest.fn()
   }
 })
 
-const { getCredit } = require('../../cloudfunctions/_shared/credit')
+const { getCredit } = require('../../scripts/cloudfunction-shared-template/credit')
 const { main } = require('../../cloudfunctions/getCreditInfo/index')
 
 describe('getCreditInfo cloud function (exports.main)', () => {
@@ -172,3 +172,4 @@ describe('getCreditInfo cloud function (exports.main)', () => {
     })
   })
 })
+

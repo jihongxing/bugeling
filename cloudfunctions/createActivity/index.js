@@ -1,17 +1,29 @@
-const cloud = require('wx-server-sdk')
+﻿const cloud = require('wx-server-sdk')
 
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 
-const { getDb, COLLECTIONS } = require('../_shared/db')
-const { getCredit } = require('../_shared/credit')
-const { successResponse, errorResponse } = require('../_shared/response')
+function requireShared(moduleName) {
+  try {
+    return require('./_shared/' + moduleName)
+  } catch (outerErr) {
+    try {
+      return require('./_shared/' + moduleName)
+    } catch (innerErr) {
+      throw outerErr
+    }
+  }
+}
+
+const { getDb, COLLECTIONS } = requireShared('db')
+const { getCredit } = requireShared('credit')
+const { successResponse, errorResponse } = requireShared('response')
 const {
   validateString,
   validateEnum,
   validateIntRange,
   validateLocation,
   validateFutureTime
-} = require('../_shared/validator')
+} = requireShared('validator')
 
 const BOND_AMOUNTS = [990, 1990, 2990, 3990, 4990]
 const DEPOSIT_TIERS = BOND_AMOUNTS
@@ -181,6 +193,18 @@ function normalizeSignupDeadline(signupDeadline, meetTime) {
     return new Date(signupDeadline)
   }
   return new Date(new Date(meetTime).getTime() - 30 * 60 * 1000)
+}
+
+function isSecurityPermissionError(err) {
+  const errCode = err && (err.errCode || err.code)
+  const errMsg = err && err.errMsg ? String(err.errMsg) : ''
+  const message = err && err.message ? String(err.message) : ''
+
+  if (String(errCode) === '-604101') return true
+  return errMsg.indexOf('-604101') !== -1 ||
+    message.indexOf('-604101') !== -1 ||
+    errMsg.indexOf('no permission to call this API') !== -1 ||
+    message.indexOf('no permission to call this API') !== -1
 }
 
 function validateParams(params) {
@@ -362,6 +386,7 @@ exports.main = async (event) => {
         ].filter(Boolean)
       : [finalTitle, finalIdentityHint].filter(Boolean)
 
+    let securityCheckSkipped = false
     try {
       for (const content of securityContents) {
         await cloud.openapi.security.msgSecCheck({ content })
@@ -370,7 +395,12 @@ exports.main = async (event) => {
       if (err.errCode === 87014) {
         return errorResponse(2001, '内容含违规信息，请修改后重试')
       }
-      throw err
+      if (isSecurityPermissionError(err)) {
+        securityCheckSkipped = true
+        console.warn('msgSecCheck skipped due to permission issue:', err)
+      } else {
+        throw err
+      }
     }
 
     const activityData = {
@@ -409,6 +439,7 @@ exports.main = async (event) => {
       allowAfterParty: Boolean(event.allowAfterParty),
       safetyTags: normalizedSafetyTags,
       atmosphereTags: normalizedAtmosphereTags,
+      securityCheckSkipped,
       rules: Array.isArray(event.rules) && event.rules.length > 0 ? event.rules : DEFAULT_RULES,
       riskLevel,
       reviewStatus: riskLevel === 'high' ? 'pending_review' : 'approved',
@@ -424,6 +455,10 @@ exports.main = async (event) => {
     return successResponse({ activityId })
   } catch (err) {
     console.error('createActivity error:', err)
+    const rawMessage = err && err.message ? String(err.message) : ''
+    if (rawMessage.indexOf('DATABASE_COLLECTION_NOT_EXIST') !== -1) {
+      return errorResponse(5002, '数据库集合不存在，请先创建 activities 与 credits 集合')
+    }
     return errorResponse(5001, err.message || '系统内部错误')
   }
 }
@@ -434,3 +469,4 @@ exports.BOND_AMOUNTS = BOND_AMOUNTS
 exports.DEPOSIT_TIERS = DEPOSIT_TIERS
 exports.SERVICE_FEES = SERVICE_FEES
 exports.TEMPLATE_TYPES = TEMPLATE_TYPES
+

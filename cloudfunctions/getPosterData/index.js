@@ -1,11 +1,11 @@
-// cloudfunctions/getPosterData/index.js
+﻿// cloudfunctions/getPosterData/index.js
 const cloud = require('wx-server-sdk')
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 
-const { getDb, COLLECTIONS } = require('../_shared/db')
-const { successResponse, errorResponse } = require('../_shared/response')
-const { getCredit } = require('../_shared/credit')
-const { mapCalendarStatus, queryMonthActivities } = require('../_shared/calendar')
+const { getDb, COLLECTIONS } = require('./_shared/db')
+const { successResponse, errorResponse } = require('./_shared/response')
+const { getCredit } = require('./_shared/credit')
+const { mapCalendarStatus, queryMonthActivities } = require('./_shared/calendar')
 
 /**
  * 生成海报文案（纯函数）
@@ -96,3 +96,4 @@ exports.main = async (event, context) => {
 }
 
 module.exports = { generateSlogan }
+

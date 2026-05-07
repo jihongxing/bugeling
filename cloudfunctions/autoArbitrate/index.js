@@ -1,13 +1,13 @@
-// cloudfunctions/autoArbitrate/index.js
+﻿// cloudfunctions/autoArbitrate/index.js
 const cloud = require('wx-server-sdk')
 
 cloud.init({
   env: cloud.DYNAMIC_CURRENT_ENV
 })
 
-const { getDb, COLLECTIONS } = require('../_shared/db')
-const { updateCredit } = require('../_shared/credit')
-const { isPresent } = require('../_shared/distance')
+const { getDb, COLLECTIONS } = require('./_shared/db')
+const { updateCredit } = require('./_shared/credit')
+const { isPresent } = require('./_shared/distance')
 
 /**
  * 判定单条参与记录的仲裁结果（纯函数）
@@ -170,3 +170,4 @@ exports.main = async (event, context) => {
     message: 'success'
   }
 }
+

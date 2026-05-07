@@ -1,10 +1,10 @@
-const cloud = require('wx-server-sdk')
+﻿const cloud = require('wx-server-sdk')
 
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 
-const { getDb, COLLECTIONS } = require('../_shared/db')
-const { successResponse, errorResponse } = require('../_shared/response')
-const { buildCreateSeedFromReport } = require('../_shared/reportBuilder')
+const { getDb, COLLECTIONS } = require('./_shared/db')
+const { successResponse, errorResponse } = require('./_shared/response')
+const { buildCreateSeedFromReport } = require('./_shared/reportBuilder')
 const generateActivityReport = require('../generateActivityReport/index')
 
 function normalizeId(value) {
@@ -69,3 +69,4 @@ exports.main = async function(event) {
     return errorResponse(5001, err.message || '系统内部错误')
   }
 }
+

@@ -252,6 +252,86 @@
   color: #4B5563;
 }
 
+.pay-breakdown-card {
+  margin-top: 20rpx;
+  padding: 20rpx 22rpx;
+  border-radius: 20rpx;
+  background: #FFF9F2;
+  border: 1rpx solid #F5DDC5;
+}
+
+.pay-breakdown-title {
+  display: block;
+  font-size: 25rpx;
+  color: #9F3616;
+  font-weight: 700;
+  margin-bottom: 10rpx;
+}
+
+.pay-breakdown-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 14rpx;
+  padding: 12rpx 0;
+  border-bottom: 1rpx solid rgba(159, 54, 22, 0.1);
+}
+
+.pay-breakdown-row:last-of-type {
+  border-bottom: none;
+}
+
+.pay-breakdown-main {
+  flex: 1;
+}
+
+.pay-breakdown-label {
+  display: block;
+  font-size: 24rpx;
+  color: #3F2C22;
+  font-weight: 600;
+}
+
+.pay-breakdown-hint {
+  display: block;
+  margin-top: 4rpx;
+  font-size: 22rpx;
+  line-height: 1.5;
+  color: #7C5A4A;
+}
+
+.pay-breakdown-value {
+  font-size: 26rpx;
+  color: #111827;
+  font-weight: 700;
+}
+
+.pay-breakdown-total {
+  margin-top: 14rpx;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.pay-breakdown-total-label {
+  font-size: 24rpx;
+  color: #3F2C22;
+  font-weight: 600;
+}
+
+.pay-breakdown-total-value {
+  font-size: 30rpx;
+  color: #9F3616;
+  font-weight: 700;
+}
+
+.pay-breakdown-tip {
+  display: block;
+  margin-top: 10rpx;
+  font-size: 22rpx;
+  line-height: 1.6;
+  color: #7C5A4A;
+}
+
 .paragraph + .paragraph {
   margin-top: 12rpx;
 }
@@ -344,4 +424,38 @@
 .loading-text {
   font-size: 28rpx;
   color: #6B7280;
+}
+
+.detail-empty-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 58vh;
+}
+
+.empty-card {
+  width: 100%;
+  padding: 36rpx 30rpx;
+}
+
+.empty-title {
+  display: block;
+  font-size: 32rpx;
+  color: #111827;
+  font-weight: 700;
+  text-align: center;
+}
+
+.empty-desc {
+  display: block;
+  margin-top: 14rpx;
+  font-size: 26rpx;
+  line-height: 1.6;
+  color: #6B7280;
+  text-align: center;
+}
+
+.empty-btn {
+  width: 100%;
+  margin-top: 18rpx;
 }

@@ -15,7 +15,7 @@ jest.mock('wx-server-sdk', () => ({
   downloadFile: (...args) => mockDownloadFile(...args)
 }))
 
-const { checkText, checkImage } = require('../../cloudfunctions/_shared/safety')
+const { checkText, checkImage } = require('../../scripts/cloudfunction-shared-template/safety')
 
 describe('safety.checkText', () => {
   beforeEach(() => {
@@ -120,3 +120,4 @@ describe('safety.checkImage', () => {
     expect(typeof result.errMsg).toBe('string')
   })
 })
+

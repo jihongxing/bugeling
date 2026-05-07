@@ -21,7 +21,7 @@ jest.mock('wx-server-sdk', () => ({
   downloadFile: (...args) => mockDownloadFile(...args)
 }))
 
-const { checkText, checkImage } = require('../../cloudfunctions/_shared/safety')
+const { checkText, checkImage } = require('../../scripts/cloudfunction-shared-template/safety')
 
 // --- Smart Generators ---
 
@@ -278,3 +278,4 @@ describe('Feature: content-safety-report, Property 2: 安全检测 errCode 到 s
     )
   })
 })
+

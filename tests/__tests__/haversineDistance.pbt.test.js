@@ -2,7 +2,7 @@
 // **Validates: Requirements 2.4**
 
 const fc = require('fast-check')
-const { haversineDistance } = require('../../cloudfunctions/_shared/distance')
+const { haversineDistance } = require('../../scripts/cloudfunction-shared-template/distance')
 
 const PBT_NUM_RUNS = 100
 
@@ -58,3 +58,4 @@ describe('Feature: activity-calendar-poster, Property 6: Haversine 距离计算�
     )
   })
 })
+

@@ -3,7 +3,7 @@
 
 jest.mock('wx-server-sdk')
 
-jest.mock('../../cloudfunctions/_shared/db', () => {
+jest.mock('../../scripts/cloudfunction-shared-template/db', () => {
   var _mockDb = null
   return {
     getDb: () => _mockDb,
@@ -18,19 +18,19 @@ jest.mock('../../cloudfunctions/_shared/db', () => {
   }
 })
 
-jest.mock('../../cloudfunctions/_shared/pay', () => ({
+jest.mock('../../scripts/cloudfunction-shared-template/pay', () => ({
   refund: jest.fn(),
   generateOutRefundNo: jest.fn(() => 'BGLR-mock-refund-no')
 }))
 
-jest.mock('../../cloudfunctions/_shared/response', () => ({
+jest.mock('../../scripts/cloudfunction-shared-template/response', () => ({
   successResponse: (data) => ({ code: 0, message: 'success', data }),
   errorResponse: (code, message) => ({ code, message, data: null })
 }))
 
 var fc = require('fast-check')
-var pay = require('../../cloudfunctions/_shared/pay')
-var db = require('../../cloudfunctions/_shared/db')
+var pay = require('../../scripts/cloudfunction-shared-template/pay')
+var db = require('../../scripts/cloudfunction-shared-template/db')
 var { main } = require('../../cloudfunctions/refundDeposit/index')
 
 var PBT_NUM_RUNS = 100
@@ -298,3 +298,4 @@ describe('refundDeposit unit tests', function() {
     expect(refundTx.data.status).toBe('success')
   })
 })
+

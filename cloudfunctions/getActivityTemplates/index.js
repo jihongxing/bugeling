@@ -1,10 +1,10 @@
-const cloud = require('wx-server-sdk')
+﻿const cloud = require('wx-server-sdk')
 
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 
-const { getDb, COLLECTIONS } = require('../_shared/db')
-const { successResponse, errorResponse } = require('../_shared/response')
-const { listEnabledTemplates } = require('../_shared/templates')
+const { getDb, COLLECTIONS } = require('./_shared/db')
+const { successResponse, errorResponse } = require('./_shared/response')
+const { listEnabledTemplates } = require('./_shared/templates')
 
 function normalizeTemplateList(list) {
   return (list || []).filter(item => item && item.type).map(item => ({
@@ -61,3 +61,4 @@ exports.main = async function() {
 
 exports.mergeTemplateOverrides = mergeTemplateOverrides
 exports.normalizeTemplateList = normalizeTemplateList
+

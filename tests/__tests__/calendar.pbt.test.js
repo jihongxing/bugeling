@@ -2,7 +2,7 @@
 // **Validates: Requirements 1.2, 1.3, 1.4, 1.5**
 
 const fc = require('fast-check')
-const { mapCalendarStatus } = require('../../cloudfunctions/_shared/calendar')
+const { mapCalendarStatus } = require('../../scripts/cloudfunction-shared-template/calendar')
 
 const PBT_NUM_RUNS = 100
 
@@ -109,3 +109,4 @@ describe('Feature: activity-calendar-poster, Property 1: 日历状态颜色映�
     )
   })
 })
+

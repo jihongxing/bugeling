@@ -3,7 +3,7 @@
 
 jest.mock('wx-server-sdk')
 
-jest.mock('../../cloudfunctions/_shared/db', () => ({
+jest.mock('../../scripts/cloudfunction-shared-template/db', () => ({
   getDb: () => require('wx-server-sdk').database(),
   COLLECTIONS: {
     ACTIVITIES: 'activities',
@@ -14,7 +14,7 @@ jest.mock('../../cloudfunctions/_shared/db', () => ({
   }
 }))
 
-jest.mock('../../cloudfunctions/_shared/response', () => ({
+jest.mock('../../scripts/cloudfunction-shared-template/response', () => ({
   successResponse: (data) => ({ code: 0, message: 'success', data }),
   errorResponse: (code, message) => ({ code, message, data: null })
 }))
@@ -22,7 +22,7 @@ jest.mock('../../cloudfunctions/_shared/response', () => ({
 const fc = require('fast-check')
 const cloud = require('wx-server-sdk')
 const { main } = require('../../cloudfunctions/approveParticipant/index')
-const activityStatus = require('../../cloudfunctions/_shared/activityStatus')
+const activityStatus = require('../../scripts/cloudfunction-shared-template/activityStatus')
 
 const PBT_NUM_RUNS = 100
 
@@ -356,3 +356,4 @@ describe('Feature: activity-crud, Property 11: approve 操作状态变更', () =
     )
   })
 })
+

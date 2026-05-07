@@ -21,7 +21,8 @@ Page({
     unlockCountdownText: '',
     wechatUnlocked: false,
     showCheckinAction: false,
-    showMoreInfo: false
+    showMoreInfo: false,
+    loadErrorText: ''
   },
 
   _countdownTimer: null,
@@ -81,7 +82,7 @@ Page({
 
   loadDetail: function() {
     var self = this
-    self.setData({ loading: true })
+    self.setData({ loading: true, loadErrorText: '' })
 
     api.callFunction('getActivityDetail', {
       activityId: self.data.activityId
@@ -114,21 +115,36 @@ Page({
           totalFeeText: detailView.totalFeeText || formatUtil.formatFeeBreakdown(data.serviceFee, data.bondAmount),
           statusConfig: statusUtil.getStatusConfig(participationStatus),
           loading: false,
-          showMoreInfo: false
+          showMoreInfo: false,
+          loadErrorText: ''
         })
 
         self._updateCountdown()
       } else if (result.code === 1003) {
         wx.showToast({ title: '活动不存在', icon: 'none' })
+        self.setData({
+          loading: false,
+          loadErrorText: '活动不存在或已被删除'
+        })
         setTimeout(function() { wx.navigateBack() }, 1500)
       } else {
-        wx.showToast({ title: '加载失败', icon: 'none' })
-        self.setData({ loading: false })
+        wx.showToast({ title: result.message || '加载失败', icon: 'none' })
+        self.setData({
+          loading: false,
+          loadErrorText: result.message || '加载失败，请稍后重试'
+        })
       }
-    }).catch(function() {
+    }).catch(function(err) {
       wx.showToast({ title: '加载失败', icon: 'none' })
-      self.setData({ loading: false })
+      self.setData({
+        loading: false,
+        loadErrorText: (err && err.message) ? err.message : '网络异常，请稍后重试'
+      })
     })
+  },
+
+  retryLoadDetail: function() {
+    this.loadDetail()
   },
 
   copyWechatId: function() {

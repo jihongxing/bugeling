@@ -1,11 +1,11 @@
-const cloud = require('wx-server-sdk')
+﻿const cloud = require('wx-server-sdk')
 
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 
-const { getDb, COLLECTIONS } = require('../_shared/db')
-const { getCredit } = require('../_shared/credit')
-const { successResponse, errorResponse } = require('../_shared/response')
-const activityStatus = require('../_shared/activityStatus')
+const { getDb, COLLECTIONS } = require('./_shared/db')
+const { getCredit } = require('./_shared/credit')
+const { successResponse, errorResponse } = require('./_shared/response')
+const activityStatus = require('./_shared/activityStatus')
 
 const TEMPLATE_TYPES = [
   'walk',
@@ -302,3 +302,4 @@ exports.batchGetCredits = batchGetCredits
 exports.formatActivity = formatActivity
 exports.scoreActivity = scoreActivity
 exports.compareActivitiesForFeed = compareActivitiesForFeed
+

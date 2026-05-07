@@ -1,11 +1,11 @@
-const cloud = require('wx-server-sdk')
+﻿const cloud = require('wx-server-sdk')
 
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 
-const db = require('../_shared/db')
-const response = require('../_shared/response')
-const activityStatus = require('../_shared/activityStatus')
-const activityFlow = require('../_shared/activityFlow')
+const db = require('./_shared/db')
+const response = require('./_shared/response')
+const activityStatus = require('./_shared/activityStatus')
+const activityFlow = require('./_shared/activityFlow')
 
 exports.main = async function(event) {
   const activityId = event && event.activityId
@@ -57,3 +57,4 @@ exports.main = async function(event) {
     return response.errorResponse(5001, err.message || '系统内部错误')
   }
 }
+

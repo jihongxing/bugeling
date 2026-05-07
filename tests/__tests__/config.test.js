@@ -1,6 +1,6 @@
 // tests/__tests__/config.test.js - 环境变量读取模块属性基测试
 const fc = require('fast-check')
-const { getEnv, ENV_KEYS } = require('../../cloudfunctions/_shared/config')
+const { getEnv, ENV_KEYS } = require('../../scripts/cloudfunction-shared-template/config')
 
 describe('Config Utils - Property-Based Tests', () => {
   describe('getEnv', () => {
@@ -89,3 +89,4 @@ describe('Config Utils - Property-Based Tests', () => {
     })
   })
 })
+

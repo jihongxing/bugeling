@@ -1,11 +1,11 @@
-// cloudfunctions/rejectParticipant/index.js
+﻿// cloudfunctions/rejectParticipant/index.js
 const cloud = require('wx-server-sdk')
 
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 
-const { getDb, COLLECTIONS } = require('../_shared/db')
-const { successResponse, errorResponse } = require('../_shared/response')
-const { refund } = require('../_shared/pay')
+const { getDb, COLLECTIONS } = require('./_shared/db')
+const { successResponse, errorResponse } = require('./_shared/response')
+const { refund } = require('./_shared/pay')
 
 /**
  * rejectParticipant 云函数入口
@@ -114,3 +114,4 @@ exports.main = async (event, context) => {
     return errorResponse(5001, err.message || '系统内部错误')
   }
 }
+

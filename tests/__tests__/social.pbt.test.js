@@ -6,7 +6,7 @@ const fc = require('fast-check')
 
 const PBT_NUM_RUNS = 100
 
-const { shouldUnlockWechatId, getUnlockCountdown, TWO_HOURS_MS } = require('../../cloudfunctions/_shared/social')
+const { shouldUnlockWechatId, getUnlockCountdown, TWO_HOURS_MS } = require('../../scripts/cloudfunction-shared-template/social')
 
 // --- Smart Generators ---
 
@@ -193,3 +193,4 @@ describe('Feature: content-safety-report, Property 8: getUnlockCountdown 倒计�
     )
   })
 })
+

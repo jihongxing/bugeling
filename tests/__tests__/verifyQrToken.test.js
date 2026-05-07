@@ -2,7 +2,7 @@
 
 jest.mock('wx-server-sdk')
 
-jest.mock('../../cloudfunctions/_shared/db', () => ({
+jest.mock('../../scripts/cloudfunction-shared-template/db', () => ({
   getDb: () => require('wx-server-sdk').database(),
   COLLECTIONS: {
     ACTIVITIES: 'activities',
@@ -13,26 +13,26 @@ jest.mock('../../cloudfunctions/_shared/db', () => ({
   }
 }))
 
-jest.mock('../../cloudfunctions/_shared/config', () => ({
+jest.mock('../../scripts/cloudfunction-shared-template/config', () => ({
   getEnv: jest.fn(() => 'test-jwt-secret'),
   ENV_KEYS: {
     JWT_SECRET: 'JWT_SECRET'
   }
 }))
 
-jest.mock('../../cloudfunctions/_shared/response', () => ({
+jest.mock('../../scripts/cloudfunction-shared-template/response', () => ({
   successResponse: (data) => ({ code: 0, message: 'success', data }),
   errorResponse: (code, message) => ({ code, message, data: null })
 }))
 
-jest.mock('../../cloudfunctions/_shared/credit', () => ({
+jest.mock('../../scripts/cloudfunction-shared-template/credit', () => ({
   updateCredit: jest.fn(() => Promise.resolve({ score: 102 }))
 }))
 
 const cloud = require('wx-server-sdk')
 const jwt = require('jsonwebtoken')
 const { main } = require('../../cloudfunctions/verifyQrToken/index')
-const { updateCredit } = require('../../cloudfunctions/_shared/credit')
+const { updateCredit } = require('../../scripts/cloudfunction-shared-template/credit')
 
 const JWT_SECRET = 'test-jwt-secret'
 
@@ -249,3 +249,4 @@ describe('verifyQrToken', () => {
     })
   })
 })
+

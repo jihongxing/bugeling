@@ -42,23 +42,48 @@ function callFunction(name, data = {}, options = {}) {
       wx.hideLoading()
     }
 
+    const errMsg = (err && err.errMsg) || ''
+
+    // 云函数不存在（未部署或部署在其他云环境）
+    if (errMsg.indexOf('FUNCTION_NOT_FOUND') !== -1 || errMsg.indexOf('-501000') !== -1) {
+      throw {
+        code: 'FUNCTION_NOT_FOUND',
+        message: `云函数 ${name} 未找到，请检查云环境或重新部署`,
+        rawErrMsg: errMsg,
+        rawErrCode: (err && (err.errCode || err.code)) || ''
+      }
+    }
+
+    // 云函数执行失败（函数内部异常 / 依赖缺失 / 运行时崩溃）
+    if (errMsg.indexOf('FUNCTIONS_EXECUTE_FAIL') !== -1 || errMsg.indexOf('-504002') !== -1) {
+      throw {
+        code: 'FUNCTIONS_EXECUTE_FAIL',
+        message: `云函数 ${name} 执行失败，请查看云函数日志`,
+        rawErrMsg: errMsg,
+        rawErrCode: (err && (err.errCode || err.code)) || ''
+      }
+    }
+
     // 区分网络错误和调用失败
-    const isNetworkError = err && err.errMsg &&
-      (err.errMsg.indexOf('request:fail') !== -1 ||
-       err.errMsg.indexOf('network') !== -1 ||
-       err.errMsg.indexOf('timeout') !== -1)
+    const isNetworkError = errMsg &&
+      (errMsg.indexOf('request:fail') !== -1 ||
+       errMsg.indexOf('network') !== -1 ||
+       errMsg.indexOf('timeout') !== -1)
 
     if (isNetworkError) {
       const error = {
         code: 'NETWORK_ERROR',
-        message: '网络异常，请重试'
+        message: '网络异常，请重试',
+        rawErrMsg: errMsg
       }
       throw error
     }
 
     const error = {
       code: 'CALL_FAILED',
-      message: (err && err.errMsg) || '云函数调用失败'
+      message: errMsg || '云函数调用失败',
+      rawErrMsg: errMsg,
+      rawErrCode: (err && (err.errCode || err.code)) || ''
     }
     throw error
   })

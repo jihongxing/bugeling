@@ -5,7 +5,7 @@
 
 jest.mock('wx-server-sdk')
 
-jest.mock('../../cloudfunctions/_shared/db', () => ({
+jest.mock('../../scripts/cloudfunction-shared-template/db', () => ({
   getDb: () => require('wx-server-sdk').database(),
   COLLECTIONS: {
     ACTIVITIES: 'activities',
@@ -16,18 +16,18 @@ jest.mock('../../cloudfunctions/_shared/db', () => ({
   }
 }))
 
-jest.mock('../../cloudfunctions/_shared/credit', () => ({
+jest.mock('../../scripts/cloudfunction-shared-template/credit', () => ({
   getCredit: jest.fn()
 }))
 
-jest.mock('../../cloudfunctions/_shared/response', () => ({
+jest.mock('../../scripts/cloudfunction-shared-template/response', () => ({
   successResponse: (data) => ({ code: 0, message: 'success', data }),
   errorResponse: (code, message) => ({ code, message, data: null })
 }))
 
 const fc = require('fast-check')
 const cloud = require('wx-server-sdk')
-const { getCredit } = require('../../cloudfunctions/_shared/credit')
+const { getCredit } = require('../../scripts/cloudfunction-shared-template/credit')
 const {
   main,
   formatActivity,
@@ -239,3 +239,4 @@ describe('Feature: activity-crud, Property 5: 活动列表按推荐排序，距�
     )
   })
 })
+

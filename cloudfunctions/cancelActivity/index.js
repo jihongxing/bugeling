@@ -1,10 +1,10 @@
-// cloudfunctions/cancelActivity/index.js
+﻿// cloudfunctions/cancelActivity/index.js
 const cloud = require('wx-server-sdk')
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 
-const { getDb, COLLECTIONS } = require('../_shared/db')
-const { successResponse, errorResponse } = require('../_shared/response')
-const { updateCredit } = require('../_shared/credit')
+const { getDb, COLLECTIONS } = require('./_shared/db')
+const { successResponse, errorResponse } = require('./_shared/response')
+const { updateCredit } = require('./_shared/credit')
 
 // 允许取消的活动状态
 const CANCELLABLE_STATUSES = ['pending', 'confirmed']
@@ -86,3 +86,4 @@ exports.main = async (event, context) => {
     return errorResponse(5001, err.message || '系统内部错误')
   }
 }
+

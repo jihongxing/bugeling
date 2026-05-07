@@ -1,9 +1,9 @@
-// cloudfunctions/checkImageSafety/index.js
+﻿// cloudfunctions/checkImageSafety/index.js
 const cloud = require('wx-server-sdk')
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 
-const { checkImage } = require('../_shared/safety')
-const { successResponse, errorResponse } = require('../_shared/response')
+const { checkImage } = require('./_shared/safety')
+const { successResponse, errorResponse } = require('./_shared/response')
 
 exports.main = async (event, context) => {
   const { fileID } = event
@@ -17,3 +17,4 @@ exports.main = async (event, context) => {
     return errorResponse(5001, err.message)
   }
 }
+

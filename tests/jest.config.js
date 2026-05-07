@@ -10,7 +10,7 @@ module.exports = {
     '<rootDir>/miniprogram/pages/activity/detail/helpers.js',
     '<rootDir>/miniprogram/pages/activity/manage/helpers.js',
     '<rootDir>/miniprogram/pages/verify/scan/scan.js',
-    '<rootDir>/cloudfunctions/_shared/**/*.js'
+    '<rootDir>/scripts/cloudfunction-shared-template/**/*.js'
   ],
   coverageDirectory: '<rootDir>/tests/coverage',
   coverageProvider: 'v8',

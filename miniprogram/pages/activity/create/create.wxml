@@ -1,6 +1,8 @@
 <!-- pages/activity/create/create.wxml - 创建活动 -->
 <view class="page create-page">
   <view class="hero-card">
+    <view class="hero-orb hero-orb-a"></view>
+    <view class="hero-orb hero-orb-b"></view>
     <text class="hero-kicker">顺手发个小局</text>
     <text class="hero-title">选一个大概方向，把时间地点补一下就行</text>
     <text class="hero-desc">不用写太多，先发出去，看看有没有人也正好想去。</text>
@@ -14,6 +16,7 @@
   </view>
 
   <view class="section-card">
+    <text class="section-mark">01</text>
     <text class="section-title">你想约个什么</text>
     <view class="template-grid">
       <view
@@ -30,6 +33,7 @@
   </view>
 
   <view class="section-card">
+    <text class="section-mark">02</text>
     <text class="section-title">大概什么时候、在哪</text>
     <text class="section-tip">首发先填 4 项就够：模板、地点、时间、人数。</text>
 
@@ -39,6 +43,9 @@
         <text class="{{location ? 'picker-value' : 'picker-placeholder'}}">{{location.name || '选个你们方便碰头的地方'}}</text>
         <text class="picker-arrow">›</text>
       </view>
+    </view>
+    <view class="location-help-row">
+      <text class="location-help-link" bindtap="useCurrentLocationAsMeetPoint">地图打不开？使用当前位置</text>
     </view>
 
     <view class="form-group">
@@ -78,6 +85,7 @@
   </view>
 
   <view class="section-card">
+    <text class="section-mark">03</text>
     <text class="section-title">花费大概怎么算</text>
     <text class="section-tip">这部分已经按模板预填好了，想改再改。</text>
 

@@ -1,8 +1,8 @@
-// cloudfunctions/executeSplit/index.js
+﻿// cloudfunctions/executeSplit/index.js
 const cloud = require('wx-server-sdk')
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 
-const { getDb, COLLECTIONS } = require('../_shared/db')
+const { getDb, COLLECTIONS } = require('./_shared/db')
 
 exports.main = async (event, context) => {
   const db = getDb()
@@ -61,3 +61,4 @@ exports.main = async (event, context) => {
     message: 'success'
   }
 }
+

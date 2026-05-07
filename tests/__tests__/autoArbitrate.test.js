@@ -6,7 +6,7 @@ const fc = require('fast-check')
 const PBT_NUM_RUNS = 100
 
 // --- Mock setup ---
-jest.mock('../../cloudfunctions/_shared/db', () => ({
+jest.mock('../../scripts/cloudfunction-shared-template/db', () => ({
   getDb: jest.fn(),
   COLLECTIONS: {
     ACTIVITIES: 'activities',
@@ -16,16 +16,16 @@ jest.mock('../../cloudfunctions/_shared/db', () => ({
     REPORTS: 'reports'
   }
 }))
-jest.mock('../../cloudfunctions/_shared/credit', () => ({
+jest.mock('../../scripts/cloudfunction-shared-template/credit', () => ({
   updateCredit: jest.fn().mockResolvedValue({})
 }))
-jest.mock('../../cloudfunctions/_shared/distance', () => ({
+jest.mock('../../scripts/cloudfunction-shared-template/distance', () => ({
   isPresent: jest.fn()
 }))
 
-const { getDb, COLLECTIONS } = require('../../cloudfunctions/_shared/db')
-const { updateCredit } = require('../../cloudfunctions/_shared/credit')
-const { isPresent } = require('../../cloudfunctions/_shared/distance')
+const { getDb, COLLECTIONS } = require('../../scripts/cloudfunction-shared-template/db')
+const { updateCredit } = require('../../scripts/cloudfunction-shared-template/credit')
+const { isPresent } = require('../../scripts/cloudfunction-shared-template/distance')
 const cloud = require('wx-server-sdk')
 const { main: autoArbitrateMain } = require('../../cloudfunctions/autoArbitrate/index')
 
@@ -346,3 +346,4 @@ describe('Feature: auto-arbitration, Property 10: 错误隔离', () => {
     )
   })
 })
+

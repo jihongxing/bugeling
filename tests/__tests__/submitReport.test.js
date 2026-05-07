@@ -27,7 +27,7 @@ jest.mock('wx-server-sdk', () => ({
   })
 }))
 
-jest.mock('../../cloudfunctions/_shared/db', () => ({
+jest.mock('../../scripts/cloudfunction-shared-template/db', () => ({
   getDb: () => require('wx-server-sdk').database(),
   COLLECTIONS: {
     PARTICIPATIONS: 'participations',
@@ -35,17 +35,17 @@ jest.mock('../../cloudfunctions/_shared/db', () => ({
   }
 }))
 
-jest.mock('../../cloudfunctions/_shared/safety', () => ({
+jest.mock('../../scripts/cloudfunction-shared-template/safety', () => ({
   checkImage: (...args) => mockCheckImage(...args)
 }))
 
-jest.mock('../../cloudfunctions/_shared/response', () => ({
+jest.mock('../../scripts/cloudfunction-shared-template/response', () => ({
   successResponse: (data) => ({ code: 0, message: 'success', data }),
   errorResponse: (code, message) => ({ code, message, data: null })
 }))
 
-jest.mock('../../cloudfunctions/_shared/validator', () => ({
-  validateEnum: jest.requireActual('../../cloudfunctions/_shared/validator').validateEnum
+jest.mock('../../scripts/cloudfunction-shared-template/validator', () => ({
+  validateEnum: jest.requireActual('../../scripts/cloudfunction-shared-template/validator').validateEnum
 }))
 
 const { main } = require('../../cloudfunctions/submitReport/index')
@@ -249,3 +249,4 @@ describe('submitReport 云函数', () => {
     })
   })
 })
+

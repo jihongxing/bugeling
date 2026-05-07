@@ -3,10 +3,55 @@ var api = require('../../utils/api')
 var location = require('../../utils/location')
 var activityFeedAdapter = require('../../components/activity-card/activity-feed-adapter')
 var templateUtil = require('../../utils/activity-templates')
+
+var ACTIVITY_LIST_TIMEOUT_MS = 8000
+var REFRESH_THROTTLE_MS = 2000
 var DEFAULT_FALLBACK_LOCATION = {
   latitude: 31.2304,
   longitude: 121.4737,
   name: '未定位（先看默认推荐）'
+}
+
+function hasValidCoordinates(latitude, longitude) {
+  return typeof latitude === 'number' &&
+    typeof longitude === 'number' &&
+    isFinite(latitude) &&
+    isFinite(longitude) &&
+    Math.abs(latitude) <= 90 &&
+    Math.abs(longitude) <= 180 &&
+    !(latitude === 0 && longitude === 0)
+}
+
+function withTimeout(promise, timeoutMs) {
+  return new Promise(function(resolve, reject) {
+    var settled = false
+    var timer = setTimeout(function() {
+      if (settled) return
+      settled = true
+      reject({
+        code: 'REQUEST_TIMEOUT',
+        message: '请求超时，请稍后重试'
+      })
+    }, timeoutMs)
+
+    promise.then(function(result) {
+      if (settled) return
+      settled = true
+      clearTimeout(timer)
+      resolve(result)
+    }).catch(function(err) {
+      if (settled) return
+      settled = true
+      clearTimeout(timer)
+      reject(err)
+    })
+  })
+}
+
+function isTimeoutError(err) {
+  var code = err && err.code ? String(err.code).toLowerCase() : ''
+  var message = err && err.message ? String(err.message).toLowerCase() : ''
+  return code.indexOf('timeout') !== -1 || message.indexOf('timeout') !== -1 || message.indexOf('超时') !== -1
 }
 
 function buildHeroSubtitle(hasActivities) {
@@ -94,7 +139,8 @@ Page({
     hasMore: true,
     loading: false,
     isEmpty: false,
-    showMoreTemplates: false
+    showMoreTemplates: false,
+    lastRefreshAt: 0
   },
 
   onLoad: function() {
@@ -111,14 +157,11 @@ Page({
     this.setData({
       page: 1,
       hasMore: true,
-      rawActivityList: [],
-      activityList: [],
-      feedSummary: { total: 0, lowBudgetCount: 0, almostReadyCount: 0, readyCount: 0 },
       feedSubtitle: '正在刷新附近组局信息',
-      heroSubtitle: buildHeroSubtitle(false),
-      feedTitle: '附近暂时还没有人发，你可以做第一个'
+      heroSubtitle: buildHeroSubtitle(this.data.activityList.length > 0),
+      feedTitle: this.data.activityList.length > 0 ? '附近已经有人在发' : '附近暂时还没有人发，你可以做第一个'
     })
-    this.initLocation()
+    this.refreshLocation()
   },
 
   onReachBottom: function() {
@@ -148,30 +191,67 @@ Page({
   },
 
   refreshLocation: function() {
+    var now = Date.now()
+    if (now - this.data.lastRefreshAt < REFRESH_THROTTLE_MS) {
+      wx.showToast({ title: '刷新太频繁，稍等一下', icon: 'none' })
+      return
+    }
+
     this.setData({
       page: 1,
       hasMore: true,
-      rawActivityList: [],
-      activityList: [],
-      feedSummary: { total: 0, lowBudgetCount: 0, almostReadyCount: 0, readyCount: 0 },
+      lastRefreshAt: now,
       feedSubtitle: '正在刷新附近组局信息',
-      heroSubtitle: buildHeroSubtitle(false),
-      feedTitle: '附近暂时还没有人发，你可以做第一个'
+      heroSubtitle: buildHeroSubtitle(this.data.activityList.length > 0),
+      feedTitle: this.data.activityList.length > 0 ? '附近已经有人在发' : '附近暂时还没有人发，你可以做第一个'
     })
+
+    if (hasValidCoordinates(this.data.latitude, this.data.longitude)) {
+      this.loadActivities({ preserveOnFailure: true, silentOnTimeout: true })
+      this.refreshDeviceLocationSilently()
+      return
+    }
+
     this.initLocation()
   },
 
-  loadActivities: function() {
+  refreshDeviceLocationSilently: function() {
     var self = this
+    location.getCurrentLocation({ useCache: false }).then(function(res) {
+      var latitude = Number(res.latitude)
+      var longitude = Number(res.longitude)
+      if (!hasValidCoordinates(latitude, longitude)) return
+
+      var changed = Math.abs(latitude - self.data.latitude) > 0.0003 ||
+        Math.abs(longitude - self.data.longitude) > 0.0003
+
+      self.setData({
+        latitude: latitude,
+        longitude: longitude,
+        locationName: res.name || self.data.locationName || '当前位置'
+      })
+
+      if (changed && !self.data.loading) {
+        self.setData({ page: 1, hasMore: true })
+        self.loadActivities({ preserveOnFailure: true, silentOnTimeout: true })
+      }
+    }).catch(function() {})
+  },
+
+  loadActivities: function(options) {
+    var self = this
+    options = options || {}
+    var preserveOnFailure = options.preserveOnFailure !== false
+    var silentOnTimeout = options.silentOnTimeout === true
     if (self.data.loading) return
     self.setData({ loading: true })
 
-    api.callFunction('getActivityList', {
+    withTimeout(api.callFunction('getActivityList', {
       latitude: self.data.latitude,
       longitude: self.data.longitude,
       page: self.data.page,
       pageSize: 20
-    }).then(function(result) {
+    }), ACTIVITY_LIST_TIMEOUT_MS).then(function(result) {
       if (result.code === 0 && result.data) {
         var incomingList = result.data.list || []
         var rawList = self.data.page === 1
@@ -192,6 +272,7 @@ Page({
           isEmpty: !hasActivities,
           loading: false
         })
+        self._lastLoadErrorAt = 0
       } else {
         self.setData({
           loading: false,
@@ -206,19 +287,30 @@ Page({
         wx.showToast({ title: '加载失败，请重试', icon: 'none' })
       }
       wx.stopPullDownRefresh()
-    }).catch(function() {
+    }).catch(function(err) {
+      var isTimeout = isTimeoutError(err)
+      var keepExistingList = preserveOnFailure && self.data.activityList.length > 0
+
       self.setData({
         loading: false,
-        hasMore: false,
+        hasMore: keepExistingList ? self.data.hasMore : false,
         isEmpty: self.data.activityList.length === 0,
         heroSubtitle: buildHeroSubtitle(self.data.activityList.length > 0),
         feedTitle: self.data.activityList.length > 0
           ? '附近已经有人在发'
           : '附近暂时还没有人发，你可以做第一个',
-        feedSubtitle: buildFeedSubtitle(self.data.feedSummary, false)
+        feedSubtitle: keepExistingList
+          ? '网络有点慢，先展示上次结果'
+          : (isTimeout ? '网络有点慢，刷新一下再试' : buildFeedSubtitle(self.data.feedSummary, false))
       })
       wx.stopPullDownRefresh()
-      wx.showToast({ title: '加载失败，请重试', icon: 'none' })
+
+      if (isTimeout && silentOnTimeout) return
+
+      wx.showToast({
+        title: isTimeout ? '刷新超时，请重试' : '加载失败，请重试',
+        icon: 'none'
+      })
     })
   },
 

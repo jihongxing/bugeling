@@ -36,7 +36,24 @@ function buildSafetyTags(formData) {
   return tags
 }
 
+function normalizeLocationPayload(location, meetingPointText) {
+  var source = location && typeof location === 'object' ? location : {}
+  var rawName = typeof source.name === 'string' ? source.name.trim() : ''
+  var rawAddress = typeof source.address === 'string' ? source.address.trim() : ''
+  var fallbackName = typeof meetingPointText === 'string' ? meetingPointText.trim() : ''
+  var finalName = rawName || fallbackName || rawAddress || '线下碰头点'
+  var finalAddress = rawAddress || finalName
+
+  return {
+    name: finalName,
+    address: finalAddress,
+    latitude: Number(source.latitude),
+    longitude: Number(source.longitude)
+  }
+}
+
 function buildCreateRequest(formData) {
+  var normalizedLocation = normalizeLocationPayload(formData.location, formData.meetingPointText)
   return {
     sourceReportId: formData.sourceReportId || '',
     templateType: formData.templateType,
@@ -48,12 +65,7 @@ function buildCreateRequest(formData) {
     depositTier: formData.bondAmount,
     minParticipants: formData.minParticipants,
     maxParticipants: formData.maxParticipants,
-    location: {
-      name: formData.location.name,
-      address: formData.location.address,
-      latitude: formData.location.latitude,
-      longitude: formData.location.longitude
-    },
+    location: normalizedLocation,
     meetTime: formData.meetTime,
     signupDeadline: buildSignupDeadline(formData.meetTime),
     identityHint: formData.identityHint.trim(),

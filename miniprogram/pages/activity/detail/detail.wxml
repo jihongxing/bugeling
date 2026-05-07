@@ -62,6 +62,29 @@
       <text class="contract-title">先看一眼</text>
       <text class="contract-text">{{detailView.contractText}}</text>
     </view>
+
+    <view class="pay-breakdown-card" wx:if="{{detailView.paymentBreakdown}}">
+      <text class="pay-breakdown-title">加入费用拆分</text>
+      <view class="pay-breakdown-row">
+        <view class="pay-breakdown-main">
+          <text class="pay-breakdown-label">平台服务费</text>
+          <text class="pay-breakdown-hint">{{detailView.paymentBreakdown.serviceFeeHint}}</text>
+        </view>
+        <text class="pay-breakdown-value">{{detailView.paymentBreakdown.serviceFeeText}}</text>
+      </view>
+      <view class="pay-breakdown-row">
+        <view class="pay-breakdown-main">
+          <text class="pay-breakdown-label">活动押金</text>
+          <text class="pay-breakdown-hint">{{detailView.paymentBreakdown.bondAmountHint}}</text>
+        </view>
+        <text class="pay-breakdown-value">{{detailView.paymentBreakdown.bondAmountText}}</text>
+      </view>
+      <view class="pay-breakdown-total">
+        <text class="pay-breakdown-total-label">合计先付</text>
+        <text class="pay-breakdown-total-value">{{detailView.paymentBreakdown.totalText}}</text>
+      </view>
+      <text class="pay-breakdown-tip">押金不是平台收入，会根据活动履约结果进行结算。</text>
+    </view>
   </view>
 
   <view class="card more-info-card" wx:if="{{detailView.descriptionParagraphs.length || detailView.safety.tags.length || detailView.credit.items.length || detailView.participationNote}}">
@@ -148,4 +171,13 @@
 
 <view class="page loading-state" wx:if="{{loading}}">
   <text class="loading-text">加载中...</text>
+</view>
+
+<view class="page detail-empty-state" wx:if="{{!loading && (!activity || !detailView)}}">
+  <view class="card empty-card">
+    <text class="empty-title">活动详情暂时没加载出来</text>
+    <text class="empty-desc">{{loadErrorText || '请重试一下，或稍后再回来看看'}}</text>
+    <button class="btn-primary empty-btn" bindtap="retryLoadDetail">重新加载</button>
+    <button class="btn-secondary empty-btn" bindtap="goReportDetail" wx:if="{{activityId}}">查看活动战报页</button>
+  </view>
 </view>

@@ -1,12 +1,48 @@
-const cloud = require('wx-server-sdk')
+﻿const cloud = require('wx-server-sdk')
 
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 
-const { getDb, COLLECTIONS } = require('../_shared/db')
-const { getCredit } = require('../_shared/credit')
-const { successResponse, errorResponse } = require('../_shared/response')
-const activityStatus = require('../_shared/activityStatus')
-const { ensureActivityLifecycle } = require('../_shared/activityLifecycle')
+function requireShared(moduleName) {
+  try {
+    return require('./_shared/' + moduleName)
+  } catch (outerErr) {
+    try {
+      return require('./_shared/' + moduleName)
+    } catch (innerErr) {
+      throw outerErr
+    }
+  }
+}
+
+function loadActivityLifecycle() {
+  try {
+    const lifecycle = require('./_shared/activityLifecycle')
+    if (lifecycle && typeof lifecycle.ensureActivityLifecycle === 'function') {
+      return lifecycle.ensureActivityLifecycle
+    }
+  } catch (outerErr) {
+    try {
+      const lifecycle = require('./_shared/activityLifecycle')
+      if (lifecycle && typeof lifecycle.ensureActivityLifecycle === 'function') {
+        return lifecycle.ensureActivityLifecycle
+      }
+    } catch (innerErr) {}
+  }
+
+  return async function fallbackEnsureActivityLifecycle(options) {
+    return {
+      changed: false,
+      activity: options && options.activity ? options.activity : null,
+      participations: []
+    }
+  }
+}
+
+const { getDb, COLLECTIONS } = requireShared('db')
+const { getCredit } = requireShared('credit')
+const { successResponse, errorResponse } = requireShared('response')
+const activityStatus = requireShared('activityStatus')
+const ensureActivityLifecycle = loadActivityLifecycle()
 
 function shouldUnlockWechatId(participation, meetTime) {
   if (!participation) return false
@@ -63,6 +99,11 @@ function buildCreditSummary(credit, activity) {
   }
 }
 
+function isCollectionNotExistError(err) {
+  const message = err && (err.message || err.errMsg) ? String(err.message || err.errMsg) : ''
+  return message.indexOf('DATABASE_COLLECTION_NOT_EXIST') !== -1 || message.indexOf('-502005') !== -1
+}
+
 exports.main = async (event) => {
   try {
     const openId = cloud.getWXContext().OPENID
@@ -108,31 +149,47 @@ exports.main = async (event) => {
     }
 
     let participation = null
-    const { data: participationList } = await db.collection(COLLECTIONS.PARTICIPATIONS)
-      .where({ activityId, participantId: openId })
-      .get()
-
-    if (participationList && participationList.length > 0) {
-      participation = participationList[0]
+    let participationList = []
+    try {
+      const participationRes = await db.collection(COLLECTIONS.PARTICIPATIONS)
+        .where({ activityId, participantId: openId })
+        .get()
+      participationList = participationRes && Array.isArray(participationRes.data) ? participationRes.data : []
+    } catch (err) {
+      if (isCollectionNotExistError(err)) {
+        participationList = []
+      } else {
+        throw err
+      }
     }
+
+    if (participationList.length > 0) participation = participationList[0]
 
     let participations = []
     if (openId === activity.initiatorId) {
-      const participationResult = await db.collection(COLLECTIONS.PARTICIPATIONS)
-        .where({ activityId })
-        .get()
+      try {
+        const participationResult = await db.collection(COLLECTIONS.PARTICIPATIONS)
+          .where({ activityId })
+          .get()
 
-      participations = (participationResult.data || []).map(item => ({
-        _id: item._id,
-        participantId: item.participantId,
-        status: item.status,
-        createdAt: item.createdAt || null,
-        paidAt: item.paidAt || null,
-        refundStatus: item.refundStatus || 'none',
-        serviceFeeAmount: item.serviceFeeAmount || 0,
-        bondAmount: item.bondAmount || item.depositAmount || 0,
-        checkinAt: item.checkinAt || item.arrivedAt || null
-      }))
+        participations = (participationResult.data || []).map(item => ({
+          _id: item._id,
+          participantId: item.participantId,
+          status: item.status,
+          createdAt: item.createdAt || null,
+          paidAt: item.paidAt || null,
+          refundStatus: item.refundStatus || 'none',
+          serviceFeeAmount: item.serviceFeeAmount || 0,
+          bondAmount: item.bondAmount || item.depositAmount || 0,
+          checkinAt: item.checkinAt || item.arrivedAt || null
+        }))
+      } catch (err) {
+        if (isCollectionNotExistError(err)) {
+          participations = []
+        } else {
+          throw err
+        }
+      }
     }
 
     const unlockWechat = shouldUnlockWechatId(participation, activity.meetTime)
@@ -209,3 +266,4 @@ exports.main = async (event) => {
 }
 
 exports.shouldUnlockWechatId = shouldUnlockWechatId
+

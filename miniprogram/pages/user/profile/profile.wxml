@@ -1,12 +1,17 @@
 <!-- pages/user/profile/profile.wxml - 个人中心 -->
-<view class="page">
+<view class="page profile-page">
   <view class="hero-card" wx:if="{{creditInfo}}">
+    <text class="hero-mark">MY BOARD</text>
     <text class="hero-kicker">最近的小局</text>
     <text class="hero-title">{{summaryTitle}}</text>
     <text class="hero-desc">{{summaryText}}</text>
   </view>
 
   <view class="credit-card" wx:if="{{creditInfo}}">
+    <view class="card-head">
+      <text class="card-title">信用面板</text>
+      <text class="card-tip">每次守约都会慢慢累积</text>
+    </view>
     <view class="score-section">
       <text class="score-label">这阵子整体感觉</text>
       <text class="score-value">{{creditInfo.score}}</text>
@@ -28,18 +33,31 @@
     <text>加载中...</text>
   </view>
 
-  <view class="nav-list">
+  <view class="nav-list" wx:if="{{!loading}}">
+    <view class="list-head">
+      <text class="list-title">常用入口</text>
+      <text class="list-subtitle">复盘、再约、继续玩</text>
+    </view>
     <view class="nav-item" bindtap="goToHistory" data-role="initiator">
-      <text>我开过的局</text>
-      <text class="nav-arrow">></text>
+      <view class="nav-copy">
+        <text class="nav-title">我开过的局</text>
+        <text class="nav-desc">看看自己发起过哪些局</text>
+      </view>
+      <text class="nav-arrow">›</text>
     </view>
     <view class="nav-item" bindtap="goToHistory" data-role="participant">
-      <text>我去过的局</text>
-      <text class="nav-arrow">></text>
+      <view class="nav-copy">
+        <text class="nav-title">我去过的局</text>
+        <text class="nav-desc">回看参加记录和节奏</text>
+      </view>
+      <text class="nav-arrow">›</text>
     </view>
     <view class="nav-item" bindtap="goToTemplateSelect">
-      <text>再发一个小局</text>
-      <text class="nav-arrow">></text>
+      <view class="nav-copy">
+        <text class="nav-title">再发一个小局</text>
+        <text class="nav-desc">把当前状态继续串起来</text>
+      </view>
+      <text class="nav-arrow">›</text>
     </view>
   </view>
 </view>

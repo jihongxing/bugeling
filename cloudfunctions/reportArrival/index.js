@@ -1,14 +1,14 @@
-// cloudfunctions/reportArrival/index.js
+﻿// cloudfunctions/reportArrival/index.js
 const cloud = require('wx-server-sdk')
 
 cloud.init({
   env: cloud.DYNAMIC_CURRENT_ENV
 })
 
-const { getDb, COLLECTIONS } = require('../_shared/db')
-const { successResponse, errorResponse } = require('../_shared/response')
-const activityStatus = require('../_shared/activityStatus')
-const { ensureActivityLifecycle } = require('../_shared/activityLifecycle')
+const { getDb, COLLECTIONS } = require('./_shared/db')
+const { successResponse, errorResponse } = require('./_shared/response')
+const activityStatus = require('./_shared/activityStatus')
+const { ensureActivityLifecycle } = require('./_shared/activityLifecycle')
 
 /**
  * Haversine 公式计算两点间球面距离
@@ -177,3 +177,4 @@ exports.main = async (event, context) => {
 
 exports.calculateDistance = calculateDistance
 exports.getActivityCoordinates = getActivityCoordinates
+

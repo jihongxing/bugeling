@@ -1,8 +1,8 @@
-const cloud = require('wx-server-sdk')
+﻿const cloud = require('wx-server-sdk')
 
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 
-const { successResponse, errorResponse } = require('../_shared/response')
+const { successResponse, errorResponse } = require('./_shared/response')
 const {
   BUDGET_TYPES,
   GENDER_LIMITS,
@@ -13,7 +13,7 @@ const {
   getDefaultRules,
   buildDefaultDescription,
   computeRiskLevel
-} = require('../_shared/templates')
+} = require('./_shared/templates')
 const {
   BOND_AMOUNTS,
   SERVICE_FEES,
@@ -21,7 +21,7 @@ const {
   normalizeBudgetRange,
   getBudgetText,
   getFeeText
-} = require('../_shared/pricing')
+} = require('./_shared/pricing')
 
 function getTimeSlotLabel(meetTime) {
   const hour = new Date(meetTime).getHours()
@@ -138,3 +138,4 @@ exports.main = async function(event) {
 
 exports.validateParams = validateParams
 exports.buildDefaultTitle = buildDefaultTitle
+

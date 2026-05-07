@@ -3,7 +3,7 @@
 
 jest.mock('wx-server-sdk')
 
-jest.mock('../../cloudfunctions/_shared/db', () => {
+jest.mock('../../scripts/cloudfunction-shared-template/db', () => {
   var _mockDb = null
   return {
     getDb: () => _mockDb,
@@ -18,9 +18,9 @@ jest.mock('../../cloudfunctions/_shared/db', () => {
   }
 })
 
-jest.mock('../../cloudfunctions/_shared/pay', () => {
+jest.mock('../../scripts/cloudfunction-shared-template/pay', () => {
   // Use the REAL calculateSplitAmounts implementation
-  var realPay = jest.requireActual('../../cloudfunctions/_shared/pay')
+  var realPay = jest.requireActual('../../scripts/cloudfunction-shared-template/pay')
   return {
     splitBill: jest.fn(),
     calculateSplitAmounts: realPay.calculateSplitAmounts,
@@ -28,14 +28,14 @@ jest.mock('../../cloudfunctions/_shared/pay', () => {
   }
 })
 
-jest.mock('../../cloudfunctions/_shared/response', () => ({
+jest.mock('../../scripts/cloudfunction-shared-template/response', () => ({
   successResponse: (data) => ({ code: 0, message: 'success', data }),
   errorResponse: (code, message) => ({ code, message, data: null })
 }))
 
 var fc = require('fast-check')
-var pay = require('../../cloudfunctions/_shared/pay')
-var db = require('../../cloudfunctions/_shared/db')
+var pay = require('../../scripts/cloudfunction-shared-template/pay')
+var db = require('../../scripts/cloudfunction-shared-template/db')
 var { main } = require('../../cloudfunctions/splitDeposit/index')
 
 var PBT_NUM_RUNS = 100
@@ -336,3 +336,4 @@ describe('splitDeposit unit tests', function() {
     expect(partUpdate.data.status).toBe('settled')
   })
 })
+

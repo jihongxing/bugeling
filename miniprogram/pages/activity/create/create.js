@@ -77,6 +77,78 @@ function safeReportEvent(eventName, data) {
   } catch (err) {}
 }
 
+function getReadableSubmitError(err, fallback) {
+  var fallbackText = fallback || '发布失败，请重试'
+  var message = err && err.message ? String(err.message).trim() : ''
+  var rawErrMsg = err && err.rawErrMsg ? String(err.rawErrMsg).trim() : ''
+  var finalText = ''
+
+  if (message && message !== 'Error') {
+    finalText = message
+  } else if (rawErrMsg) {
+    finalText = rawErrMsg
+  } else {
+    finalText = fallbackText
+  }
+
+  return finalText.length > 30 ? (finalText.slice(0, 30) + '…') : finalText
+}
+
+function normalizeMeetLocation(rawLocation, meetingPointText) {
+  var source = rawLocation && typeof rawLocation === 'object' ? rawLocation : {}
+  var rawName = typeof source.name === 'string' ? source.name.trim() : ''
+  var rawAddress = typeof source.address === 'string' ? source.address.trim() : ''
+  var fallbackName = typeof meetingPointText === 'string' ? meetingPointText.trim() : ''
+  var finalName = rawName || fallbackName || rawAddress || '线下碰头点'
+  var finalAddress = rawAddress || finalName
+
+  return {
+    name: finalName,
+    address: finalAddress,
+    latitude: Number(source.latitude),
+    longitude: Number(source.longitude)
+  }
+}
+
+function isCancelError(err) {
+  var errMsg = err && err.errMsg ? String(err.errMsg).toLowerCase() : ''
+  return errMsg.indexOf('cancel') !== -1
+}
+
+function isPermissionDeniedError(errMsg) {
+  return errMsg.indexOf('auth deny') !== -1 ||
+    errMsg.indexOf('auth denied') !== -1 ||
+    errMsg.indexOf('permission denied') !== -1 ||
+    errMsg.indexOf('scope.userlocation') !== -1
+}
+
+function isMapServiceConfigError(errMsg) {
+  return errMsg.indexOf('key') !== -1 ||
+    errMsg.indexOf('map') !== -1 ||
+    errMsg.indexOf('service') !== -1
+}
+
+function buildMapConfigHint() {
+  var app = null
+  var globalData = null
+  var initError = ''
+  try {
+    app = getApp()
+    globalData = app && app.globalData ? app.globalData : {}
+    initError = globalData.tencentMapInitError || ''
+  } catch (err) {
+    initError = ''
+  }
+
+  if (initError === 'MISSING_KEY') {
+    return '本地未读取到腾讯地图 key，请检查 miniprogram/config/local.private.js。'
+  }
+  if (initError === 'MISSING_SDK_FILE') {
+    return '缺少腾讯地图 SDK 文件，请放置 libs/qqmap-wx-jssdk.min.js。'
+  }
+  return '地图选点未正常加载，请确认微信公众平台已配置腾讯位置服务 Key 后重试。'
+}
+
 Page({
   data: {
     templateOptions: TEMPLATE_OPTIONS,
@@ -262,23 +334,160 @@ Page({
   chooseLocation: function() {
     var self = this
     var currentTemplate = this.data.templateType
-    wx.chooseLocation({
+
+    this.ensureLocationPermission().then(function(granted) {
+      if (!granted) {
+        wx.showModal({
+          title: '定位权限未开启',
+          content: '请在小程序设置中开启位置信息权限，再选择地图碰头点。',
+          confirmText: '去设置',
+          success: function(modalRes) {
+            if (modalRes.confirm && typeof wx.openSetting === 'function') {
+              wx.openSetting({})
+            }
+          }
+        })
+        return
+      }
+
+      wx.chooseLocation({
+        success: function(res) {
+          var normalizedLocation = normalizeMeetLocation(res, self.data.meetingPointText)
+          var updates = {
+            location: normalizedLocation,
+            meetingPointText: self.data.meetingPointText || normalizedLocation.name
+          }
+
+          if (!self.data.titleTouched) {
+            updates.title = templateUtil.buildDefaultTitle(currentTemplate, normalizedLocation.name || '')
+          }
+
+          self.setData(updates)
+        },
+        fail: function(err) {
+          var errMsg = err && err.errMsg ? String(err.errMsg).toLowerCase() : ''
+          if (isCancelError(err)) return
+
+          if (isMapServiceConfigError(errMsg)) {
+            wx.showModal({
+              title: '地图服务异常',
+              content: buildMapConfigHint(),
+              showCancel: false
+            })
+          } else {
+            wx.showToast({
+              title: '地图暂时不可用，改用当前位置',
+              icon: 'none'
+            })
+          }
+
+          self.useCurrentLocationAsMeetPoint({
+            silent: true,
+            templateType: currentTemplate
+          })
+        }
+      })
+    }).catch(function() {
+      wx.showToast({
+        title: '定位权限检查失败，请稍后重试',
+        icon: 'none'
+      })
+    })
+  },
+
+  ensureLocationPermission: function() {
+    return new Promise(function(resolve) {
+      wx.getSetting({
+        success: function(res) {
+          var auth = res && res.authSetting ? res.authSetting : {}
+          if (auth['scope.userLocation'] === true) {
+            resolve(true)
+            return
+          }
+          if (auth['scope.userLocation'] === false) {
+            resolve(false)
+            return
+          }
+          wx.authorize({
+            scope: 'scope.userLocation',
+            success: function() {
+              resolve(true)
+            },
+            fail: function() {
+              resolve(false)
+            }
+          })
+        },
+        fail: function() {
+          resolve(false)
+        }
+      })
+    })
+  },
+
+  useCurrentLocationAsMeetPoint: function(options) {
+    var self = this
+    options = options || {}
+
+    wx.getLocation({
+      type: 'gcj02',
       success: function(res) {
+        var latitude = Number(res.latitude)
+        var longitude = Number(res.longitude)
+        if (isNaN(latitude) || isNaN(longitude)) {
+          wx.showToast({
+            title: '定位失败，请重试',
+            icon: 'none'
+          })
+          return
+        }
+        var locationName = self.data.meetingPointText || '线下碰头点（当前位置）'
         var updates = {
           location: {
-            name: res.name,
-            address: res.address,
-            latitude: res.latitude,
-            longitude: res.longitude
-          },
-          meetingPointText: self.data.meetingPointText || res.name
+            name: locationName,
+            address: '地图选点不可用，已使用当前位置',
+            latitude: latitude,
+            longitude: longitude
+          }
+        }
+
+        if (!self.data.meetingPointText) {
+          updates.meetingPointText = '当前位置碰头'
         }
 
         if (!self.data.titleTouched) {
-          updates.title = templateUtil.buildDefaultTitle(currentTemplate, res.name || '')
+          updates.title = templateUtil.buildDefaultTitle(options.templateType || self.data.templateType, locationName)
         }
 
         self.setData(updates)
+
+        if (!options.silent) {
+          wx.showToast({
+            title: '已使用当前位置',
+            icon: 'none'
+          })
+        }
+      },
+      fail: function(err) {
+        var errMsg = err && err.errMsg ? String(err.errMsg).toLowerCase() : ''
+        if (isPermissionDeniedError(errMsg)) {
+          wx.showModal({
+            title: '定位权限未开启',
+            content: '请在小程序设置里开启位置信息，开启后就能选择碰头地点。',
+            confirmText: '去设置',
+            success: function(modalRes) {
+              if (modalRes.confirm && typeof wx.openSetting === 'function') {
+                wx.openSetting({})
+              }
+            }
+          })
+          return
+        }
+
+        wx.showToast({
+          title: '定位失败，请填写接头方式后重试',
+          icon: 'none'
+        })
       }
     })
   },
@@ -382,13 +591,36 @@ Page({
           })
         } else if (result.code === 2001) {
           wx.showToast({ title: '内容包含违规信息，请修改', icon: 'none' })
+        } else if (result.code === 5002) {
+          wx.showModal({
+            title: '发布前需初始化数据库',
+            content: '当前云环境缺少 activities / credits 集合，请先在云开发控制台创建后重试。',
+            showCancel: false
+          })
         } else {
+          console.log('[createActivity] business fail', {
+            code: result && result.code,
+            message: result && result.message,
+            data: result && result.data
+          })
+          safeReportEvent('create_publish_failed', {
+            template_type: self.data.templateType || 'other',
+            error_code: String((result && result.code) || 'UNKNOWN')
+          })
           wx.showToast({ title: result.message || '发布失败，请重试', icon: 'none' })
         }
       })
-      .catch(function() {
+      .catch(function(err) {
         self.setData({ submitting: false })
-        wx.showToast({ title: '发布失败，请重试', icon: 'none' })
+        console.log('[createActivity] request fail', err)
+        safeReportEvent('create_publish_failed', {
+          template_type: self.data.templateType || 'other',
+          error_code: String((err && err.code) || 'REQUEST_FAIL')
+        })
+        wx.showToast({
+          title: getReadableSubmitError(err, '发布失败，请重试'),
+          icon: 'none'
+        })
       })
   },
 

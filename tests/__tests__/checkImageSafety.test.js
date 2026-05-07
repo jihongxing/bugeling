@@ -7,11 +7,11 @@ jest.mock('wx-server-sdk', () => ({
   DYNAMIC_CURRENT_ENV: 'test-env'
 }))
 
-jest.mock('../../cloudfunctions/_shared/safety', () => ({
+jest.mock('../../scripts/cloudfunction-shared-template/safety', () => ({
   checkImage: (...args) => mockCheckImage(...args)
 }))
 
-jest.mock('../../cloudfunctions/_shared/response', () => ({
+jest.mock('../../scripts/cloudfunction-shared-template/response', () => ({
   successResponse: (data) => ({ code: 0, message: 'success', data }),
   errorResponse: (code, message) => ({ code, message, data: null })
 }))
@@ -70,3 +70,4 @@ describe('checkImageSafety 云函数', () => {
     expect(result).toEqual({ code: 5001, message: 'unexpected error', data: null })
   })
 })
+

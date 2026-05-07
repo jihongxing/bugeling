@@ -29,7 +29,7 @@ jest.mock('wx-server-sdk', () => ({
   getWXContext: () => mockGetWXContext()
 }))
 
-jest.mock('../../cloudfunctions/_shared/db', () => ({
+jest.mock('../../scripts/cloudfunction-shared-template/db', () => ({
   getDb: () => ({
     collection: mockCollection,
     serverDate: mockServerDate
@@ -40,16 +40,16 @@ jest.mock('../../cloudfunctions/_shared/db', () => ({
   }
 }))
 
-jest.mock('../../cloudfunctions/_shared/safety', () => ({
+jest.mock('../../scripts/cloudfunction-shared-template/safety', () => ({
   checkImage: (...args) => mockCheckImage(...args)
 }))
 
-jest.mock('../../cloudfunctions/_shared/response', () => ({
+jest.mock('../../scripts/cloudfunction-shared-template/response', () => ({
   successResponse: (data) => ({ code: 0, message: 'success', data }),
   errorResponse: (code, message) => ({ code, message, data: null })
 }))
 
-jest.mock('../../cloudfunctions/_shared/validator', () => ({
+jest.mock('../../scripts/cloudfunction-shared-template/validator', () => ({
   validateEnum: (...args) => mockValidateEnum(...args)
 }))
 
@@ -576,3 +576,4 @@ describe('Feature: content-safety-report, Property 6: 举报记录创建完整�
     )
   })
 })
+

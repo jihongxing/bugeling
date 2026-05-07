@@ -1,10 +1,10 @@
-// cloudfunctions/checkConflict/index.js
+﻿// cloudfunctions/checkConflict/index.js
 const cloud = require('wx-server-sdk')
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 
-const { getDb, COLLECTIONS } = require('../_shared/db')
-const { successResponse, errorResponse } = require('../_shared/response')
-const { haversineDistance } = require('../_shared/distance')
+const { getDb, COLLECTIONS } = require('./_shared/db')
+const { successResponse, errorResponse } = require('./_shared/response')
+const { haversineDistance } = require('./_shared/distance')
 
 /**
  * 检测两个时间段是否重叠（纯函数）
@@ -117,3 +117,4 @@ exports.main = async (event, context) => {
 }
 
 module.exports = { hasTimeOverlap, getGapMinutes }
+

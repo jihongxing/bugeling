@@ -355,6 +355,7 @@ function buildDetailView(activity, myParticipation) {
   var summaryText = normalizeText(safeActivity.summary) || normalizeText(safeActivity.description) || '时间地点差不多定了，觉得合适就顺手来。'
   var depositText = formatUtil.formatDeposit(toNumber(safeActivity.depositTier || safeActivity.bondAmount || 0) || 0)
   var heroBadges = []
+  var paymentBreakdown = buildPaymentBreakdown(safeActivity, fee, myParticipation)
 
   addUnique(heroBadges, fee.budgetTypeText)
   addUnique(heroBadges, progress.stateText)
@@ -370,6 +371,7 @@ function buildDetailView(activity, myParticipation) {
     budgetRangeText: formatBudgetRange(safeActivity),
     depositText: depositText,
     totalFeeText: fee.totalText,
+    paymentBreakdown: paymentBreakdown,
     feeRows: fee.rows,
     progress: progress,
     meeting: meeting,
@@ -379,6 +381,24 @@ function buildDetailView(activity, myParticipation) {
     participationNote: myParticipation && ['paid', 'approved', 'confirmed', 'checked_in', 'completed'].indexOf(myParticipation.status) !== -1
       ? '你已经占上位置了，临近见面时间会解锁对方的微信'
       : ''
+  }
+}
+
+function buildPaymentBreakdown(activity, fee, myParticipation) {
+  var serviceAmount = toNumber(activity.serviceFee || 0) || 0
+  var bondAmount = toNumber(activity.bondAmount || activity.depositTier || 0) || 0
+  var participationBond = myParticipation ? toNumber(myParticipation.bondAmount || myParticipation.depositAmount || 0) : null
+  var participationService = myParticipation ? toNumber(myParticipation.serviceFeeAmount || 0) : null
+  var finalService = participationService !== null ? participationService : serviceAmount
+  var finalBond = participationBond !== null ? participationBond : bondAmount
+  var total = finalService + finalBond
+
+  return {
+    serviceFeeText: formatYuanFromCent(finalService),
+    bondAmountText: formatYuanFromCent(finalBond),
+    totalText: total > 0 ? formatYuanFromCent(total) : '¥0',
+    serviceFeeHint: '平台服务费，用于支付与履约保障能力',
+    bondAmountHint: '活动押金（履约约束金），按规则到场通常可退，违约可能扣除'
   }
 }
 
