@@ -7,6 +7,7 @@ cloud.init({
 
 const { getDb, COLLECTIONS } = require('../_shared/db')
 const { successResponse, errorResponse } = require('../_shared/response')
+const activityStatus = require('../_shared/activityStatus')
 
 /**
  * Haversine 公式计算两点间球面距离
@@ -25,6 +26,42 @@ function calculateDistance(lat1, lon1, lat2, lon2) {
     Math.sin(dLon / 2) ** 2
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
   return R * c
+}
+
+function parseTime(value) {
+  const time = new Date(value).getTime()
+  return isNaN(time) ? null : time
+}
+
+function validateCheckinWindow(activity, nowMs) {
+  const startMs = parseTime(activity.startCheckinAt)
+  const endMs = parseTime(activity.endCheckinAt)
+  const allowLateMinutes = Number.isFinite(Number(activity.allowLateMinutes))
+    ? Number(activity.allowLateMinutes)
+    : 0
+  const finalEndMs = endMs === null ? null : endMs + allowLateMinutes * 60 * 1000
+
+  if (startMs !== null && nowMs < startMs) {
+    return { ok: false, code: 1004, message: '签到尚未开始' }
+  }
+
+  if (finalEndMs !== null && nowMs > finalEndMs) {
+    return { ok: false, code: 1004, message: '签到已截止' }
+  }
+
+  return { ok: true }
+}
+
+function getActivityCoordinates(activity) {
+  const activityLocation = activity && activity.location ? activity.location : {}
+  const coordinates = Array.isArray(activityLocation.coordinates) ? activityLocation.coordinates : []
+  const longitude = coordinates[0] !== undefined ? Number(coordinates[0]) : Number(activityLocation.longitude)
+  const latitude = coordinates[1] !== undefined ? Number(coordinates[1]) : Number(activityLocation.latitude)
+
+  return {
+    longitude: Number.isFinite(longitude) ? longitude : 0,
+    latitude: Number.isFinite(latitude) ? latitude : 0
+  }
 }
 
 exports.main = async (event, context) => {
@@ -51,6 +88,11 @@ exports.main = async (event, context) => {
       return errorResponse(1003, '活动不存在')
     }
 
+    const windowValidation = validateCheckinWindow(activity, Date.now())
+    if (!windowValidation.ok) {
+      return errorResponse(windowValidation.code, windowValidation.message)
+    }
+
     // 3. 身份校验
     let isInitiator = false
     let participation = null
@@ -60,14 +102,19 @@ exports.main = async (event, context) => {
     } else {
       const partRes = await db.collection(COLLECTIONS.PARTICIPATIONS).where({
         participantId: openId,
-        activityId,
-        status: 'approved'
+        activityId
       }).get()
 
       if (partRes.data && partRes.data.length > 0) {
-        participation = partRes.data[0]
+        participation = partRes.data.find(item => activityStatus.isCheckinEligibleParticipationStatus(item.status)) || null
+      }
+
+      if (participation && ['checked_in', 'completed', 'verified'].indexOf(participation.status) !== -1) {
+        participation = Object.assign({}, participation, { alreadyCheckedIn: true })
       } else {
-        return errorResponse(1002, '权限不足：非发起人或已通过的参与者')
+        if (!participation) {
+          return errorResponse(1002, '权限不足：非发起人或已报名参与者')
+        }
       }
     }
 
@@ -75,25 +122,40 @@ exports.main = async (event, context) => {
     if (isInitiator) {
       await db.collection(COLLECTIONS.ACTIVITIES).doc(activityId).update({
         data: {
+          status: activity.status === 'finished' ? activity.status : 'in_progress',
           arrivedAt: db.serverDate(),
           arrivedLocation: { latitude, longitude }
         }
       })
     } else {
-      await db.collection(COLLECTIONS.PARTICIPATIONS).doc(participation._id).update({
+      if (!participation.alreadyCheckedIn) {
+        await db.collection(COLLECTIONS.PARTICIPATIONS).doc(participation._id).update({
+          data: {
+            status: 'checked_in',
+            arrivedAt: db.serverDate(),
+            arrivedLocation: { latitude, longitude },
+            checkinAt: db.serverDate(),
+            checkinLocation: { latitude, longitude },
+            checkinMethod: 'location'
+          }
+        })
+      }
+
+      await db.collection(COLLECTIONS.ACTIVITIES).doc(activityId).update({
         data: {
-          arrivedAt: db.serverDate(),
-          arrivedLocation: { latitude, longitude }
+          status: activity.status === 'finished' ? activity.status : 'in_progress'
         }
       })
     }
 
     // 5. 计算距离
-    const activityLocation = activity.location || {}
-    const coordinates = activityLocation.coordinates || []
-    const activityLon = coordinates[0] || 0
-    const activityLat = coordinates[1] || 0
-    const distance = calculateDistance(latitude, longitude, activityLat, activityLon)
+    const activityCoordinates = getActivityCoordinates(activity)
+    const distance = calculateDistance(
+      latitude,
+      longitude,
+      activityCoordinates.latitude,
+      activityCoordinates.longitude
+    )
 
     // 6. 返回结果
     return successResponse({ success: true, distance })
@@ -103,3 +165,4 @@ exports.main = async (event, context) => {
 }
 
 exports.calculateDistance = calculateDistance
+exports.getActivityCoordinates = getActivityCoordinates

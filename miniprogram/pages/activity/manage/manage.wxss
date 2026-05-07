@@ -16,6 +16,16 @@
   color: var(--color-text-secondary);
 }
 
+.manage-actions {
+  display: flex;
+  gap: 16rpx;
+  margin-top: 20rpx;
+}
+
+.manage-actions .btn-secondary {
+  flex: 1;
+}
+
 .section-title {
   font-size: var(--font-size-md);
   font-weight: 500;

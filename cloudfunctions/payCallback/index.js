@@ -1,19 +1,26 @@
-// cloudfunctions/payCallback/index.js
 var cloud = require('wx-server-sdk')
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 
 var db = require('../_shared/db')
 var pay = require('../_shared/pay')
 var config = require('../_shared/config')
+var activityStatus = require('../_shared/activityStatus')
+var activityFlow = require('../_shared/activityFlow')
 
 var SUCCESS_RESPONSE = { errcode: 0, errmsg: 'SUCCESS' }
 var FAIL_RESPONSE = { errcode: -1, errmsg: 'FAIL' }
 
-exports.main = async function(event, context) {
+function getServerDate(database) {
+  if (database && typeof database.serverDate === 'function') {
+    return database.serverDate()
+  }
+  return new Date()
+}
+
+exports.main = async function(event) {
   var database = db.getDb()
 
   try {
-    // 1. 验证签名
     var apiKey = config.getEnv(config.ENV_KEYS.API_KEY)
     if (!pay.verifyCallbackSign(event, apiKey)) {
       console.error('payCallback: 签名验证失败')
@@ -24,7 +31,6 @@ exports.main = async function(event, context) {
     var resultCode = event.result_code
     var wxPayOrderId = event.transaction_id
 
-    // 2. 查找 transaction 记录
     var txRes = await database.collection(db.COLLECTIONS.TRANSACTIONS)
       .where({ outTradeNo: outTradeNo, type: 'deposit' }).get()
 
@@ -34,22 +40,17 @@ exports.main = async function(event, context) {
     }
     var transaction = txRes.data[0]
 
-    // 3. transaction 幂等检查：非 pending 状态一律跳过
     if (transaction.status !== 'pending') {
       return SUCCESS_RESPONSE
     }
 
-    // 4. 支付失败处理
     if (resultCode !== 'SUCCESS') {
       await database.collection(db.COLLECTIONS.TRANSACTIONS)
         .doc(transaction._id).update({ data: { status: 'failed' } })
       return SUCCESS_RESPONSE
     }
 
-    // 5. 支付成功处理
     var participationId = transaction.participationId
-
-    // 查找 participation 记录
     var partRes = await database.collection(db.COLLECTIONS.PARTICIPATIONS)
       .doc(participationId).get()
 
@@ -58,25 +59,68 @@ exports.main = async function(event, context) {
       return SUCCESS_RESPONSE
     }
 
-    // 6. participation 幂等检查：非 pending 状态一律跳过
-    if (partRes.data.status !== 'pending') {
+    var participation = partRes.data
+    if (['paid', 'approved', 'confirmed', 'checked_in', 'completed', 'verified', 'refunded'].indexOf(participation.status) !== -1) {
       return SUCCESS_RESPONSE
     }
 
-    // 7. 更新 participation 状态
     await database.collection(db.COLLECTIONS.PARTICIPATIONS)
       .doc(participationId).update({
-        data: { status: 'paid', paymentId: wxPayOrderId }
+        data: {
+          status: 'paid',
+          paymentId: wxPayOrderId,
+          paidAt: getServerDate(database),
+          refundStatus: 'none'
+        }
       })
 
-    // 8. 更新 transaction 状态
     await database.collection(db.COLLECTIONS.TRANSACTIONS)
       .doc(transaction._id).update({
-        data: { status: 'success', wxPayOrderId: wxPayOrderId }
+        data: {
+          status: 'success',
+          wxPayOrderId: wxPayOrderId
+        }
       })
 
-    return SUCCESS_RESPONSE
+    try {
+      var activityRes = await database.collection(db.COLLECTIONS.ACTIVITIES)
+        .doc(participation.activityId).get()
+      if (activityRes.data && activityStatus.isJoinableActivityStatus(activityRes.data.status)) {
+        var partListRes = await database.collection(db.COLLECTIONS.PARTICIPATIONS)
+          .where({ activityId: participation.activityId }).get()
+        var syncParticipations = (partListRes.data || []).map(function(item) {
+          if (item && item._id === participationId) {
+            return Object.assign({}, item, { status: 'paid' })
+          }
+          return item
+        })
+        if (!syncParticipations.some(function(item) { return item && item._id === participationId })) {
+          syncParticipations.push(Object.assign({}, participation, {
+            _id: participationId,
+            status: 'paid'
+          }))
+        }
+        if ((partListRes.data || []).length === 0) {
+          var existingCount = Number(activityRes.data.currentParticipants || activityRes.data.approvedParticipants || 0)
+          for (var index = 0; index < existingCount; index++) {
+            syncParticipations.push({
+              _id: '__existing__' + index,
+              status: 'confirmed'
+            })
+          }
+        }
+        await activityFlow.syncActivityFormation(
+          database,
+          db.COLLECTIONS,
+          Object.assign({}, activityRes.data, { _id: participation.activityId }),
+          syncParticipations
+        )
+      }
+    } catch (activityErr) {
+      console.error('payCallback: 活动同步失败, activityId=' + participation.activityId, activityErr)
+    }
 
+    return SUCCESS_RESPONSE
   } catch (err) {
     console.error('payCallback error:', err)
     return FAIL_RESPONSE

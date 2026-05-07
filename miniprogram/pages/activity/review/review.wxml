@@ -1,0 +1,112 @@
+<view class="page review-page">
+  <view class="hero-card">
+    <view class="hero-head">
+      <text class="hero-badge">{{isMockMode ? '原型预览' : '活动互评'}}</text>
+      <text class="hero-id">ID {{activityId}}</text>
+    </view>
+    <text class="hero-title">{{activityTitle}}</text>
+    <text class="hero-target" wx:if="{{!isMockMode}}">评价对象：{{reviewTargetText}}</text>
+    <text class="hero-desc">{{introText}}</text>
+  </view>
+
+  <view class="card">
+    <view class="section-head">
+      <text class="section-title">这次体验里做得好的地方</text>
+      <text class="section-side">最多 {{maxPositiveCount}} 个</text>
+    </view>
+    <view class="tag-grid">
+      <view
+        wx:for="{{positiveTagOptions}}"
+        wx:key="label"
+        class="tag-chip {{item.selected ? 'tag-chip-positive tag-chip-active' : ''}}"
+        data-group="positive"
+        data-index="{{index}}"
+        bindtap="onToggleTag"
+      >
+        <text class="tag-chip-text">{{item.label}}</text>
+      </view>
+    </view>
+    <text class="field-hint">已选 {{selectedPositiveTags.length}} / {{maxPositiveCount}}</text>
+  </view>
+
+  <view class="card">
+    <view class="section-head">
+      <text class="section-title">这次体验里需要改进的地方</text>
+      <text class="section-side">最多 {{maxNegativeCount}} 个</text>
+    </view>
+    <view class="tag-grid">
+      <view
+        wx:for="{{negativeTagOptions}}"
+        wx:key="label"
+        class="tag-chip {{item.selected ? 'tag-chip-negative tag-chip-active' : ''}}"
+        data-group="negative"
+        data-index="{{index}}"
+        bindtap="onToggleTag"
+      >
+        <text class="tag-chip-text">{{item.label}}</text>
+      </view>
+    </view>
+    <text class="field-hint">已选 {{selectedNegativeTags.length}} / {{maxNegativeCount}}</text>
+  </view>
+
+  <view class="card">
+    <view class="section-head">
+      <text class="section-title">补充评价</text>
+      <text class="section-side">选填</text>
+    </view>
+    <textarea
+      class="review-textarea"
+      maxlength="200"
+      placeholder="可以补充一两句具体感受，帮助后续做更稳妥的匹配。"
+      value="{{comment}}"
+      bindinput="onCommentInput"
+    />
+    <view class="text-footer">
+      <text class="field-hint">建议聚焦真实体验，不做人身攻击。</text>
+      <text class="char-count">{{commentLength}}/200</text>
+    </view>
+  </view>
+
+  <view class="card note-card">
+    <view class="section-head">
+      <text class="section-title">提交规则</text>
+    </view>
+    <text class="note-text">{{submitRuleText}}</text>
+  </view>
+
+  <button
+    class="btn-primary submit-btn"
+    disabled="{{!canSubmit || submitting}}"
+    bindtap="submitReview"
+  >
+    {{submitting ? '提交中...' : '提交评价'}}
+  </button>
+
+  <view class="card result-card" wx:if="{{submitted && draftPreview}}">
+    <view class="section-head">
+      <text class="section-title">{{isMockMode ? '本地提交结果' : '提交结果'}}</text>
+      <text class="section-side">{{lastSubmittedAt}}</text>
+    </view>
+
+    <view class="result-block">
+      <text class="result-label">正向标签</text>
+      <view class="tag-grid compact-grid">
+        <text class="result-tag result-tag-positive" wx:for="{{draftPreview.positiveTags}}" wx:key="*this">{{item}}</text>
+      </view>
+    </view>
+
+    <view class="result-block">
+      <text class="result-label">负向标签</text>
+      <view class="tag-grid compact-grid">
+        <text class="result-tag result-tag-negative" wx:for="{{draftPreview.negativeTags}}" wx:key="*this">{{item}}</text>
+      </view>
+    </view>
+
+    <view class="result-block">
+      <text class="result-label">文字评价</text>
+      <text class="result-text">{{draftPreview.comment || '未填写'}}</text>
+    </view>
+
+    <button class="btn-secondary reset-btn" bindtap="resetForm">重新填写</button>
+  </view>
+</view>

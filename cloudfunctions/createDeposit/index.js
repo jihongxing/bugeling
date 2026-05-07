@@ -1,4 +1,3 @@
-// cloudfunctions/createDeposit/index.js
 var cloud = require('wx-server-sdk')
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 
@@ -6,19 +5,26 @@ var db = require('../_shared/db')
 var pay = require('../_shared/pay')
 var response = require('../_shared/response')
 var config = require('../_shared/config')
+var activityStatus = require('../_shared/activityStatus')
 
-exports.main = async function(event, context) {
+function isJoinableStatus(status) {
+  return activityStatus.isJoinableActivityStatus(status)
+}
+
+function isActiveParticipationStatus(status) {
+  return ['rejected', 'cancelled', 'refunded'].indexOf(status) === -1
+}
+
+exports.main = async function(event) {
   var openId = cloud.getWXContext().OPENID
   var activityId = event.activityId
   var database = db.getDb()
 
-  // 1. 参数校验
   if (!activityId || typeof activityId !== 'string') {
     return response.errorResponse(1001, 'activityId 不能为空')
   }
 
   try {
-    // 2. 查询信用分
     var creditRes = await database.collection(db.COLLECTIONS.CREDITS)
       .where({ _id: openId }).get()
     var creditScore = 100
@@ -29,7 +35,6 @@ exports.main = async function(event, context) {
       return response.errorResponse(2002, '信用分不足，无法报名')
     }
 
-    // 3. 查询活动记录
     var activityRes = await database.collection(db.COLLECTIONS.ACTIVITIES)
       .doc(activityId).get()
     if (!activityRes.data) {
@@ -37,69 +42,80 @@ exports.main = async function(event, context) {
     }
     var activity = activityRes.data
 
-    // 4. 校验活动状态
-    if (activity.status !== 'pending') {
+    if (!isJoinableStatus(activity.status)) {
       return response.errorResponse(1004, '活动状态不允许报名')
     }
 
-    // 5. 校验非发起人
+    if (activity.signupDeadline && new Date(activity.signupDeadline).getTime() < Date.now()) {
+      return response.errorResponse(1004, '报名已截止')
+    }
+
     if (openId === activity.initiatorId) {
       return response.errorResponse(1004, '不能报名自己发起的活动')
     }
 
-    // 6. 校验未重复参与
+    var currentParticipants = Number(activity.currentParticipants || activity.approvedParticipants || 0)
+    if (activity.maxParticipants && currentParticipants >= activity.maxParticipants) {
+      return response.errorResponse(1004, '活动已满员')
+    }
+
     var existingRes = await database.collection(db.COLLECTIONS.PARTICIPATIONS)
       .where({ activityId: activityId, participantId: openId }).get()
     var hasActive = (existingRes.data || []).some(function(p) {
-      return p.status !== 'rejected'
+      return isActiveParticipationStatus(p.status)
     })
     if (hasActive) {
       return response.errorResponse(1004, '不能重复报名')
     }
 
-    // 7. 生成 outTradeNo
-    var depositAmount = activity.depositTier
+    var bondAmount = Number(activity.bondAmount || activity.depositTier || 0)
+    var serviceFee = Number(activity.serviceFee || 0)
+    var totalFee = bondAmount + serviceFee
     var outTradeNo = pay.generateOutTradeNo()
 
-    // 8. 创建 participation 记录
     var participationRes = await database.collection(db.COLLECTIONS.PARTICIPATIONS).add({
       data: {
         activityId: activityId,
         participantId: openId,
-        depositAmount: depositAmount,
-        status: 'pending',
+        serviceFeeAmount: serviceFee,
+        bondAmount: bondAmount,
+        depositAmount: bondAmount,
+        totalFeeAmount: totalFee,
+        refundStatus: 'none',
+        status: 'pending_payment',
         createdAt: database.serverDate()
       }
     })
     var participationId = participationRes._id
 
-    // 9. 创建 transaction 记录
     var transactionRes = await database.collection(db.COLLECTIONS.TRANSACTIONS).add({
       data: {
         activityId: activityId,
         participationId: participationId,
         type: 'deposit',
-        amount: depositAmount,
+        amount: totalFee,
         outTradeNo: outTradeNo,
         status: 'pending',
-        createdAt: database.serverDate()
+        createdAt: database.serverDate(),
+        meta: {
+          serviceFee: serviceFee,
+          bondAmount: bondAmount
+        }
       }
     })
     var transactionId = transactionRes._id
 
-    // 10. 调用 pay.createOrder()
     var paymentParams
     try {
       var notifyUrl = config.getEnv(config.ENV_KEYS.NOTIFY_URL)
       paymentParams = await pay.createOrder({
         openId: openId,
         outTradeNo: outTradeNo,
-        totalFee: depositAmount,
-        description: '不鸽令-鸽子费',
+        totalFee: totalFee,
+        description: '不鸽令-组局报名',
         notifyUrl: notifyUrl
       })
     } catch (payErr) {
-      // 回滚：删除 participation 和 transaction
       try {
         await database.collection(db.COLLECTIONS.PARTICIPATIONS).doc(participationId).remove()
         await database.collection(db.COLLECTIONS.TRANSACTIONS).doc(transactionId).remove()
@@ -109,12 +125,15 @@ exports.main = async function(event, context) {
       return response.errorResponse(3001, '支付下单失败: ' + (payErr.message || ''))
     }
 
-    // 11. 返回结果
     return response.successResponse({
       participationId: participationId,
-      paymentParams: paymentParams
+      paymentParams: paymentParams,
+      feeBreakdown: {
+        serviceFee: serviceFee,
+        bondAmount: bondAmount,
+        totalFee: totalFee
+      }
     })
-
   } catch (err) {
     console.error('createDeposit error:', err)
     return response.errorResponse(5001, '系统内部错误')

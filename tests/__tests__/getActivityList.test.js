@@ -286,6 +286,54 @@ describe('getActivityList', () => {
       expect(result.data.list[1].activityId).toBe('act-002')
     })
 
+    test('falls back to approvedParticipants when currentParticipants is missing', async () => {
+      const activities = [
+        sampleActivity({
+          _id: 'act-legacy',
+          currentParticipants: undefined,
+          approvedParticipants: 4
+        })
+      ]
+
+      const db = cloud.database()
+      let callCount = 0
+      const mockAggregate = jest.fn(() => {
+        callCount++
+        const chain = {
+          geoNear: jest.fn(),
+          sort: jest.fn(),
+          skip: jest.fn(),
+          limit: jest.fn(),
+          count: jest.fn(),
+          end: jest.fn()
+        }
+        chain.geoNear.mockReturnValue(chain)
+        chain.sort.mockReturnValue(chain)
+        chain.skip.mockReturnValue(chain)
+        chain.limit.mockReturnValue(chain)
+        chain.count.mockReturnValue(chain)
+
+        if (callCount === 1) {
+          chain.end.mockResolvedValue({ list: [{ total: 1 }] })
+        } else {
+          chain.end.mockResolvedValue({ list: activities })
+        }
+        return chain
+      })
+
+      db.collection.mockReturnValue({
+        ...db.collection(),
+        aggregate: mockAggregate
+      })
+
+      const result = await main({ latitude: 39.99, longitude: 116.19 }, {})
+
+      expect(result.code).toBe(0)
+      expect(result.data.list[0].currentParticipants).toBe(4)
+      expect(result.data.list[0].approvedParticipants).toBe(4)
+      expect(result.data.list[0].remainingToForm).toBe(0)
+    })
+
     test('returns empty list when no activities found', async () => {
       const db = cloud.database()
       const mockAggregate = jest.fn(() => {
@@ -382,7 +430,7 @@ describe('getActivityList', () => {
       await main({ latitude: 39.99, longitude: 116.19 }, {})
 
       expect(geoNearArgs.maxDistance).toBe(20000)
-      expect(geoNearArgs.query).toEqual({ status: 'pending' })
+      expect(geoNearArgs.query).toEqual({ status: { $in: ['pending', 'confirmed'] } })
     })
 
     test('filters only pending activities', async () => {
@@ -403,7 +451,7 @@ describe('getActivityList', () => {
 
       await main({ latitude: 39.99, longitude: 116.19 }, {})
 
-      expect(geoNearArgs.query).toEqual({ status: 'pending' })
+      expect(geoNearArgs.query).toEqual({ status: { $in: ['pending', 'confirmed'] } })
     })
   })
 

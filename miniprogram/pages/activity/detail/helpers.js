@@ -1,33 +1,439 @@
 // pages/activity/detail/helpers.js - 活动详情辅助函数
 
-/**
- * 根据用户角色决定按钮状态
- * @param {boolean} isInitiator - 是否为活动发起人
- * @param {object|null} myParticipation - 当前用户的参与记录
- * @returns {'manage'|'status'|'join'} 按钮状态
- */
-function getActionState(isInitiator, myParticipation) {
+var formatUtil = require('../../../utils/format')
+var statusUtil = require('../../../utils/status')
+
+function isPresent(value) {
+  return value !== undefined && value !== null && value !== ''
+}
+
+function normalizeText(value) {
+  if (!isPresent(value)) return ''
+  return String(value).replace(/\s+/g, ' ').trim()
+}
+
+function toNumber(value) {
+  if (!isPresent(value)) return null
+  var num = Number(value)
+  return isNaN(num) ? null : num
+}
+
+function addUnique(list, value) {
+  if (!value) return
+  if (list.indexOf(value) !== -1) return
+  list.push(value)
+}
+
+function formatYuanFromCent(value) {
+  var num = toNumber(value)
+  if (num === null) return ''
+  var yuan = num / 100
+  var fixed = Math.round(yuan * 10) / 10
+  return fixed % 1 === 0 ? '¥' + fixed.toFixed(0) : '¥' + fixed.toFixed(1)
+}
+
+function formatBooleanText(value, yesText, noText) {
+  return value ? (yesText || '是') : (noText || '否')
+}
+
+function getBudgetTypeLabel(budgetType) {
+  var map = {
+    free: '免费局',
+    under_20: '20 元内',
+    under_50: '50 元内',
+    aa: '现场 AA'
+  }
+  return map[budgetType] || '费用待补充'
+}
+
+function getGenderLimitLabel(genderLimit) {
+  var map = {
+    none: '不限性别',
+    female_only: '仅限女生'
+  }
+  return map[genderLimit] || '不限性别'
+}
+
+function getRiskLevelLabel(riskLevel) {
+  var map = {
+    low: '低风险',
+    medium: '中风险',
+    high: '高风险'
+  }
+  return map[riskLevel] || '风险待评估'
+}
+
+function getTemplateLabel(activity) {
+  var templateType = normalizeText(activity.templateType)
+  var map = {
+    walk: '散步聊天',
+    convenience_store: '便利店闲聊',
+    cheap_meal: '便宜饭局',
+    free_exhibition: '免费展览',
+    park_chill: '公园放松',
+    study_buddy: '自习搭子',
+    night_market: '夜市局',
+    boardgame: '桌游局',
+    other: '组局'
+  }
+
+  if (templateType && map[templateType]) return map[templateType]
+
+  var maxParticipants = toNumber(activity.maxParticipants)
+  if (maxParticipants !== null && maxParticipants <= 2) return '双人搭子'
+  if (maxParticipants !== null && maxParticipants <= 4) return '小队组局'
+  return '同城组局'
+}
+
+function formatBudgetRange(activity) {
+  var budgetType = normalizeText(activity.budgetType) || 'aa'
+  var budgetMin = toNumber(activity.budgetMin)
+  var budgetMax = toNumber(activity.budgetMax)
+
+  if (budgetMin !== null || budgetMax !== null) {
+    if (budgetMin !== null && budgetMax !== null) {
+      if (budgetMin === budgetMax) return formatYuanFromCent(budgetMin) + '/人'
+      if (budgetMin === 0 && budgetMax > 0) return '约 ' + formatYuanFromCent(budgetMax) + ' 以内/人'
+      return formatYuanFromCent(budgetMin) + '-' + formatYuanFromCent(budgetMax) + '/人'
+    }
+    if (budgetMin !== null && budgetMin > 0) return '约 ' + formatYuanFromCent(budgetMin) + '/人'
+    if (budgetMax !== null && budgetMax > 0) return '约 ' + formatYuanFromCent(budgetMax) + ' 以内/人'
+  }
+
+  if (budgetType === 'free') return '0 元'
+  if (budgetType === 'under_20') return '20 元以内/人'
+  if (budgetType === 'under_50') return '50 元以内/人'
+  if (budgetType === 'aa') return '现场 AA'
+  return '预算待补充'
+}
+
+function buildFeeRows(activity, myParticipation) {
+  var rows = []
+  var budgetType = normalizeText(activity.budgetType) || 'aa'
+  var bondAmount = toNumber(activity.bondAmount || activity.depositTier || 0) || 0
+  var serviceFee = toNumber(activity.serviceFee || 0) || 0
+  var participationBond = myParticipation ? toNumber(myParticipation.bondAmount || myParticipation.depositAmount || 0) : null
+  var participationService = myParticipation ? toNumber(myParticipation.serviceFeeAmount || 0) : null
+  var paidBond = participationBond !== null ? participationBond : bondAmount
+  var paidService = participationService !== null ? participationService : serviceFee
+  var payableTotal = paidBond + paidService
+
+  rows.push({
+    label: '费用方式',
+    value: getBudgetTypeLabel(budgetType)
+  })
+  rows.push({
+    label: '人均预算',
+    value: formatBudgetRange(activity)
+  })
+  rows.push({
+    label: '服务费',
+    value: formatYuanFromCent(serviceFee)
+  })
+  rows.push({
+    label: '鸽子费',
+    value: formatYuanFromCent(bondAmount)
+  })
+  rows.push({
+    label: myParticipation ? '已支付合计' : '报名应付',
+    value: payableTotal > 0 ? formatYuanFromCent(payableTotal) : '¥0'
+  })
+
+  return {
+    rows: rows,
+    totalText: payableTotal > 0 ? formatYuanFromCent(payableTotal) : '¥0',
+    bondText: formatYuanFromCent(bondAmount),
+    serviceText: formatYuanFromCent(serviceFee),
+    budgetTypeText: getBudgetTypeLabel(budgetType)
+  }
+}
+
+function buildProgress(activity) {
+  var current = toNumber(activity.currentParticipants || activity.approvedParticipants || 0) || 0
+  var max = toNumber(activity.maxParticipants || 0) || 0
+  var required = toNumber(activity.minParticipants || 0) || max || 1
+  var remaining = toNumber(activity.remainingToForm)
+  var state = 'forming'
+  var stateText = '组局中'
+  var hintText = ''
+  var percent = 0
+
+  if (remaining === null) remaining = Math.max(required - current, 0)
+  if (required > 0) percent = Math.round((current / required) * 100)
+  if (percent > 100) percent = 100
+
+  if (max > 0 && current >= max) {
+    state = 'full'
+    stateText = '已满员'
+    hintText = '当前 ' + current + '/' + max + ' 人'
+  } else if (remaining === 0) {
+    state = 'ready'
+    stateText = '已成局'
+    hintText = required === max
+      ? '当前 ' + current + '/' + max + ' 人'
+      : '已达到 ' + required + ' 人成局线'
+  } else if (remaining === 1) {
+    state = 'almost'
+    stateText = '差 1 人'
+    hintText = '再来 1 人就能成局'
+  } else {
+    stateText = '差 ' + remaining + ' 人'
+    hintText = '还差 ' + remaining + ' 人达到成局线'
+  }
+
+  return {
+    state: state,
+    stateText: stateText,
+    detailText: current + '/' + (max > 0 ? max : required) + ' 人',
+    hintText: hintText,
+    currentText: String(current),
+    maxText: String(max > 0 ? max : required),
+    requiredText: String(required),
+    remainingText: String(remaining),
+    percent: percent
+  }
+}
+
+function buildMeetingSection(activity) {
+  var location = activity.location || {}
+  var locationName = normalizeText(location.name || activity.meetingPointText || '')
+  var locationAddress = normalizeText(location.address || '')
+  var rows = []
+
+  rows.push({
+    label: '时间',
+    value: activity.meetTime ? formatUtil.formatMeetTime(activity.meetTime) : '待补充'
+  })
+  rows.push({
+    label: '地点',
+    value: locationName || '待补充'
+  })
+  rows.push({
+    label: '集合点',
+    value: normalizeText(activity.meetingPointText || locationName || '待补充')
+  })
+  rows.push({
+    label: '接头特征',
+    value: normalizeText(activity.identityHint || '无')
+  })
+
+  return {
+    rows: rows,
+    locationName: locationName || '待补充',
+    locationAddress: locationAddress,
+    timeText: activity.meetTime ? formatUtil.formatMeetTime(activity.meetTime) : '待补充'
+  }
+}
+
+function normalizeSafetyTagTag(item) {
+  if (typeof item === 'string') return normalizeText(item)
+  if (!item || typeof item !== 'object') return ''
+  return normalizeText(item.label || item.name || item.text || item.title)
+}
+
+function translateSafetyTag(tag) {
+  var map = {
+    public_space: '公共场所',
+    low_budget: '低消费',
+    no_alcohol: '不喝酒',
+    daytime: '白天见面',
+    women_friendly: '女生友好',
+    no_after_party: '不转场',
+    real_name: '实名可见'
+  }
+  var text = normalizeText(tag)
+  if (!text) return ''
+  return map[text] || text.replace(/_/g, ' ')
+}
+
+function buildSafetySection(activity) {
+  var tags = []
+  var safetyTags = activity.safetyTags
+  var rules = []
+  var i = 0
+
+  if (Array.isArray(safetyTags)) {
+    for (i = 0; i < safetyTags.length; i++) {
+      addUnique(tags, translateSafetyTag(normalizeSafetyTagTag(safetyTags[i])))
+    }
+  }
+
+  addUnique(tags, activity.realNameRequired === true ? '需实名' : '')
+  addUnique(tags, getGenderLimitLabel(activity.genderLimit))
+  addUnique(tags, getRiskLevelLabel(activity.riskLevel))
+
+  if (!tags.length) addUnique(tags, '平台留痕')
+
+  if (Array.isArray(activity.rules) && activity.rules.length > 0) {
+    for (i = 0; i < activity.rules.length; i++) {
+      addUnique(rules, translateSafetyTag(normalizeSafetyTagTag(activity.rules[i])))
+    }
+  }
+
+  if (!rules.length) {
+    addUnique(rules, '按约定时间到场，迟到请提前沟通')
+    addUnique(rules, '默认在公共地点集合，结束后自由离开')
+    addUnique(rules, '未到场或违约将按鸽子费规则处理')
+    if (activity.realNameRequired === true) {
+      addUnique(rules, '入局需完成实名信息校验')
+    }
+  }
+
+  return {
+    tags: tags,
+    rules: rules,
+    realNameText: formatBooleanText(activity.realNameRequired, '需要实名', '无需实名'),
+    genderText: getGenderLimitLabel(activity.genderLimit),
+    riskText: getRiskLevelLabel(activity.riskLevel)
+  }
+}
+
+function buildCreditSection(activity) {
+  var summary = activity.initiatorCreditSummary || {}
+  var score = toNumber(activity.initiatorCredit)
+  var level = normalizeText(summary.level)
+  var realNameVerified = summary.realNameVerified === true
+  var items = []
+
+  if (score === null) score = toNumber(summary.score) || 100
+
+  items.push({
+    label: '契约分',
+    value: String(score)
+  })
+  items.push({
+    label: '发起局数',
+    value: String(summary.totalInitiated || 0)
+  })
+  items.push({
+    label: '参与局数',
+    value: String(summary.totalJoined || 0)
+  })
+  items.push({
+    label: '守约完成',
+    value: String(summary.totalCompleted || 0)
+  })
+  items.push({
+    label: '爽约记录',
+    value: String(summary.noShowCount || 0)
+  })
+  items.push({
+    label: '投诉记录',
+    value: String(summary.complaintsCount || 0)
+  })
+  items.push({
+    label: '实名状态',
+    value: realNameVerified ? '已要求实名' : '未强制实名'
+  })
+
+  return {
+    score: score,
+    levelText: level || 'active',
+    summaryText: score >= 100 ? '信用稳定，适合优先报名' : '请先查看信用详情',
+    items: items
+  }
+}
+
+function buildDescriptionParagraphs(activity) {
+  var text = normalizeText(activity.description || activity.summary || '')
+  if (!text) return []
+  return text.split(/\n+/).map(function(item) {
+    return normalizeText(item)
+  }).filter(function(item) {
+    return !!item
+  })
+}
+
+function buildDetailView(activity, myParticipation) {
+  var safeActivity = activity || {}
+  var fee = buildFeeRows(safeActivity, myParticipation)
+  var progress = buildProgress(safeActivity)
+  var meeting = buildMeetingSection(safeActivity)
+  var safety = buildSafetySection(safeActivity)
+  var credit = buildCreditSection(safeActivity)
+  var paragraphs = buildDescriptionParagraphs(safeActivity)
+  var summaryText = normalizeText(safeActivity.summary) || normalizeText(safeActivity.description) || '时间地点已确认，欢迎守约参加。'
+  var depositText = formatUtil.formatDeposit(toNumber(safeActivity.depositTier || safeActivity.bondAmount || 0) || 0)
+  var heroBadges = []
+
+  addUnique(heroBadges, fee.budgetTypeText)
+  addUnique(heroBadges, progress.stateText)
+  addUnique(heroBadges, safety.genderText)
+
+  return {
+    title: normalizeText(safeActivity.title) || '活动详情',
+    summaryText: summaryText,
+    descriptionParagraphs: paragraphs,
+    heroBadges: heroBadges,
+    templateText: getTemplateLabel(safeActivity),
+    budgetText: fee.budgetTypeText,
+    budgetRangeText: formatBudgetRange(safeActivity),
+    depositText: depositText,
+    totalFeeText: fee.totalText,
+    feeRows: fee.rows,
+    progress: progress,
+    meeting: meeting,
+    safety: safety,
+    credit: credit,
+    contractText: buildContractText(safeActivity, fee),
+    participationNote: myParticipation && ['paid', 'approved', 'confirmed', 'checked_in', 'completed'].indexOf(myParticipation.status) !== -1
+      ? '你已报名，页面会在临近见面时间解锁发起人微信'
+      : ''
+  }
+}
+
+function buildContractText(activity, fee) {
+  var serviceText = fee && fee.serviceText ? fee.serviceText : '¥0'
+  var bondText = fee && fee.bondText ? fee.bondText : '¥0'
+  var parts = []
+
+  if (serviceText !== '¥0') parts.push('服务费 ' + serviceText)
+  if (bondText !== '¥0') parts.push('鸽子费 ' + bondText)
+
+  if (!parts.length) {
+    return '参与本活动即表示同意按约定时间到场，并遵守平台规则。'
+  }
+
+  return '报名需先支付 ' + parts.join(' + ') + '。守约后按平台规则处理，违约将影响信用。'
+}
+
+function getActionState(activityOrIsInitiator, isInitiatorOrParticipation, maybeParticipation) {
+  if (typeof activityOrIsInitiator === 'boolean') {
+    if (activityOrIsInitiator) return 'manage'
+    if (isInitiatorOrParticipation) return 'status'
+    return 'join'
+  }
+
+  var activity = activityOrIsInitiator
+  var isInitiator = isInitiatorOrParticipation
+  var myParticipation = maybeParticipation
+
   if (isInitiator) return 'manage'
   if (myParticipation) return 'status'
+  if (!activity) return 'closed'
+  if (['cancelled', 'removed', 'finished', 'locked', 'pending_review'].indexOf(activity.status) !== -1) {
+    return 'closed'
+  }
   return 'join'
 }
 
-/**
- * 将分为单位的金额转换为元显示
- * @param {number} amountInCents - 金额（分）
- * @returns {string} 格式化后的金额字符串（如 "9.9"）
- */
+function getParticipationStatusConfig(status) {
+  var customMap = {
+    approved: { label: '已报名', bgColor: '#DBEAFE', textColor: '#2563EB' },
+    rejected: { label: '未通过', bgColor: '#FEE2E2', textColor: '#DC2626' },
+    cancelled: { label: '已取消', bgColor: '#F3F4F6', textColor: '#6B7280' },
+    checked_in: { label: '已到场', bgColor: '#D1FAE5', textColor: '#059669' },
+    completed: { label: '已完成', bgColor: '#E0E7FF', textColor: '#4F46E5' }
+  }
+
+  if (customMap[status]) return customMap[status]
+  return statusUtil.getStatusConfig(status)
+}
+
 function formatAmount(amountInCents) {
   return (amountInCents / 100).toFixed(1)
 }
 
-/**
- * 判断是否显示报名按钮
- * @param {object} activity - 活动记录
- * @param {string} openId - 当前用户 openId
- * @param {object|null} myParticipation - 当前用户参与记录
- * @returns {boolean}
- */
 function shouldShowPayButton(activity, openId, myParticipation) {
   if (!activity) return false
   return activity.status === 'pending'
@@ -35,11 +441,14 @@ function shouldShowPayButton(activity, openId, myParticipation) {
     && !myParticipation
 }
 
-/**
- * 格式化倒计时毫秒为 "X小时X分钟" 文案
- * @param {number} ms - 剩余毫秒数
- * @returns {string} 格式化后的倒计时文案，0 或负数返回空字符串
- */
+function shouldShowCheckinAction(activity, isInitiator, myParticipation) {
+  if (!activity) return false
+  if (isInitiator) return true
+  if (!myParticipation) return false
+
+  return ['paid', 'approved', 'confirmed', 'checked_in'].indexOf(myParticipation.status) !== -1
+}
+
 function formatCountdown(ms) {
   if (ms <= 0) return ''
   var totalMinutes = Math.ceil(ms / (60 * 1000))
@@ -52,7 +461,10 @@ function formatCountdown(ms) {
 
 module.exports = {
   getActionState: getActionState,
+  getParticipationStatusConfig: getParticipationStatusConfig,
+  buildDetailView: buildDetailView,
   formatAmount: formatAmount,
   shouldShowPayButton: shouldShowPayButton,
+  shouldShowCheckinAction: shouldShowCheckinAction,
   formatCountdown: formatCountdown
 }

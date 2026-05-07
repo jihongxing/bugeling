@@ -79,6 +79,19 @@
   margin-top: 8rpx;
 }
 
+.activity-actions {
+  display: flex;
+  gap: 16rpx;
+  margin-top: 18rpx;
+}
+
+.mini-action {
+  flex: 1;
+  padding: 14rpx 0;
+  font-size: 24rpx;
+  line-height: 1.2;
+}
+
 .empty-state {
   display: flex;
   justify-content: center;

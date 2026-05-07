@@ -12,6 +12,10 @@
       <view class="participation-status" wx:if="{{role === 'participant' && item.participationStatus}}">
         <text>参与状态：{{item.participationStatus}}</text>
       </view>
+      <view class="activity-actions">
+        <button class="btn-secondary mini-action" bindtap="goDetail" data-id="{{item._id}}">查看详情</button>
+        <button class="btn-secondary mini-action" bindtap="goReportDetail" data-id="{{item._id}}">活动战报</button>
+      </view>
     </view>
   </view>
 

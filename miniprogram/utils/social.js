@@ -10,7 +10,8 @@ var TWO_HOURS_MS = 2 * 60 * 60 * 1000
  * @returns {boolean}
  */
 function shouldUnlockWechatId(participationStatus, meetTime, now) {
-  if (participationStatus !== 'approved') return false
+  var allowedStatuses = ['paid', 'approved', 'confirmed', 'checked_in', 'completed']
+  if (allowedStatuses.indexOf(participationStatus) === -1) return false
   var meetMs = new Date(meetTime).getTime()
   var nowMs = new Date(now).getTime()
   if (meetMs <= nowMs) return false

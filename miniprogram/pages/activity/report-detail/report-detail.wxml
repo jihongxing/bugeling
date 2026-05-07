@@ -1,0 +1,76 @@
+<view class="page report-page" wx:if="{{reportView}}">
+  <view class="hero-card">
+    <view class="hero-head">
+      <text class="hero-kicker">活动战报</text>
+      <text class="hero-sync" wx:if="{{loading}}">同步中</text>
+    </view>
+
+    <text class="hero-title">{{reportView.title}}</text>
+
+    <view class="hero-badges">
+      <text class="hero-badge">{{reportView.templateText}}</text>
+      <text class="hero-badge subtle">{{reportView.participantHintText}}</text>
+      <text class="hero-badge subtle" wx:if="{{reportView.reportDateText}}">{{reportView.reportDateText}}</text>
+    </view>
+
+    <view class="summary-box">
+      <text class="summary-label">一句话总结</text>
+      <text class="summary-text">{{reportView.summaryText}}</text>
+    </view>
+  </view>
+
+  <view class="metric-grid">
+    <view class="metric-card">
+      <text class="metric-label">人数</text>
+      <text class="metric-value">{{reportView.participantsText}}</text>
+    </view>
+    <view class="metric-card">
+      <text class="metric-label">预算</text>
+      <text class="metric-value">{{reportView.budgetText}}</text>
+    </view>
+    <view class="metric-card">
+      <text class="metric-label">报名费用</text>
+      <text class="metric-value compact">{{reportView.feeText}}</text>
+    </view>
+    <view class="metric-card">
+      <text class="metric-label">集合点</text>
+      <text class="metric-value compact">{{reportView.meetingPointText}}</text>
+    </view>
+  </view>
+
+  <view class="card">
+    <view class="section-head">
+      <text class="section-title">摘要信息</text>
+      <text class="section-side">适合直接复用</text>
+    </view>
+
+    <view class="info-item" wx:for="{{reportView.infoRows}}" wx:key="label">
+      <text class="info-label">{{item.label}}</text>
+      <text class="info-value">{{item.value}}</text>
+    </view>
+  </view>
+
+  <view class="card">
+    <view class="section-head">
+      <text class="section-title">安全标签</text>
+      <text class="section-side">保留原局约束</text>
+    </view>
+
+    <view class="tag-list" wx:if="{{reportView.safetyTags.length}}">
+      <text class="tag-item" wx:for="{{reportView.safetyTags}}" wx:key="index">{{item}}</text>
+    </view>
+
+    <text class="empty-text" wx:else>暂无安全标签</text>
+  </view>
+
+  <view class="cta-card">
+    <text class="cta-title">这个模板可以继续用</text>
+    <text class="cta-desc">{{reportView.noteText}}</text>
+    <button class="btn-primary cta-btn" bindtap="goCreateSame">发起同款</button>
+    <button class="btn-secondary cta-btn" wx:if="{{showReviewAction}}" bindtap="goReview">去互评</button>
+  </view>
+</view>
+
+<view class="page loading-state" wx:if="{{!reportView}}">
+  <text class="loading-text">准备活动战报中...</text>
+</view>

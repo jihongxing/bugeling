@@ -1,4 +1,3 @@
-// cloudfunctions/getActivityList/index.js
 const cloud = require('wx-server-sdk')
 
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
@@ -6,57 +5,77 @@ cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 const { getDb, COLLECTIONS } = require('../_shared/db')
 const { getCredit } = require('../_shared/credit')
 const { successResponse, errorResponse } = require('../_shared/response')
+const activityStatus = require('../_shared/activityStatus')
 
-/**
- * 校验 getActivityList 参数
- */
+const TEMPLATE_TYPES = [
+  'walk',
+  'convenience_store',
+  'cheap_meal',
+  'free_exhibition',
+  'park_chill',
+  'study_buddy',
+  'photo_walk',
+  'night_market',
+  'sports',
+  'boardgame',
+  'other'
+]
+const BUDGET_TYPES = ['free', 'under_20', 'under_50', 'aa']
+const GENDER_LIMITS = ['none', 'female_only']
+
 function validateParams(params) {
-  const { latitude, longitude, radius, page, pageSize } = params || {}
+  const { latitude, longitude, radius, page, pageSize, budgetType, templateType, genderLimit } = params || {}
 
-  if (latitude === undefined || latitude === null || typeof latitude !== 'number' || isNaN(latitude)) {
+  if (typeof latitude !== 'number' || isNaN(latitude)) {
     return { valid: false, error: 'latitude 为必填数值参数' }
   }
-  if (longitude === undefined || longitude === null || typeof longitude !== 'number' || isNaN(longitude)) {
+  if (typeof longitude !== 'number' || isNaN(longitude)) {
     return { valid: false, error: 'longitude 为必填数值参数' }
   }
 
-  const parsedRadius = (radius !== undefined && radius !== null) ? Number(radius) : 20000
+  const parsedRadius = radius !== undefined && radius !== null ? Number(radius) : 20000
+  const parsedPage = page !== undefined && page !== null ? Number(page) : 1
+  let parsedPageSize = pageSize !== undefined && pageSize !== null ? Number(pageSize) : 20
+
   if (isNaN(parsedRadius) || parsedRadius <= 0) {
     return { valid: false, error: 'radius 必须为正数' }
   }
-
-  const parsedPage = (page !== undefined && page !== null) ? Number(page) : 1
   if (!Number.isInteger(parsedPage) || parsedPage < 1) {
     return { valid: false, error: 'page 必须为正整数' }
   }
-
-  let parsedPageSize = (pageSize !== undefined && pageSize !== null) ? Number(pageSize) : 20
   if (!Number.isInteger(parsedPageSize) || parsedPageSize < 1) {
     return { valid: false, error: 'pageSize 必须为正整数' }
   }
   if (parsedPageSize > 50) parsedPageSize = 50
 
+  if (budgetType && !BUDGET_TYPES.includes(budgetType)) {
+    return { valid: false, error: 'budgetType 不合法' }
+  }
+  if (templateType && !TEMPLATE_TYPES.includes(templateType)) {
+    return { valid: false, error: 'templateType 不合法' }
+  }
+  if (genderLimit && !GENDER_LIMITS.includes(genderLimit)) {
+    return { valid: false, error: 'genderLimit 不合法' }
+  }
+
   return {
     valid: true,
-    parsed: { latitude, longitude, radius: parsedRadius, page: parsedPage, pageSize: parsedPageSize }
+    parsed: Object.assign({
+      latitude,
+      longitude,
+      radius: parsedRadius,
+      page: parsedPage,
+      pageSize: parsedPageSize
+    }, budgetType ? { budgetType } : {}, templateType ? { templateType } : {}, genderLimit ? { genderLimit } : {}, params && params.realNameRequired === true ? { realNameRequired: true } : {}, Array.isArray(params && params.safetyTags) && params.safetyTags.length > 0 ? { safetyTags: params.safetyTags } : {})
   }
 }
 
-/**
- * 批量查询发起人信用分。
- * 兼容两种调用方式：
- * 1. batchGetCredits(db, initiatorIds) - 生产代码使用单次 in 查询
- * 2. batchGetCredits(initiatorIds) - 测试/兼容逻辑使用 getCredit 逐个查询
- * @param {object|string[]} dbOrIds - 数据库实例或 openId 列表
- * @param {string[]} [maybeIds] - 发起人 openId 列表
- * @returns {Promise<Object>} openId -> score 映射
- */
 async function batchGetCredits(dbOrIds, maybeIds) {
   const legacyMode = Array.isArray(dbOrIds) && maybeIds === undefined
   const db = legacyMode ? null : dbOrIds
   const initiatorIds = legacyMode ? dbOrIds : maybeIds
   const uniqueIds = [...new Set(initiatorIds)]
-  const creditMap = {}
+  const creditMap = Object.create(null)
   if (uniqueIds.length === 0) return creditMap
 
   async function fillByGetCredit(defaultValue) {
@@ -79,17 +98,17 @@ async function batchGetCredits(dbOrIds, maybeIds) {
     const result = await db.collection(COLLECTIONS.CREDITS)
       .where({ _id: db.command.in(uniqueIds) })
       .get()
-    const credits = result && Array.isArray(result.data) ? result.data : null
-    if (!credits) {
+    const credits = result && Array.isArray(result.data) ? result.data : []
+    if (credits.length === 0) {
       return fillByGetCredit(100)
     }
-
-    credits.forEach(c => { creditMap[c._id] = c.score })
+    credits.forEach(item => {
+      creditMap[item._id] = item.score
+    })
   } catch (err) {
     return fillByGetCredit(100)
   }
 
-  // 未找到记录的用户默认 100 分
   uniqueIds.forEach(id => {
     if (creditMap[id] === undefined) creditMap[id] = 100
   })
@@ -97,34 +116,123 @@ async function batchGetCredits(dbOrIds, maybeIds) {
   return creditMap
 }
 
-/**
- * 将活动记录组装为返回格式
- */
-function formatActivity(activity, creditMap) {
-  const location = activity.location || {}
-  const coordinates = location.coordinates || []
+function matchesFilters(activity, filters) {
+  if (filters.budgetType && activity.budgetType !== filters.budgetType) {
+    return false
+  }
+  if (filters.templateType && activity.templateType !== filters.templateType) {
+    return false
+  }
+  if (filters.genderLimit && (activity.genderLimit || 'none') !== filters.genderLimit) {
+    return false
+  }
+  if (filters.realNameRequired && activity.realNameRequired !== true) {
+    return false
+  }
+  if (filters.safetyTags && filters.safetyTags.length > 0) {
+    const safetyTags = Array.isArray(activity.safetyTags) ? activity.safetyTags : []
+    const hasAllTags = filters.safetyTags.every(tag => safetyTags.includes(tag))
+    if (!hasAllTags) return false
+  }
+  return true
+}
 
+function normalizeLocation(activity) {
+  const location = activity.location || {}
+  const coordinates = Array.isArray(location.coordinates) ? location.coordinates : []
+  return {
+    name: activity.locationName || location.name || '',
+    latitude: coordinates[1] !== undefined ? coordinates[1] : location.latitude,
+    longitude: coordinates[0] !== undefined ? coordinates[0] : location.longitude
+  }
+}
+
+function scoreActivity(activity) {
+  const distanceValue = Number(activity.distance)
+  const distance = Number.isFinite(distanceValue) ? distanceValue : 0
+  const minParticipantsValue = Number(activity.minParticipants)
+  const currentParticipantsValue = Number(activity.currentParticipants || activity.approvedParticipants)
+  const minParticipants = Number.isFinite(minParticipantsValue) && minParticipantsValue > 0
+    ? minParticipantsValue
+    : 1
+  const currentParticipants = Number.isFinite(currentParticipantsValue) && currentParticipantsValue >= 0
+    ? currentParticipantsValue
+    : 0
+  const remaining = Math.max(
+    0,
+    minParticipants - currentParticipants
+  )
+  const initiatorCreditValue = Number(activity.initiatorCredit)
+  const initiatorCredit = Number.isFinite(initiatorCreditValue) ? initiatorCreditValue : 100
+  const distanceScore = Math.max(0, 10000 - distance) / 100
+  const nearFormScore = remaining === 0 ? 20 : Math.max(0, 12 - remaining * 3)
+  const creditScore = Math.min(12, Math.floor(initiatorCredit / 10))
+  const safetyScore = activity.realNameRequired ? 6 : 0
+  const lowBudgetScore = activity.budgetType === 'free' || activity.budgetType === 'under_20' ? 4 : 0
+
+  return distanceScore + nearFormScore + creditScore + safetyScore + lowBudgetScore
+}
+
+function compareActivitiesForFeed(a, b) {
+  const scoreDiff = scoreActivity(b) - scoreActivity(a)
+  if (scoreDiff !== 0) return scoreDiff
+
+  const distanceDiff = Number(a.distance || 0) - Number(b.distance || 0)
+  if (distanceDiff !== 0) return distanceDiff
+
+  const meetTimeDiff = new Date(a.meetTime).getTime() - new Date(b.meetTime).getTime()
+  if (!Number.isNaN(meetTimeDiff) && meetTimeDiff !== 0) return meetTimeDiff
+
+  return String(a.activityId || a._id || '').localeCompare(String(b.activityId || b._id || ''))
+}
+
+function formatActivity(activity, creditMap) {
+  const hasInitiatorCredit = Object.prototype.hasOwnProperty.call(creditMap, activity.initiatorId)
   return {
     activityId: activity._id,
     title: activity.title,
-    depositTier: activity.depositTier,
     maxParticipants: activity.maxParticipants,
-    currentParticipants: activity.currentParticipants,
-    location: {
-      name: activity.locationName,
-      latitude: coordinates[1],
-      longitude: coordinates[0]
-    },
+    currentParticipants: activity.currentParticipants || activity.approvedParticipants || 0,
+    depositTier: activity.depositTier || activity.bondAmount || 0,
+    location: normalizeLocation(activity),
     distance: activity.distance,
     meetTime: activity.meetTime,
-    initiatorCredit: creditMap[activity.initiatorId] !== undefined
+    initiatorCredit: hasInitiatorCredit
       ? creditMap[activity.initiatorId]
       : null,
     status: activity.status
   }
 }
 
-exports.main = async (event, context) => {
+function enrichActivity(activity) {
+  const currentParticipants = activity.currentParticipants || activity.approvedParticipants || 0
+  const minParticipants = activity.minParticipants || Math.min(3, activity.maxParticipants || 3)
+  const enriched = {
+    templateType: activity.templateType || 'other',
+    summary: activity.summary || '',
+    budgetType: activity.budgetType || 'aa',
+    budgetMin: activity.budgetMin || 0,
+    budgetMax: activity.budgetMax || 0,
+    serviceFee: activity.serviceFee || 0,
+    bondAmount: activity.bondAmount || activity.depositTier || 0,
+    minParticipants: minParticipants,
+    approvedParticipants: currentParticipants,
+    remainingToForm: Math.max(0, minParticipants - currentParticipants),
+    signupDeadline: activity.signupDeadline || null,
+    realNameRequired: activity.realNameRequired === true,
+    genderLimit: activity.genderLimit || 'none',
+    safetyTags: Array.isArray(activity.safetyTags) ? activity.safetyTags : [],
+    atmosphereTags: Array.isArray(activity.atmosphereTags) ? activity.atmosphereTags : [],
+    riskLevel: activity.riskLevel || 'low'
+  }
+  return Object.assign({}, activity, enriched, {
+    status: activity.status,
+    displayStatus: activityStatus.getDisplayStatus(activity.status),
+    sortScore: scoreActivity(Object.assign({}, activity, enriched))
+  })
+}
+
+exports.main = async (event) => {
   try {
     const validation = validateParams(event)
     if (!validation.valid) {
@@ -140,38 +248,51 @@ exports.main = async (event, context) => {
         spherical: true,
         near: db.Geo.Point(longitude, latitude),
         maxDistance: radius,
-        query: { status: 'pending' }
+        query: {
+          status: db.command.in(activityStatus.JOINABLE_ACTIVITY_STATUSES)
+        }
       })
-      .sort({ distance: 1 })
 
     const countResult = await buildAggregate().count().end()
     const total = countResult.list && countResult.list[0] ? countResult.list[0].total : 0
 
-    const result = await buildAggregate()
+    const dataResult = await buildAggregate()
+      .sort({ distance: 1 })
       .skip((page - 1) * pageSize)
       .limit(pageSize)
       .end()
 
-    const activities = result.list || []
-    const hasMore = total > page * pageSize
-
+    const activities = dataResult.list || []
     if (activities.length === 0) {
       return successResponse({ list: [], total: 0, hasMore: false })
     }
 
-    // 批量查询发起人信用分（单次 in 查询）
-    const initiatorIds = activities.map(a => a.initiatorId)
+    const filteredActivities = activities.filter(item => matchesFilters(item, validation.parsed))
+    const initiatorIds = filteredActivities.map(item => item.initiatorId)
     const creditMap = await batchGetCredits(db, initiatorIds)
+    const formatted = filteredActivities
+      .map(item => enrichActivity(formatActivity(item, creditMap)))
+      .sort(compareActivitiesForFeed)
 
-    const list = activities.map(a => formatActivity(a, creditMap))
+    const list = formatted.map(item => {
+      const next = { ...item }
+      delete next.sortScore
+      return next
+    })
 
-    return successResponse({ list, total, hasMore })
+    return successResponse({
+      list,
+      total,
+      hasMore: total > page * pageSize
+    })
   } catch (err) {
     console.error('getActivityList error:', err)
-    return errorResponse(5001, err.message)
+    return errorResponse(5001, err.message || '系统内部错误')
   }
 }
 
 exports.validateParams = validateParams
 exports.batchGetCredits = batchGetCredits
 exports.formatActivity = formatActivity
+exports.scoreActivity = scoreActivity
+exports.compareActivitiesForFeed = compareActivitiesForFeed

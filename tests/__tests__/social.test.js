@@ -16,6 +16,11 @@ describe('shouldUnlockWechatId', () => {
     expect(shouldUnlockWechatId('approved', meetTime, now)).toBe(true)
   })
 
+  test('paid 且距活动不到 2 小时返回 true', () => {
+    const now = new Date('2025-01-01T12:30:00Z') // 1.5h before
+    expect(shouldUnlockWechatId('paid', meetTime, now)).toBe(true)
+  })
+
   test('approved 且恰好 2 小时返回 true（边界：meetTime - now === 2h）', () => {
     const now = new Date('2025-01-01T12:00:00Z') // exactly 2h before
     expect(shouldUnlockWechatId('approved', meetTime, now)).toBe(true)

@@ -1,0 +1,27 @@
+<view class="page template-page">
+  <view class="hero-card">
+    <text class="hero-kicker">模板广场</text>
+    <text class="hero-title">先决定要组什么局，再去补时间地点</text>
+    <text class="hero-desc">优先推荐公共空间、低预算、弱社交负担的组局模板。</text>
+  </view>
+
+  <view class="template-list">
+    <view
+      wx:for="{{templateOptions}}"
+      wx:key="type"
+      class="template-card {{selectedType === item.type ? 'active' : ''}}"
+      bindtap="chooseTemplate"
+      data-type="{{item.type}}"
+    >
+      <view class="template-head">
+        <text class="template-title">{{item.label}}</text>
+        <text class="template-badge">{{selectedType === item.type ? '当前已选' : '推荐模板'}}</text>
+      </view>
+      <text class="template-desc">{{item.desc}}</text>
+      <text class="template-summary">{{item.summary}}</text>
+      <view class="template-footer">
+        <text class="template-action">用这个模板发起 ›</text>
+      </view>
+    </view>
+  </view>
+</view>

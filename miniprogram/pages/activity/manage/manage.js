@@ -3,12 +3,35 @@ var api = require('../../../utils/api')
 var statusUtil = require('../../../utils/status')
 var manageHelpers = require('./helpers')
 
+function parseTime(value) {
+  var time = new Date(value).getTime()
+  return isNaN(time) ? null : time
+}
+
+function canSyncFlowStatus(activity) {
+  return !!(activity && (activity.status === 'pending' || activity.status === 'confirmed'))
+}
+
+function shouldCheckLock(activity) {
+  if (!canSyncFlowStatus(activity)) return false
+  var signupDeadlineMs = parseTime(activity.signupDeadline)
+  return signupDeadlineMs !== null && Date.now() >= signupDeadlineMs
+}
+
+function getFlowSyncLabel(activity) {
+  return shouldCheckLock(activity) ? '检查锁局' : '刷新成局'
+}
+
 Page({
   data: {
     activityId: '',
     activity: null,
     participations: [],
-    loading: true
+    loading: true,
+    isInitiator: false,
+    showFlowSyncAction: false,
+    flowSyncLabel: '刷新成局',
+    flowSyncing: false
   },
 
   onLoad: function(options) {
@@ -39,6 +62,9 @@ Page({
         self.setData({
           activity: data,
           participations: participations,
+          isInitiator: !!data.isInitiator,
+          showFlowSyncAction: !!data.isInitiator && canSyncFlowStatus(data),
+          flowSyncLabel: getFlowSyncLabel(data),
           loading: false
         })
       } else {
@@ -48,6 +74,44 @@ Page({
     }).catch(function() {
       wx.showToast({ title: '加载失败', icon: 'none' })
       self.setData({ loading: false })
+    })
+  },
+
+  goCheckin: function() {
+    wx.navigateTo({
+      url: '/pages/activity/checkin/checkin?activityId=' + this.data.activityId
+    })
+  },
+
+  syncFlowStatus: function() {
+    var self = this
+    var activity = self.data.activity
+    if (!activity || self.data.flowSyncing) return
+
+    var functionName = shouldCheckLock(activity) ? 'lockActivity' : 'autoFormActivity'
+    self.setData({ flowSyncing: true })
+
+    api.callFunction(functionName, {
+      activityId: self.data.activityId
+    }, {
+      showLoading: true
+    }).then(function(result) {
+      if (result.code === 0) {
+        var message = '已刷新人数'
+        if (functionName === 'lockActivity') {
+          message = result.data && result.data.locked ? '已同步为锁局' : '暂未到锁局时间'
+        } else if (result.data && result.data.activityStatus === 'confirmed') {
+          message = '已同步成局'
+        }
+        wx.showToast({ title: message, icon: 'success' })
+        self.loadData()
+      } else {
+        wx.showToast({ title: result.message || '同步失败', icon: 'none' })
+      }
+      self.setData({ flowSyncing: false })
+    }).catch(function(err) {
+      self.setData({ flowSyncing: false })
+      wx.showToast({ title: err.message || '同步失败', icon: 'none' })
     })
   },
 

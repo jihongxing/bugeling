@@ -17,7 +17,11 @@ const COLLECTIONS = {
   PARTICIPATIONS: 'participations',
   CREDITS: 'credits',
   TRANSACTIONS: 'transactions',
-  REPORTS: 'reports'
+  REPORTS: 'reports',
+  ACTIVITY_REVIEWS: 'activity_reviews',
+  ACTIVITY_TEMPLATES: 'activity_templates',
+  ACTIVITY_REPORTS_SUMMARY: 'activity_reports_summary',
+  MODERATION_TASKS: 'moderation_tasks'
 }
 
 module.exports = {

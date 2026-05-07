@@ -114,6 +114,7 @@ describe('reportArrival', () => {
       expect(dbMocks.doc).toHaveBeenCalledWith('act-001')
       expect(dbMocks.update).toHaveBeenCalledWith({
         data: {
+          status: 'in_progress',
           arrivedAt: 'SERVER_DATE',
           arrivedLocation: { latitude: 39.91, longitude: 116.41 }
         }
@@ -129,7 +130,7 @@ describe('reportArrival', () => {
           data: { _id: 'act-001', initiatorId: 'initiator-001', location: { coordinates: [116.4, 39.9] } }
         })
         .mockResolvedValueOnce({
-          data: [{ _id: 'part-001', participantId: 'participant-001', activityId: 'act-001', status: 'approved' }]
+          data: [{ _id: 'part-001', participantId: 'participant-001', activityId: 'act-001', status: 'paid' }]
         })
       dbMocks.update.mockResolvedValue({ stats: { updated: 1 } })
 
@@ -139,10 +140,19 @@ describe('reportArrival', () => {
       expect(typeof result.data.distance).toBe('number')
       // Verify update was called on participation doc
       expect(dbMocks.doc).toHaveBeenCalledWith('part-001')
-      expect(dbMocks.update).toHaveBeenCalledWith({
+      expect(dbMocks.update).toHaveBeenNthCalledWith(1, {
         data: {
+          status: 'checked_in',
           arrivedAt: 'SERVER_DATE',
-          arrivedLocation: { latitude: 39.91, longitude: 116.41 }
+          arrivedLocation: { latitude: 39.91, longitude: 116.41 },
+          checkinAt: 'SERVER_DATE',
+          checkinLocation: { latitude: 39.91, longitude: 116.41 },
+          checkinMethod: 'location'
+        }
+      })
+      expect(dbMocks.update).toHaveBeenNthCalledWith(2, {
+        data: {
+          status: 'in_progress'
         }
       })
     })
@@ -166,6 +176,23 @@ describe('reportArrival', () => {
     test('距离非负', () => {
       const distance = calculateDistance(0, 0, 1, 1)
       expect(distance).toBeGreaterThanOrEqual(0)
+    })
+
+    test('旧 location.latitude/longitude 数据也能正确计算距离', async () => {
+      cloud.getWXContext.mockReturnValue({ OPENID: 'initiator-001' })
+      dbMocks.get.mockResolvedValueOnce({
+        data: {
+          _id: 'act-legacy',
+          initiatorId: 'initiator-001',
+          location: { latitude: 39.91, longitude: 116.41 }
+        }
+      })
+      dbMocks.update.mockResolvedValue({ stats: { updated: 1 } })
+
+      const result = await main({ activityId: 'act-legacy', latitude: 39.91, longitude: 116.41 }, {})
+
+      expect(result.code).toBe(0)
+      expect(result.data.distance).toBe(0)
     })
   })
 

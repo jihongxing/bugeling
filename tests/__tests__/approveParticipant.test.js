@@ -242,6 +242,7 @@ describe('approveParticipant', () => {
       expect(dbMocks.update).toHaveBeenCalledWith({
         data: {
           currentParticipants: { $inc: 1 },
+          approvedParticipants: { $inc: 1 },
           status: 'confirmed'
         }
       })
@@ -262,7 +263,8 @@ describe('approveParticipant', () => {
       // Verify activity update does NOT include status change
       expect(dbMocks.update).toHaveBeenCalledWith({
         data: {
-          currentParticipants: { $inc: 1 }
+          currentParticipants: { $inc: 1 },
+          approvedParticipants: { $inc: 1 }
         }
       })
     })
@@ -279,6 +281,12 @@ describe('approveParticipant', () => {
 
       expect(result.code).toBe(0)
       expect(result.data).toEqual({ success: true })
+      expect(dbMocks.update).toHaveBeenCalledWith({
+        data: {
+          currentParticipants: { $inc: 1 },
+          approvedParticipants: { $inc: 1 }
+        }
+      })
     })
 
     test('approves when one slot remaining', async () => {

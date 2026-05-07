@@ -4,6 +4,17 @@
   <view class="manage-header card">
     <text class="manage-title">{{activity.title}}</text>
     <text class="manage-count">参与人数 {{activity.currentParticipants}}/{{activity.maxParticipants}}</text>
+    <view class="manage-actions">
+      <button
+        wx:if="{{showFlowSyncAction}}"
+        class="btn-secondary"
+        bindtap="syncFlowStatus"
+        loading="{{flowSyncing}}"
+      >
+        {{flowSyncLabel}}
+      </button>
+      <button class="btn-secondary" bindtap="goCheckin">签到页</button>
+    </view>
   </view>
 
   <!-- 参与者列表 -->

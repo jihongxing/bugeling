@@ -5,6 +5,7 @@ cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 
 const { getDb, COLLECTIONS } = require('../_shared/db')
 const { successResponse, errorResponse } = require('../_shared/response')
+const activityStatus = require('../_shared/activityStatus')
 
 /**
  * approveParticipant 云函数入口
@@ -75,12 +76,17 @@ exports.main = async (event, context) => {
       .doc(participationId)
       .update({ data: { status: 'approved' } })
 
-    // 8. 更新活动 currentParticipants + 1，若 status 为 pending 则更新为 confirmed
+    // 8. 用统一状态机推进人数与成局状态，避免审批流和自动成局规则分叉
+    const currentParticipants = Number(activity.currentParticipants || activity.approvedParticipants || 0)
+    const nextParticipantCount = currentParticipants + 1
+    const nextActivityStatus = activityStatus.getNextActivityStatus(activity, nextParticipantCount)
     const activityUpdateData = {
-      currentParticipants: db.command.inc(1)
+      currentParticipants: db.command.inc(1),
+      approvedParticipants: db.command.inc(1)
     }
-    if (activity.status === 'pending') {
-      activityUpdateData.status = 'confirmed'
+
+    if (nextActivityStatus === 'confirmed' && activity.status !== 'confirmed') {
+      activityUpdateData.status = nextActivityStatus
     }
 
     await db.collection(COLLECTIONS.ACTIVITIES)

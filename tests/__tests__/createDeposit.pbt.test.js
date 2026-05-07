@@ -44,8 +44,8 @@ const PBT_NUM_RUNS = 100
 
 const validIdArb = fc.stringMatching(/^[a-zA-Z0-9_-]+$/).filter(s => s.length > 0)
 const depositTierArb = fc.constantFrom(990, 1990, 2990, 3990, 4990)
-const allActivityStatuses = ['pending', 'confirmed', 'verified', 'expired', 'settled']
-const nonPendingStatuses = allActivityStatuses.filter(s => s !== 'pending')
+const joinableStatuses = ['pending', 'confirmed']
+const nonJoinableStatuses = ['pending_review', 'locked', 'in_progress', 'finished', 'cancelled', 'removed']
 const activeParticipationStatuses = ['paid', 'approved', 'verified', 'breached', 'settled']
 
 // --- Helper: set up mocks ---
@@ -203,7 +203,7 @@ describe('Feature: payment-settlement, Property 3: createDeposit 活动状态校
   it('should return 1004 when activity status is not pending', async () => {
     await fc.assert(
       fc.asyncProperty(
-        fc.constantFrom(...nonPendingStatuses),
+        fc.constantFrom(...nonJoinableStatuses),
         async (status) => {
           setupMocks({
             openId: 'participant-001',
@@ -219,15 +219,15 @@ describe('Feature: payment-settlement, Property 3: createDeposit 活动状态校
     )
   })
 
-  it('should NOT return status-related 1004 when activity status is pending', async () => {
+  it('should NOT return status-related 1004 when activity status is joinable', async () => {
     await fc.assert(
       fc.asyncProperty(
-        depositTierArb,
-        async (depositTier) => {
+        fc.constantFrom(...joinableStatuses),
+        async (status) => {
           setupMocks({
             openId: 'participant-001',
             creditScore: 100,
-            activity: makeActivity({ status: 'pending', depositTier })
+            activity: makeActivity({ status })
           })
 
           const result = await main({ activityId: 'act-001' })

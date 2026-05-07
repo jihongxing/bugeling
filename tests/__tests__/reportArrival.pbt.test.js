@@ -80,7 +80,7 @@ function setupDbMock({ activityData, participationData, docGetThrows }) {
 // **Validates: Requirements 3.6, 3.7**
 //
 // For any caller openId that is neither the activity initiator
-// nor an approved participant, reportArrival returns 1002.
+// nor an eligible participant, reportArrival returns 1002.
 // ============================================================
 
 describe('Feature: verification-qrcode, Property 7: 到达记录权限校验', () => {
@@ -106,7 +106,7 @@ describe('Feature: verification-qrcode, Property 7: 到达记录权限校验', (
               initiatorId,
               location: { coordinates: [116.4, 39.9] }
             },
-            participationData: [] // no approved participation
+            participationData: [] // no eligible participation
           })
 
           const result = await main({
@@ -156,7 +156,7 @@ describe('Feature: verification-qrcode, Property 7: 到达记录权限校验', (
     )
   })
 
-  it('approved participant is allowed (does NOT get 1002)', async () => {
+  it('paid participant is allowed (does NOT get 1002)', async () => {
     await fc.assert(
       fc.asyncProperty(
         nonEmptyIdArb,
@@ -180,7 +180,7 @@ describe('Feature: verification-qrcode, Property 7: 到达记录权限校验', (
               _id: 'part-001',
               participantId,
               activityId,
-              status: 'approved'
+              status: 'paid'
             }]
           })
 
@@ -235,7 +235,7 @@ describe('Feature: verification-qrcode, Property 8: 到达记录路由正确性'
                   _id: partDocId,
                   participantId,
                   activityId,
-                  status: 'approved'
+                  status: 'paid'
                 }]
               })),
               count: jest.fn(),
@@ -272,15 +272,18 @@ describe('Feature: verification-qrcode, Property 8: 到达记录路由正确性'
           const result = await main({ activityId, latitude: lat, longitude: lon })
 
           expect(result.code).toBe(0)
-          // update should be called once (participation only)
-          expect(mockUpdate).toHaveBeenCalledTimes(1)
+          // update should be called twice (participation + activity in_progress)
+          expect(mockUpdate).toHaveBeenCalledTimes(2)
           // The doc() call for update should use the participation doc ID
           // First doc() call is for activity get, second is for participation update
           expect(docIds).toContain(partDocId)
           // Verify the update payload has arrivedAt and arrivedLocation
           const updatePayload = mockUpdate.mock.calls[0][0]
+          const activityPayload = mockUpdate.mock.calls[1][0]
+          expect(updatePayload.data.status).toBe('checked_in')
           expect(updatePayload.data.arrivedAt).toBe('SERVER_DATE')
           expect(updatePayload.data.arrivedLocation).toEqual({ latitude: lat, longitude: lon })
+          expect(activityPayload.data.status).toBe('in_progress')
         }
       ),
       { numRuns: PBT_NUM_RUNS }
@@ -347,6 +350,7 @@ describe('Feature: verification-qrcode, Property 8: 到达记录路由正确性'
           expect(docIds).toContain(activityId)
           // Verify the update payload
           const updatePayload = mockUpdate.mock.calls[0][0]
+          expect(updatePayload.data.status).toBe('in_progress')
           expect(updatePayload.data.arrivedAt).toBe('SERVER_DATE')
           expect(updatePayload.data.arrivedLocation).toEqual({ latitude: lat, longitude: lon })
         }

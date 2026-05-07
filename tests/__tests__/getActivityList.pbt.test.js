@@ -1,6 +1,6 @@
 // tests/__tests__/getActivityList.pbt.test.js - getActivityList 属性基测试
 // Feature: activity-crud, Property 4: GEO 查询仅返回 pending 活动
-// Feature: activity-crud, Property 5: 活动列表按距离升序排列
+// Feature: activity-crud, Property 5: 活动列表按推荐排序，距离作为兜底排序
 // **Validates: Requirements 2.3, 2.4**
 
 jest.mock('wx-server-sdk')
@@ -28,7 +28,11 @@ jest.mock('../../cloudfunctions/_shared/response', () => ({
 const fc = require('fast-check')
 const cloud = require('wx-server-sdk')
 const { getCredit } = require('../../cloudfunctions/_shared/credit')
-const { main, formatActivity } = require('../../cloudfunctions/getActivityList/index')
+const {
+  main,
+  formatActivity,
+  compareActivitiesForFeed
+} = require('../../cloudfunctions/getActivityList/index')
 
 const PBT_NUM_RUNS = 100
 
@@ -175,16 +179,15 @@ describe('Feature: activity-crud, Property 4: GEO 查询仅返回 pending 活动
   })
 })
 
-describe('Feature: activity-crud, Property 5: 活动列表按距离升序排列', () => {
+describe('Feature: activity-crud, Property 5: 活动列表按推荐排序，距离作为兜底排序', () => {
   beforeEach(() => {
     jest.clearAllMocks()
     getCredit.mockResolvedValue({ score: 90 })
   })
 
-  it('for any result with length >= 2, distance[i] <= distance[i+1]', () => {
+  it('for any result with length >= 2, compareActivitiesForFeed(list[i], list[i+1]) <= 0', () => {
     return fc.assert(
       fc.asyncProperty(
-        // Generate at least 2 activities to test ordering
         fc.array(
           activityRecordArb({ statusArb: fc.constant('pending') }),
           { minLength: 2, maxLength: 20 }
@@ -204,9 +207,9 @@ describe('Feature: activity-crud, Property 5: 活动列表按距离升序排列'
           const list = result.data.list
           expect(list.length).toBeGreaterThanOrEqual(2)
 
-          // Property 5: distances are in ascending order
+          // Property 5: recommended order is stable and distance is the fallback
           for (let i = 0; i < list.length - 1; i++) {
-            expect(list[i].distance).toBeLessThanOrEqual(list[i + 1].distance)
+            expect(compareActivitiesForFeed(list[i], list[i + 1])).toBeLessThanOrEqual(0)
           }
         }
       ),
@@ -214,7 +217,7 @@ describe('Feature: activity-crud, Property 5: 活动列表按距离升序排列'
     )
   })
 
-  it('formatActivity preserves distance ordering from source records', () => {
+  it('formatActivity preserves distance values from source records', () => {
     return fc.assert(
       fc.property(
         fc.array(

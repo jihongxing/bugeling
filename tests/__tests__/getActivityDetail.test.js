@@ -78,10 +78,16 @@ describe('shouldUnlockWechatId', () => {
     expect(shouldUnlockWechatId(undefined, new Date().toISOString())).toBe(false)
   })
 
-  test('returns false when participation status is not approved', () => {
-    const participation = { status: 'paid' }
+  test('returns false when participation status is not unlockable', () => {
+    const participation = { status: 'rejected' }
     const meetTime = new Date(Date.now() + 30 * 60 * 1000).toISOString()
     expect(shouldUnlockWechatId(participation, meetTime)).toBe(false)
+  })
+
+  test('returns true when participation status is paid and meetTime is within 2 hours', () => {
+    const participation = { status: 'paid' }
+    const meetTime = new Date(Date.now() + 30 * 60 * 1000).toISOString()
+    expect(shouldUnlockWechatId(participation, meetTime)).toBe(true)
   })
 
   test('returns false when status is approved but meetTime is more than 2 hours away', () => {
@@ -212,7 +218,7 @@ describe('getActivityDetail', () => {
       expect(result.data.wechatId).toBeNull()
     })
 
-    test('returns wechatId as null when participation is paid (not approved)', async () => {
+    test('returns wechatId as unlocked when participation is paid', async () => {
       const activity = mockActivity()
       const participation = mockParticipation({ status: 'paid' })
       dbMocks.get
@@ -221,7 +227,7 @@ describe('getActivityDetail', () => {
 
       const result = await main({ activityId: 'activity-001' }, {})
       expect(result.code).toBe(0)
-      expect(result.data.wechatId).toBeNull()
+      expect(result.data.wechatId).toBe('wx_secret_123')
     })
 
     test('returns wechatId as null when approved but meetTime > 2 hours away', async () => {

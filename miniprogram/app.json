@@ -1,9 +1,14 @@
 {
   "pages": [
     "pages/index/index",
+    "pages/activity/template-select/template-select",
     "pages/activity/create/create",
     "pages/activity/detail/detail",
+    "pages/activity/checkin/checkin",
+    "pages/activity/report-detail/report-detail",
+    "pages/activity/review/review",
     "pages/activity/manage/manage",
+    "pages/rules/index",
     "pages/verify/qrcode/qrcode",
     "pages/verify/scan/scan",
     "pages/user/profile/profile",
@@ -25,8 +30,8 @@
         "selectedIconPath": "assets/icons/home-active.png"
       },
       {
-        "pagePath": "pages/activity/create/create",
-        "text": "发布",
+        "pagePath": "pages/activity/template-select/template-select",
+        "text": "发局",
         "iconPath": "assets/icons/add.png",
         "selectedIconPath": "assets/icons/add-active.png"
       },

@@ -1,6 +1,3 @@
 {
-  "component": true,
-  "usingComponents": {
-    "deposit-tag": "/components/deposit-tag/deposit-tag"
-  }
+  "component": true
 }

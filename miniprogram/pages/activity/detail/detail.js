@@ -9,16 +9,18 @@ Page({
   data: {
     activityId: '',
     activity: null,
+    detailView: null,
     myParticipation: null,
     isInitiator: false,
     actionState: '',
     showWechatCopy: false,
-    depositDisplay: '',
+    totalFeeText: '',
     statusConfig: null,
     loading: true,
     paying: false,
     unlockCountdownText: '',
-    wechatUnlocked: false
+    wechatUnlocked: false,
+    showCheckinAction: false
   },
 
   _countdownTimer: null,
@@ -48,7 +50,8 @@ Page({
 
     var status = myParticipation ? myParticipation.status : ''
     var now = new Date()
-    var unlocked = socialUtil.shouldUnlockWechatId(status, activity.meetTime, now)
+    var unlocked = activity.wechatId != null
+      || socialUtil.shouldUnlockWechatId(status, activity.meetTime, now)
     var countdownMs = socialUtil.getUnlockCountdown(activity.meetTime, now)
     var countdownText = detailHelpers.formatCountdown(countdownMs)
 
@@ -84,22 +87,34 @@ Page({
     }).then(function(result) {
       if (result.code === 0 && result.data) {
         var data = result.data
+        if (data.locationDisplay) {
+          data.location = data.locationDisplay
+        }
+        if (data.myParticipationMeta && data.myParticipation) {
+          data.myParticipation = Object.assign({}, data.myParticipation, data.myParticipationMeta)
+        }
         var isInitiator = data.isInitiator || false
         var myParticipation = data.myParticipation || null
-        var actionState = detailHelpers.getActionState(isInitiator, myParticipation)
+        var detailView = detailHelpers.buildDetailView(data, myParticipation)
+        var actionState = detailHelpers.getActionState(data, isInitiator, myParticipation)
+        var participationStatus = myParticipation
+          ? myParticipation.status
+          : (data.displayStatus || data.status)
+        var showCheckinAction = detailHelpers.shouldShowCheckinAction(data, isInitiator, myParticipation)
 
         self.setData({
           activity: data,
+          detailView: detailView,
           isInitiator: isInitiator,
           myParticipation: myParticipation,
           actionState: actionState,
+          showCheckinAction: showCheckinAction,
           showWechatCopy: data.wechatId != null,
-          depositDisplay: formatUtil.formatDeposit(data.depositTier),
-          statusConfig: myParticipation ? statusUtil.getStatusConfig(myParticipation.status) : null,
+          totalFeeText: detailView.totalFeeText || formatUtil.formatFeeBreakdown(data.serviceFee, data.bondAmount),
+          statusConfig: statusUtil.getStatusConfig(participationStatus),
           loading: false
         })
 
-        // 加载完成后立即更新倒计时状态
         self._updateCountdown()
       } else if (result.code === 1003) {
         wx.showToast({ title: '活动不存在', icon: 'none' })
@@ -126,6 +141,18 @@ Page({
     })
   },
 
+  goCheckin: function() {
+    wx.navigateTo({
+      url: '/pages/activity/checkin/checkin?activityId=' + this.data.activityId
+    })
+  },
+
+  goReportDetail: function() {
+    wx.navigateTo({
+      url: '/pages/activity/report-detail/report-detail?activityId=' + this.data.activityId
+    })
+  },
+
   goReport: function() {
     wx.navigateTo({
       url: '/pages/report/report?activityId=' + this.data.activityId
@@ -135,7 +162,7 @@ Page({
   goJoin: function() {
     var self = this
     var activity = self.data.activity
-    if (self.data.paying) return
+    if (self.data.paying || !activity) return
 
     api.callFunction('checkConflict', {
       meetTime: activity.meetTime,
@@ -151,48 +178,40 @@ Page({
 
       if (hasConflict) {
         wx.showModal({
-          title: '契约冲突',
-          content: '契约冲突！您在那段时间已有一场不鸽令，强行加入若无法准时到达，将损失两份押金。',
+          title: '时间冲突',
+          content: '你在同一时段已经有其他活动，强行报名可能会导致两边都无法守约。',
           confirmText: '仍然报名',
           cancelText: '取消',
           success: function(res) {
             if (!res.confirm) return
-            if (hasRouteRisk && routeWarning) {
-              wx.showModal({
-                title: '行程过紧',
-                content: routeWarning + '，鸽子风险极高！',
-                confirmText: '仍然报名',
-                cancelText: '取消',
-                success: function(res2) {
-                  if (res2.confirm) {
-                    self.proceedToDeposit()
-                  }
-                }
-              })
-            } else {
-              self.proceedToDeposit()
-            }
-          }
-        })
-      } else if (hasRouteRisk && routeWarning) {
-        wx.showModal({
-          title: '行程过紧',
-          content: routeWarning + '，鸽子风险极高！',
-          confirmText: '仍然报名',
-          cancelText: '取消',
-          success: function(res) {
-            if (res.confirm) {
-              self.proceedToDeposit()
-            }
+            self._confirmJoinWithRouteWarning(hasRouteRisk, routeWarning)
           }
         })
       } else {
-        self.proceedToDeposit()
+        self._confirmJoinWithRouteWarning(hasRouteRisk, routeWarning)
       }
     }).catch(function() {
-      // 冲突检测失败不阻塞报名
       self.proceedToDeposit()
     })
+  },
+
+  _confirmJoinWithRouteWarning: function(hasRouteRisk, routeWarning) {
+    var self = this
+    if (hasRouteRisk && routeWarning) {
+      wx.showModal({
+        title: '行程过紧',
+        content: routeWarning + '，如果赶不到现场，保证金会按规则处理。',
+        confirmText: '继续报名',
+        cancelText: '取消',
+        success: function(res) {
+          if (res.confirm) {
+            self.proceedToDeposit()
+          }
+        }
+      })
+      return
+    }
+    self.proceedToDeposit()
   },
 
   proceedToDeposit: function() {
@@ -219,16 +238,14 @@ Page({
           fail: function(err) {
             self.setData({ paying: false })
             var msg = (err && err.errMsg && err.errMsg.indexOf('cancel') !== -1)
-              ? '已取消支付' : '支付失败，请重试'
+              ? '已取消支付'
+              : '支付失败，请重试'
             wx.showToast({ title: msg, icon: 'none' })
           }
         })
       } else if (result.code === 2002) {
         self.setData({ paying: false })
         wx.showToast({ title: '信用分不足，无法报名', icon: 'none' })
-      } else if (result.code === 1004) {
-        self.setData({ paying: false })
-        wx.showToast({ title: result.message || '无法报名', icon: 'none' })
       } else {
         self.setData({ paying: false })
         wx.showToast({ title: result.message || '报名失败，请重试', icon: 'none' })

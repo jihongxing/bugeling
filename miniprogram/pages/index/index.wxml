@@ -1,31 +1,79 @@
 <!-- pages/index/index.wxml - 首页活动列表 -->
-<view class="page">
-  <!-- 位置栏 -->
-  <view class="location-bar">
-    <text class="location-name">{{locationName}}</text>
-    <view class="refresh-btn" bindtap="refreshLocation">
-      <text class="refresh-icon">↻</text>
+<view class="page index-page">
+  <view class="hero-card">
+    <view class="hero-copy">
+      <text class="hero-kicker">UGC 同城低成本组局</text>
+      <text class="hero-title">附近有哪些局，先看清再决定加不加</text>
+      <text class="hero-subtitle">{{feedSubtitle}}</text>
+    </view>
+
+    <view class="hero-toolbar">
+      <view class="location-chip">
+        <text class="location-dot"></text>
+        <text class="location-name">{{locationName || '定位中...'}}</text>
+      </view>
+
+      <view class="refresh-btn" bindtap="refreshLocation">
+        <text class="refresh-icon">↻</text>
+        <text class="refresh-text">刷新附近</text>
+      </view>
+    </view>
+
+    <view class="hero-stats">
+      <view class="stat-card">
+        <text class="stat-value">{{feedSummary.total}}</text>
+        <text class="stat-label">附近可选</text>
+      </view>
+      <view class="stat-card">
+        <text class="stat-value">{{feedSummary.almostReadyCount}}</text>
+        <text class="stat-label">临近成局</text>
+      </view>
+      <view class="stat-card">
+        <text class="stat-value">{{feedSummary.lowBudgetCount}}</text>
+        <text class="stat-label">预算友好</text>
+      </view>
+    </view>
+
+    <view class="hero-tags">
+      <text class="hero-tag">模板化发局</text>
+      <text class="hero-tag">低成本优先</text>
+      <text class="hero-tag">安全信息透明</text>
     </view>
   </view>
 
-  <!-- 活动列表 -->
-  <view class="activity-list" wx:if="{{!isEmpty}}">
-    <activity-card
-      wx:for="{{activityList}}"
-      wx:key="activityId"
-      activity="{{item}}"
-      bind:tap="onCardTap"
-    />
+  <view class="feed-section" wx:if="{{activityList.length > 0}}">
+    <view class="feed-head">
+      <view class="feed-head-copy">
+        <text class="feed-title">附近活动流</text>
+        <text class="feed-desc">优先展示信息更完整、组局目标更清楚的局</text>
+      </view>
+      <text class="feed-count">{{activityList.length}} 个局</text>
+    </view>
+
+    <view class="activity-list">
+      <activity-card
+        wx:for="{{activityList}}"
+        wx:key="activityId"
+        activity="{{item}}"
+        bind:tap="onCardTap"
+      />
+    </view>
+
     <view class="loading-tip" wx:if="{{loading}}">
-      <text>加载中...</text>
+      <text>正在加载更多组局...</text>
     </view>
     <view class="no-more-tip" wx:if="{{!hasMore && activityList.length > 0}}">
-      <text>没有更多了</text>
+      <text>附近就这些了，换个位置再看看</text>
     </view>
   </view>
 
-  <!-- 空状态 -->
+  <view class="loading-state" wx:if="{{loading && activityList.length === 0}}">
+    <text class="loading-title">正在查找附近组局</text>
+    <text class="loading-desc">优先拉取离你更近、更容易成局的活动</text>
+  </view>
+
   <view class="empty-state" wx:if="{{isEmpty && !loading}}">
-    <text class="empty-text">附近暂无活动，去发起一个？</text>
+    <text class="empty-title">附近暂时还没有在招募的局</text>
+    <text class="empty-text">可以稍后刷新位置，或者先去发起一个更清楚、更容易成局的组局。</text>
   </view>
 </view>

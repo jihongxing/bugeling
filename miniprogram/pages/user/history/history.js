@@ -40,6 +40,22 @@ Page({
     }
   },
 
+  goDetail(e) {
+    const activityId = e.currentTarget.dataset.id
+    if (!activityId) return
+    wx.navigateTo({
+      url: '/pages/activity/detail/detail?activityId=' + activityId
+    })
+  },
+
+  goReportDetail(e) {
+    const activityId = e.currentTarget.dataset.id
+    if (!activityId) return
+    wx.navigateTo({
+      url: '/pages/activity/report-detail/report-detail?activityId=' + activityId
+    })
+  },
+
   onPullDownRefresh() {
     this.setData({ page: 1 })
     this.loadActivities().then(() => wx.stopPullDownRefresh())

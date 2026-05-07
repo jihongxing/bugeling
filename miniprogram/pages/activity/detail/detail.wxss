@@ -1,85 +1,263 @@
-/* pages/activity/detail/detail.wxss */
-.detail-header {
+.detail-page {
+  padding-bottom: 56rpx;
+}
+
+.hero-card,
+.metric-card,
+.card,
+.note-box {
+  background: #FFFFFF;
+  border-radius: 28rpx;
+  box-shadow: 0 12rpx 32rpx rgba(15, 23, 42, 0.06);
+}
+
+.hero-card {
+  padding: 28rpx;
   margin-bottom: 24rpx;
 }
 
-.detail-title {
-  display: block;
-  font-size: var(--font-size-xl);
-  font-weight: 600;
-  color: var(--color-secondary);
-  margin-bottom: 8rpx;
-}
-
-.credit-score {
-  font-size: var(--font-size-sm);
-  color: var(--color-text-secondary);
-}
-
-.deposit-card {
+.hero-head,
+.section-head,
+.info-item,
+.rule-item {
   display: flex;
-  flex-direction: column;
+  justify-content: space-between;
+  gap: 16rpx;
+}
+
+.hero-head {
   align-items: center;
-  padding: 32rpx;
+  margin-bottom: 16rpx;
 }
 
-.deposit-label {
-  font-size: var(--font-size-sm);
-  color: var(--color-text-secondary);
-  margin-bottom: 8rpx;
+.hero-badge,
+.hero-tag,
+.tag-item,
+.progress-chip-text {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.deposit-amount {
-  font-size: var(--font-size-price);
-  font-weight: 700;
-  color: var(--color-primary);
-}
-
-.contract-declaration {
-  background-color: #FEF3C7;
-  border: 1rpx solid #F59E0B;
-  border-radius: var(--radius-card);
-  padding: var(--spacing-card-inner);
-  margin-bottom: var(--spacing-card-gap);
-}
-
-.contract-title {
-  display: block;
-  font-size: var(--font-size-md);
+.hero-badge {
+  font-size: 24rpx;
+  color: #C2410C;
+  background: #FFF4EE;
+  border-radius: 999rpx;
+  padding: 8rpx 18rpx;
   font-weight: 600;
-  color: #D97706;
-  margin-bottom: 8rpx;
 }
 
-.contract-text {
-  font-size: var(--font-size-sm);
-  color: #92400E;
-  line-height: 1.6;
+.hero-status-text {
+  font-size: 24rpx;
+  border-radius: 999rpx;
+  padding: 8rpx 18rpx;
+  font-weight: 600;
 }
 
-.info-section {
-  margin-bottom: var(--spacing-card-gap);
+.hero-title {
+  display: block;
+  font-size: 40rpx;
+  line-height: 1.35;
+  color: #111827;
+  font-weight: 700;
+  margin-bottom: 12rpx;
+}
+
+.hero-summary {
+  font-size: 26rpx;
+  line-height: 1.7;
+  color: #6B7280;
+}
+
+.hero-badges,
+.tag-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12rpx;
+  margin-top: 20rpx;
+}
+
+.hero-tag,
+.tag-item {
+  font-size: 24rpx;
+  color: #374151;
+  background: #F3F4F6;
+  border-radius: 999rpx;
+  padding: 10rpx 18rpx;
+}
+
+.metric-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16rpx;
+  margin-bottom: 24rpx;
+}
+
+.metric-card {
+  padding: 24rpx;
+}
+
+.metric-label,
+.info-label,
+.credit-label {
+  font-size: 24rpx;
+  color: #6B7280;
+}
+
+.metric-value,
+.info-value,
+.credit-value {
+  display: block;
+  margin-top: 8rpx;
+  font-size: 28rpx;
+  color: #111827;
+  font-weight: 600;
+}
+
+.card {
+  padding: 28rpx;
+  margin-bottom: 24rpx;
+}
+
+.section-title {
+  font-size: 30rpx;
+  color: #111827;
+  font-weight: 700;
+}
+
+.section-side {
+  font-size: 24rpx;
+  color: #6B7280;
+  text-align: right;
+}
+
+.progress-card .progress-chip {
+  margin-top: 18rpx;
+  display: inline-flex;
+}
+
+.progress-chip-text {
+  font-size: 24rpx;
+  border-radius: 999rpx;
+  padding: 10rpx 18rpx;
+}
+
+.progress-ready .progress-chip-text,
+.progress-fill.progress-ready {
+  background: #DCFCE7;
+  color: #15803D;
+}
+
+.progress-almost .progress-chip-text,
+.progress-fill.progress-almost {
+  background: #FEF3C7;
+  color: #B45309;
+}
+
+.progress-forming .progress-chip-text,
+.progress-fill.progress-forming {
+  background: #E0F2FE;
+  color: #0369A1;
+}
+
+.progress-full .progress-chip-text,
+.progress-fill.progress-full {
+  background: #E5E7EB;
+  color: #4B5563;
+}
+
+.progress-track {
+  height: 18rpx;
+  border-radius: 999rpx;
+  background: #F3F4F6;
+  overflow: hidden;
+  margin-top: 20rpx;
+}
+
+.progress-fill {
+  height: 100%;
+  border-radius: 999rpx;
+}
+
+.progress-hint {
+  display: block;
+  margin-top: 16rpx;
+  font-size: 24rpx;
+  color: #6B7280;
 }
 
 .info-item {
-  display: flex;
-  justify-content: space-between;
-  padding: 16rpx 0;
+  padding: 18rpx 0;
   border-bottom: 1rpx solid #F3F4F6;
+  align-items: flex-start;
 }
 
 .info-item:last-child {
   border-bottom: none;
 }
 
-.info-label {
-  font-size: var(--font-size-md);
-  color: var(--color-text-secondary);
+.info-value {
+  flex: 1;
+  text-align: right;
+  margin-top: 0;
+  line-height: 1.5;
 }
 
-.info-value {
-  font-size: var(--font-size-md);
-  color: var(--color-secondary);
+.contract-box,
+.note-box {
+  margin-top: 24rpx;
+  background: #FFF7ED;
+  border-radius: 24rpx;
+  padding: 22rpx 24rpx;
+}
+
+.contract-title {
+  display: block;
+  font-size: 26rpx;
+  color: #C2410C;
+  font-weight: 700;
+  margin-bottom: 8rpx;
+}
+
+.contract-text,
+.paragraph,
+.rule-text,
+.note-text {
+  font-size: 26rpx;
+  line-height: 1.7;
+  color: #4B5563;
+}
+
+.paragraph + .paragraph {
+  margin-top: 12rpx;
+}
+
+.rule-list {
+  margin-top: 20rpx;
+}
+
+.rule-item {
+  align-items: flex-start;
+  margin-bottom: 12rpx;
+}
+
+.rule-dot {
+  width: 24rpx;
+  color: #FF6B35;
+}
+
+.credit-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18rpx 16rpx;
+  margin-top: 18rpx;
+}
+
+.credit-item {
+  background: #F8FAFC;
+  border-radius: 20rpx;
+  padding: 18rpx;
 }
 
 .action-area {
@@ -92,10 +270,18 @@
   margin-bottom: 16rpx;
 }
 
-.status-display {
-  display: flex;
-  justify-content: center;
+.status-tip,
+.countdown-tip {
+  background: #F8FAFC;
+  border-radius: 20rpx;
+  padding: 20rpx 24rpx;
   margin-bottom: 16rpx;
+}
+
+.status-tip-text,
+.countdown-tip text {
+  font-size: 26rpx;
+  color: #4B5563;
 }
 
 .loading-state {
@@ -106,6 +292,6 @@
 }
 
 .loading-text {
-  font-size: var(--font-size-md);
-  color: var(--color-text-secondary);
+  font-size: 28rpx;
+  color: #6B7280;
 }

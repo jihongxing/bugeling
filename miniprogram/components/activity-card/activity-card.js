@@ -1,5 +1,5 @@
 // components/activity-card/activity-card.js - 活动卡片组件
-var formatUtil = require('../../utils/format')
+var activityFeedAdapter = require('./activity-feed-adapter')
 
 Component({
   properties: {
@@ -10,17 +10,14 @@ Component({
   },
 
   data: {
-    formattedDistance: '',
-    formattedTime: ''
+    card: null
   },
 
   observers: {
     'activity': function(activity) {
       if (!activity) return
-      this.setData({
-        formattedDistance: formatUtil.formatDistance(activity.distance || 0),
-        formattedTime: formatUtil.formatMeetTime(activity.meetTime || '')
-      })
+      var normalizedActivity = activity.feedCard ? activity : activityFeedAdapter.normalizeActivity(activity)
+      this.setData({ card: normalizedActivity.feedCard })
     }
   },
 

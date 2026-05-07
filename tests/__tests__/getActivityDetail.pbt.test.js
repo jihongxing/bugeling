@@ -34,7 +34,7 @@ const TWO_HOURS_MS = 2 * 60 * 60 * 1000
 
 // All possible participation statuses from the domain
 const allStatuses = ['paid', 'approved', 'rejected', 'verified', 'breached', 'refunded']
-const nonApprovedStatuses = allStatuses.filter(s => s !== 'approved')
+const nonUnlockStatuses = allStatuses.filter(s => s !== 'approved' && s !== 'paid')
 
 // Generate a meetTime that is within 2 hours from now (meet - now <= 2h)
 // This includes past times and up to exactly 2 hours in the future
@@ -54,8 +54,8 @@ const anyMeetTimeArb = fc.integer({ min: -365 * 24 * 60, max: 365 * 24 * 60 }).m
 })
 
 describe('Feature: activity-crud, Property 7: wechatId 条件解锁', () => {
-  // Property: approved + meetTime within 2 hours → returns true
-  it('should return true when status is approved AND meetTime is within 2 hours', () => {
+  // Property: approved/paid + meetTime within 2 hours → returns true
+  it('should return true when status is approved or paid AND meetTime is within 2 hours', () => {
     return fc.assert(
       fc.property(
         meetTimeWithin2HoursArb,
@@ -63,14 +63,15 @@ describe('Feature: activity-crud, Property 7: wechatId 条件解锁', () => {
           const participation = { status: 'approved' }
           const result = shouldUnlockWechatId(participation, meetTime)
           expect(result).toBe(true)
+          expect(shouldUnlockWechatId({ status: 'paid' }, meetTime)).toBe(true)
         }
       ),
       { numRuns: PBT_NUM_RUNS }
     )
   })
 
-  // Property: approved + meetTime > 2 hours away → returns false
-  it('should return false when status is approved BUT meetTime is more than 2 hours away', () => {
+  // Property: approved/paid + meetTime > 2 hours away → returns false
+  it('should return false when status is approved or paid BUT meetTime is more than 2 hours away', () => {
     return fc.assert(
       fc.property(
         meetTimeBeyond2HoursArb,
@@ -78,17 +79,18 @@ describe('Feature: activity-crud, Property 7: wechatId 条件解锁', () => {
           const participation = { status: 'approved' }
           const result = shouldUnlockWechatId(participation, meetTime)
           expect(result).toBe(false)
+          expect(shouldUnlockWechatId({ status: 'paid' }, meetTime)).toBe(false)
         }
       ),
       { numRuns: PBT_NUM_RUNS }
     )
   })
 
-  // Property: non-approved status + any meetTime → returns false
-  it('should return false for any non-approved status regardless of meetTime', () => {
+  // Property: non-unlockable status + any meetTime → returns false
+  it('should return false for any non-unlockable status regardless of meetTime', () => {
     return fc.assert(
       fc.property(
-        fc.constantFrom(...nonApprovedStatuses),
+        fc.constantFrom(...nonUnlockStatuses),
         anyMeetTimeArb,
         (status, meetTime) => {
           const participation = { status }

@@ -16,18 +16,19 @@ const timestampArb = fc.integer({
   max: new Date('2030-12-31T23:59:59Z').getTime()
 })
 
-/** Non-'approved' participation status */
+/** Non-unlockable participation status */
 const nonApprovedStatusArb = fc.oneof(
   fc.constant('pending'),
   fc.constant('rejected'),
   fc.constant('cancelled'),
   fc.constant(''),
-  fc.string({ minLength: 0, maxLength: 20 }).filter(s => s !== 'approved')
+  fc.string({ minLength: 0, maxLength: 20 }).filter(s => s !== 'approved' && s !== 'paid')
 )
 
-/** Any participation status (including 'approved') */
+/** Any participation status (including unlockable states) */
 const statusArb = fc.oneof(
   fc.constant('approved'),
+  fc.constant('paid'),
   nonApprovedStatusArb
 )
 
@@ -38,8 +39,8 @@ const statusArb = fc.oneof(
 
 describe('Feature: content-safety-report, Property 7: shouldUnlockWechatId 解锁逻辑完整性', () => {
 
-  // 5.2: approved + 0 < diff <= 2h → true
-  it('returns true when status is approved and 0 < meetTime - now <= 2 hours', () => {
+  // 5.2: approved/paid + 0 < diff <= 2h → true
+  it('returns true when status is approved or paid and 0 < meetTime - now <= 2 hours', () => {
     fc.assert(
       fc.property(
         timestampArb,
@@ -48,14 +49,15 @@ describe('Feature: content-safety-report, Property 7: shouldUnlockWechatId 解�
           const meetMs = nowMs + diff
           const result = shouldUnlockWechatId('approved', meetMs, nowMs)
           expect(result).toBe(true)
+          expect(shouldUnlockWechatId('paid', meetMs, nowMs)).toBe(true)
         }
       ),
       { numRuns: PBT_NUM_RUNS }
     )
   })
 
-  // 5.3: status !== 'approved' → false (regardless of time)
-  it('returns false when status is not approved', () => {
+  // 5.3: non-unlockable status → false (regardless of time)
+  it('returns false when status is not unlockable', () => {
     fc.assert(
       fc.property(
         nonApprovedStatusArb,
@@ -103,7 +105,7 @@ describe('Feature: content-safety-report, Property 7: shouldUnlockWechatId 解�
   })
 
   // Completeness: the function returns true if and only if the exact conditions are met
-  it('returns true iff status === approved AND 0 < meetTime - now <= 2h', () => {
+  it('returns true iff status is approved or paid AND 0 < meetTime - now <= 2h', () => {
     fc.assert(
       fc.property(
         statusArb,
@@ -112,7 +114,7 @@ describe('Feature: content-safety-report, Property 7: shouldUnlockWechatId 解�
         (status, meetMs, nowMs) => {
           const result = shouldUnlockWechatId(status, meetMs, nowMs)
           const diff = meetMs - nowMs
-          const expected = status === 'approved' && diff > 0 && diff <= TWO_HOURS_MS
+          const expected = (status === 'approved' || status === 'paid') && diff > 0 && diff <= TWO_HOURS_MS
           expect(result).toBe(expected)
         }
       ),

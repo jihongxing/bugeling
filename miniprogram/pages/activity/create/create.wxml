@@ -1,79 +1,174 @@
 <!-- pages/activity/create/create.wxml - 创建活动 -->
-<view class="page">
-  <!-- 活动主题 -->
-  <view class="form-group">
-    <text class="form-label">活动主题</text>
-    <input class="form-input" placeholder="请输入活动主题（2-50字）" maxlength="50" value="{{title}}" bindinput="onTitleInput" />
-  </view>
-
-  <!-- 地点选择 -->
-  <view class="form-group" bindtap="chooseLocation">
-    <text class="form-label">活动地点</text>
-    <view class="form-picker">
-      <text class="{{location ? 'picker-value' : 'picker-placeholder'}}">{{location.name || '请选择活动地点'}}</text>
-      <text class="picker-arrow">›</text>
+<view class="page create-page">
+  <view class="hero-card">
+    <text class="hero-kicker">发起一个低成本局</text>
+    <text class="hero-title">先选模板，再补时间地点和成局条件</text>
+    <text class="hero-desc">系统会根据模板补齐规则和费用结构，尽量避免空白页发局。</text>
+    <view class="prefill-banner" wx:if="{{prefillHintText}}">
+      <text class="prefill-text">{{prefillHintText}}</text>
+    </view>
+    <view class="hero-actions">
+      <button class="hero-link-btn" bindtap="goTemplateSelect">去模板广场换一个</button>
+      <button class="hero-link-btn secondary" bindtap="goRules">查看组局规则</button>
     </view>
   </view>
 
-  <!-- 见面时间 -->
-  <view class="form-group">
-    <text class="form-label">见面时间</text>
-    <view class="time-picker-row">
-      <picker mode="date" start="{{minDate}}" bindchange="onDateChange">
-        <view class="form-picker half">
-          <text class="{{meetTimeDisplay ? 'picker-value' : 'picker-placeholder'}}">{{meetTimeDisplay || '选择日期'}}</text>
-        </view>
-      </picker>
-      <picker mode="time" start="{{minTime}}" bindchange="onTimeChange">
-        <view class="form-picker half">
-          <text class="{{_timeStr ? 'picker-value' : 'picker-placeholder'}}">{{_timeStr || '选择时间'}}</text>
-        </view>
-      </picker>
-    </view>
-  </view>
-
-  <!-- 参与人数 -->
-  <view class="form-group">
-    <text class="form-label">参与人数</text>
-    <view class="stepper">
-      <view class="stepper-btn" bindtap="adjustParticipants" data-delta="-1">-</view>
-      <text class="stepper-value">{{maxParticipants}}</text>
-      <view class="stepper-btn" bindtap="adjustParticipants" data-delta="1">+</view>
-    </view>
-  </view>
-
-  <!-- 押金档位 -->
-  <view class="form-group">
-    <text class="form-label">鸽子费档位</text>
-    <view class="deposit-options">
+  <view class="section-card">
+    <text class="section-title">1. 先选想做什么</text>
+    <view class="template-grid">
       <view
-        wx:for="{{depositTiers}}"
-        wx:key="*this"
-        class="deposit-option {{depositTier === item ? 'selected' : ''}}"
-        bindtap="onDepositSelect"
-        data-tier="{{item}}"
+        wx:for="{{templateOptions}}"
+        wx:key="type"
+        class="template-card {{selectedTemplateIndex === index ? 'active' : ''}}"
+        bindtap="onTemplateSelect"
+        data-index="{{index}}"
       >
-        <text>¥{{item / 100}}</text>
+        <text class="template-label">{{item.label}}</text>
+        <text class="template-desc">{{item.desc}}</text>
       </view>
     </view>
   </view>
 
-  <!-- 接头特征 -->
-  <view class="form-group">
-    <text class="form-label">接头特征</text>
-    <input class="form-input" placeholder="如：穿红色外套，戴黑帽" maxlength="100" value="{{identityHint}}" bindinput="onIdentityInput" />
+  <view class="section-card">
+    <text class="section-title">2. 补充局的信息</text>
+
+    <view class="form-group">
+      <text class="form-label">活动标题</text>
+      <input class="form-input" placeholder="可留空，系统会自动生成标题" maxlength="50" value="{{title}}" bindinput="onTitleInput" />
+    </view>
+
+    <view class="form-group">
+      <text class="form-label">一句话说明</text>
+      <textarea class="form-textarea" placeholder="比如：下班后附近走走，不喝酒不转场" maxlength="120" value="{{summary}}" bindinput="onSummaryInput"></textarea>
+    </view>
+
+    <view class="form-group" bindtap="chooseLocation">
+      <text class="form-label">活动地点</text>
+      <view class="form-picker">
+        <text class="{{location ? 'picker-value' : 'picker-placeholder'}}">{{location.name || '请选择活动地点'}}</text>
+        <text class="picker-arrow">›</text>
+      </view>
+    </view>
+
+    <view class="form-group">
+      <text class="form-label">见面时间</text>
+      <view class="time-picker-row">
+        <picker mode="date" start="{{minDate}}" bindchange="onDateChange">
+          <view class="form-picker half">
+            <text class="{{meetTimeDisplay ? 'picker-value' : 'picker-placeholder'}}">{{meetTimeDisplay || '选择日期'}}</text>
+          </view>
+        </picker>
+        <picker mode="time" start="{{minTime}}" bindchange="onTimeChange">
+          <view class="form-picker half">
+            <text class="{{_timeStr ? 'picker-value' : 'picker-placeholder'}}">{{_timeStr || '选择时间'}}</text>
+          </view>
+        </picker>
+      </view>
+    </view>
+
+    <view class="dual-stepper-row">
+      <view class="stepper-card">
+        <text class="form-label">最低成局人数</text>
+        <view class="stepper">
+          <view class="stepper-btn" bindtap="adjustParticipants" data-field="minParticipants" data-delta="-1">-</view>
+          <text class="stepper-value">{{minParticipants}}</text>
+          <view class="stepper-btn" bindtap="adjustParticipants" data-field="minParticipants" data-delta="1">+</view>
+        </view>
+      </view>
+      <view class="stepper-card">
+        <text class="form-label">人数上限</text>
+        <view class="stepper">
+          <view class="stepper-btn" bindtap="adjustParticipants" data-field="maxParticipants" data-delta="-1">-</view>
+          <text class="stepper-value">{{maxParticipants}}</text>
+          <view class="stepper-btn" bindtap="adjustParticipants" data-field="maxParticipants" data-delta="1">+</view>
+        </view>
+      </view>
+    </view>
   </view>
 
-  <!-- 微信号 -->
-  <view class="form-group">
-    <text class="form-label">微信号</text>
-    <input class="form-input" placeholder="请输入微信号" value="{{wechatId}}" bindinput="onWechatInput" />
+  <view class="section-card">
+    <text class="section-title">3. 设置预算和报名费用</text>
+
+    <view class="option-grid">
+      <view
+        wx:for="{{budgetOptions}}"
+        wx:key="value"
+        class="option-card {{budgetType === item.value ? 'active' : ''}}"
+        bindtap="onBudgetSelect"
+        data-value="{{item.value}}"
+      >
+        <text class="option-title">{{item.label}}</text>
+        <text class="option-desc">{{item.desc}}</text>
+      </view>
+    </view>
+
+    <view class="form-group">
+      <text class="form-label">保证金</text>
+      <view class="deposit-options">
+        <view
+          wx:for="{{bondOptions}}"
+          wx:key="*this"
+          class="deposit-option {{bondAmount === item ? 'selected' : ''}}"
+          bindtap="onBondSelect"
+          data-value="{{item}}"
+        >
+          <text>¥{{item / 100}}</text>
+        </view>
+      </view>
+    </view>
+
+    <view class="preview-card">
+      <view class="preview-row">
+        <text class="preview-label">预算建议</text>
+        <text class="preview-value">{{budgetPreviewText}}</text>
+      </view>
+      <view class="preview-row">
+        <text class="preview-label">报名结构</text>
+        <text class="preview-value">{{feePreviewText}}</text>
+      </view>
+    </view>
   </view>
 
-  <!-- 提交按钮 -->
+  <view class="section-card">
+    <text class="section-title">4. 安全和集合说明</text>
+
+    <view class="form-group">
+      <text class="form-label">集合说明</text>
+      <input class="form-input" placeholder="比如：地铁口 A 出口集合" maxlength="100" value="{{meetingPointText}}" bindinput="onMeetingPointInput" />
+    </view>
+
+    <view class="form-group">
+      <text class="form-label">接头特征</text>
+      <input class="form-input" placeholder="可选，比如：背黑色双肩包" maxlength="100" value="{{identityHint}}" bindinput="onIdentityInput" />
+    </view>
+
+    <view class="toggle-row">
+      <text class="form-label no-margin">是否要求实名</text>
+      <switch checked="{{realNameRequired}}" color="#FF6B35" bindchange="onToggleRealName" />
+    </view>
+
+    <view class="form-group">
+      <text class="form-label">性别限制</text>
+      <view class="segmented">
+        <view class="segment {{genderLimit === 'none' ? 'active' : ''}}" bindtap="onGenderSelect" data-value="none">不限</view>
+        <view class="segment {{genderLimit === 'female_only' ? 'active' : ''}}" bindtap="onGenderSelect" data-value="female_only">仅女生</view>
+      </view>
+    </view>
+
+    <view class="toggle-row">
+      <text class="form-label no-margin">允许活动后转场</text>
+      <switch checked="{{allowAfterParty}}" color="#FF6B35" bindchange="onAfterPartyChange" />
+    </view>
+
+    <view class="form-group">
+      <text class="form-label">备用微信号</text>
+      <input class="form-input" placeholder="可选，临近集合时再解锁给已报名用户" value="{{wechatId}}" bindinput="onWechatInput" />
+    </view>
+  </view>
+
   <view class="submit-area">
     <button class="btn-primary submit-btn" bindtap="submitForm" disabled="{{submitting}}">
-      {{submitting ? '发布中...' : '发布活动'}}
+      {{submitting ? '发布中...' : '发布这个组局'}}
     </button>
   </view>
 </view>

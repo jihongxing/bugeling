@@ -1,24 +1,51 @@
 <!-- components/activity-card/activity-card.wxml - 活动卡片 -->
 <view class="activity-card" bindtap="onCardTap" wx:if="{{activity}}">
-  <view class="card-header">
-    <text class="card-title">{{activity.title}}</text>
-    <deposit-tag amount="{{activity.depositTier}}" />
-  </view>
-  <view class="card-info">
-    <view class="info-row">
-      <text class="info-label">参与</text>
-      <text class="info-value">{{activity.currentParticipants}}/{{activity.maxParticipants}}人</text>
+  <view class="card-header" wx:if="{{card}}">
+    <view class="header-main">
+      <text class="template-badge">{{card.templateLabel}}</text>
+      <text class="card-title">{{card.title}}</text>
     </view>
-    <view class="info-row">
-      <text class="info-label">距离</text>
-      <text class="info-value">{{formattedDistance}}</text>
-    </view>
-    <view class="info-row">
-      <text class="info-label">时间</text>
-      <text class="info-value">{{formattedTime}}</text>
+    <view class="progress-chip progress-{{card.progressState}}">
+      <text class="progress-chip-text">{{card.progressText}}</text>
     </view>
   </view>
-  <view class="card-footer">
-    <text class="credit-text">契约分 {{activity.initiatorCredit}}</text>
+
+  <view class="metrics-grid" wx:if="{{card}}">
+    <view class="metric-card metric-strong">
+      <text class="metric-label">模板预算</text>
+      <text class="metric-value">{{card.budgetText}}</text>
+    </view>
+    <view class="metric-card">
+      <text class="metric-label">参与费用</text>
+      <text class="metric-value">{{card.feeText}}</text>
+    </view>
+    <view class="metric-card">
+      <text class="metric-label">集合时间</text>
+      <text class="metric-value">{{card.meetTimeText}}</text>
+    </view>
+    <view class="metric-card">
+      <text class="metric-label">距离位置</text>
+      <text class="metric-value">{{card.distanceText}}</text>
+    </view>
+  </view>
+
+  <view class="progress-section" wx:if="{{card}}">
+    <view class="progress-head">
+      <text class="progress-title">成局进度</text>
+      <text class="progress-detail">{{card.progressDetail}}</text>
+    </view>
+    <view class="progress-track">
+      <view class="progress-fill progress-{{card.progressState}}" style="width: {{card.progressPercent}}%;"></view>
+    </view>
+    <text class="progress-hint">{{card.progressHint}}</text>
+  </view>
+
+  <view class="safety-tags" wx:if="{{card && card.safetyTags && card.safetyTags.length}}">
+    <text class="safety-tag" wx:for="{{card.safetyTags}}" wx:key="index">{{item}}</text>
+  </view>
+
+  <view class="card-footer" wx:if="{{card}}">
+    <text class="location-text">{{card.locationText}}</text>
+    <text class="credit-text">发起人信用 {{card.creditText}}</text>
   </view>
 </view>

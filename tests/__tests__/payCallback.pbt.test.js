@@ -204,6 +204,65 @@ describe('Feature: payment-settlement, Property 9: payCallback 状态同步更�
     )
   })
 
+  it('should promote participation and activity to confirmed when minimum participants is reached', async function() {
+    var transaction = makeTransaction({ outTradeNo: 'BGL-confirmed-001' })
+    var participation = makeParticipation({ status: 'pending', activityId: 'act-confirmed' })
+    var activity = {
+      _id: 'act-confirmed',
+      initiatorId: 'initiator-001',
+      status: 'pending',
+      currentParticipants: 2,
+      approvedParticipants: 2,
+      minParticipants: 3,
+      maxParticipants: 8
+    }
+
+    var updateLog = []
+    var mockCollection = jest.fn(function(name) {
+      return {
+        where: jest.fn(function() {
+          return {
+            get: jest.fn(function() {
+              if (name === 'transactions') return Promise.resolve({ data: [transaction] })
+              return Promise.resolve({ data: [] })
+            })
+          }
+        }),
+        doc: jest.fn(function(docId) {
+          return {
+            get: jest.fn(function() {
+              if (name === 'participations') return Promise.resolve({ data: participation })
+              if (name === 'activities') return Promise.resolve({ data: activity })
+              return Promise.resolve({ data: null })
+            }),
+            update: jest.fn(function(arg) {
+              updateLog.push({ collection: name, docId: docId, data: arg.data })
+              return Promise.resolve({ stats: { updated: 1 } })
+            })
+          }
+        })
+      }
+    })
+
+    db._setMockDb({ collection: mockCollection })
+    pay.verifyCallbackSign.mockReturnValue(true)
+
+    const result = await main(makeSuccessEvent({
+      out_trade_no: 'BGL-confirmed-001',
+      transaction_id: '4200001234202301010000000002'
+    }))
+
+    expect(result).toEqual({ errcode: 0, errmsg: 'SUCCESS' })
+    const confirmedPartUpdate = updateLog.find(function(u) {
+      return u.collection === 'participations' && u.data && u.data.status === 'confirmed'
+    })
+    const activityUpdate = updateLog.find(function(u) { return u.collection === 'activities' })
+    expect(confirmedPartUpdate).toBeDefined()
+    expect(confirmedPartUpdate.data.status).toBe('confirmed')
+    expect(activityUpdate.data.status).toBe('confirmed')
+    expect(activityUpdate.data.currentParticipants).toBe(3)
+  })
+
   it('should be idempotent - return SUCCESS without updates when participation already paid', async function() {
     await fc.assert(
       fc.asyncProperty(

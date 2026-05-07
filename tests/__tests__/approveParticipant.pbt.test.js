@@ -22,6 +22,7 @@ jest.mock('../../cloudfunctions/_shared/response', () => ({
 const fc = require('fast-check')
 const cloud = require('wx-server-sdk')
 const { main } = require('../../cloudfunctions/approveParticipant/index')
+const activityStatus = require('../../cloudfunctions/_shared/activityStatus')
 
 const PBT_NUM_RUNS = 100
 
@@ -264,22 +265,27 @@ describe('Feature: activity-crud, Property 11: approve 操作状态变更', () =
           const actUpdate = updateLog.find(u => u.collection === 'activities')
           expect(actUpdate).toBeDefined()
           expect(actUpdate.data.currentParticipants).toEqual({ $inc: 1 })
+          expect(actUpdate.data.approvedParticipants).toEqual({ $inc: 1 })
         }
       ),
       { numRuns: PBT_NUM_RUNS }
     )
   })
 
-  it('should change activity status from pending to confirmed', async () => {
+  it('should only change pending activity to confirmed when next participant count reaches minParticipants', async () => {
     await fc.assert(
       fc.asyncProperty(
+        fc.integer({ min: 2, max: 20 }),
         fc.integer({ min: 0, max: 18 }),
-        async (currentParticipants) => {
+        async (minParticipants, currentParticipants) => {
+          fc.pre(currentParticipants < 19)
+          fc.pre(minParticipants <= 20)
           const activity = {
             _id: 'act-001',
             initiatorId: fixedUserId,
             maxParticipants: 20,
             currentParticipants,
+            minParticipants,
             status: 'pending'
           }
 
@@ -300,7 +306,12 @@ describe('Feature: activity-crud, Property 11: approve 操作状态变更', () =
 
           const actUpdate = updateLog.find(u => u.collection === 'activities')
           expect(actUpdate).toBeDefined()
-          expect(actUpdate.data.status).toBe('confirmed')
+          const expectedStatus = activityStatus.getNextActivityStatus(activity, currentParticipants + 1)
+          if (expectedStatus === 'confirmed') {
+            expect(actUpdate.data.status).toBe('confirmed')
+          } else {
+            expect(actUpdate.data).not.toHaveProperty('status')
+          }
         }
       ),
       { numRuns: PBT_NUM_RUNS }
