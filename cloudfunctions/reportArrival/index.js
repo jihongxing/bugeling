@@ -8,6 +8,7 @@ cloud.init({
 const { getDb, COLLECTIONS } = require('../_shared/db')
 const { successResponse, errorResponse } = require('../_shared/response')
 const activityStatus = require('../_shared/activityStatus')
+const { ensureActivityLifecycle } = require('../_shared/activityLifecycle')
 
 /**
  * Haversine 公式计算两点间球面距离
@@ -147,6 +148,16 @@ exports.main = async (event, context) => {
         }
       })
     }
+
+    await ensureActivityLifecycle({
+      db,
+      activityId,
+      activity: Object.assign({}, activity, {
+        status: activity.status === 'finished' ? activity.status : 'in_progress',
+        arrivedAt: new Date(),
+        arrivedLocation: { latitude, longitude }
+      })
+    })
 
     // 5. 计算距离
     const activityCoordinates = getActivityCoordinates(activity)

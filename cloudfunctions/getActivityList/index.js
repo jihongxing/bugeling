@@ -117,6 +117,12 @@ async function batchGetCredits(dbOrIds, maybeIds) {
 }
 
 function matchesFilters(activity, filters) {
+  const signupDeadlineMs = new Date(activity.signupDeadline).getTime()
+  if (!Number.isNaN(signupDeadlineMs) &&
+      activityStatus.isJoinableActivityStatus(activity.status) &&
+      signupDeadlineMs <= Date.now()) {
+    return false
+  }
   if (filters.budgetType && activity.budgetType !== filters.budgetType) {
     return false
   }

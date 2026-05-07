@@ -5,6 +5,7 @@ const { getDb, COLLECTIONS } = require('../_shared/db')
 const { getEnv, ENV_KEYS } = require('../_shared/config')
 const { successResponse, errorResponse } = require('../_shared/response')
 const { updateCredit } = require('../_shared/credit')
+const { RETRY_BACKOFF_MS, ensureActivityLifecycle } = require('../_shared/activityLifecycle')
 
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 
@@ -76,6 +77,22 @@ exports.main = async (event, context) => {
       console.error('[verifyQrToken] refundDeposit failed:', refundErr)
     }
 
+    if (refundStatus !== 'success') {
+      const retryAt = new Date(Date.now() + RETRY_BACKOFF_MS)
+      await db.collection(COLLECTIONS.PARTICIPATIONS).doc(participation._id).update({
+        data: {
+          refundStatus: 'pending_retry',
+          refundRetryAt: retryAt,
+          retryCount: Number(participation.retryCount || 0) + 1
+        }
+      })
+      await db.collection(COLLECTIONS.ACTIVITIES).doc(activityId).update({
+        data: {
+          nextActionAt: retryAt
+        }
+      })
+    }
+
     // 9. 更新信用分
     try {
       await updateCredit(participantId, 2, 'verified')
@@ -99,6 +116,16 @@ exports.main = async (event, context) => {
     } catch (checkErr) {
       console.error('[verifyQrToken] all verified check failed:', checkErr)
     }
+
+    await ensureActivityLifecycle({
+      db,
+      activityId,
+      activity: Object.assign({}, activity, {
+        nextActionAt: refundStatus === 'success'
+          ? activity.nextActionAt
+          : new Date(Date.now() + RETRY_BACKOFF_MS)
+      })
+    })
 
     return successResponse({
       success: true,

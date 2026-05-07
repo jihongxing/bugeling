@@ -100,8 +100,29 @@ Page({
   },
 
   goCreateSame: function() {
-    wx.navigateTo({
-      url: this.data.createUrl
+    var activityId = this.data.activityId
+    var fallbackUrl = this.data.createUrl
+
+    if (!activityId) {
+      wx.navigateTo({ url: fallbackUrl })
+      return
+    }
+
+    api.callFunction('createActivityFromReport', {
+      activityId: activityId
+    }, {
+      showLoading: true
+    }).then(function(result) {
+      if (result.code === 0 && result.data) {
+        wx.navigateTo({
+          url: helpers.buildCreateUrl(result.data)
+        })
+        return
+      }
+
+      wx.navigateTo({ url: fallbackUrl })
+    }).catch(function() {
+      wx.navigateTo({ url: fallbackUrl })
     })
   },
 

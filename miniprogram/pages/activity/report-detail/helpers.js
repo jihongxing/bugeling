@@ -138,6 +138,7 @@ function buildSeedActivity(source) {
 
   var activity = {
     activityId: normalizeText(pickFirst(raw, ['activityId', 'id'])),
+    reportId: normalizeText(pickFirst(raw, ['reportId'])),
     sourceReportId: normalizeText(pickFirst(raw, ['sourceReportId'])) || normalizeText(pickFirst(raw, ['activityId', 'id'])),
     title: title,
     templateType: templateType,
@@ -202,6 +203,7 @@ function mergeActivity(baseActivity, remoteActivity) {
   if (!normalizeText(merged.summary)) merged.summary = base.summary || getTemplateMeta(merged.templateType).summary
   if (!normalizeText(merged.templateType)) merged.templateType = base.templateType || 'other'
   if (!normalizeText(merged.meetingPointText)) merged.meetingPointText = base.meetingPointText || merged.location.name || '待补充'
+  if (!normalizeText(merged.reportId)) merged.reportId = base.reportId || ''
   if (!normalizeText(merged.sourceReportId)) merged.sourceReportId = base.sourceReportId || merged.activityId || ''
 
   if (!Array.isArray(merged.safetyTags) || !merged.safetyTags.length) {
@@ -282,7 +284,7 @@ function buildCreateSeed(activity) {
   var templateType = normalizeText(safeActivity.templateType) || 'other'
 
   return {
-    sourceReportId: normalizeText(safeActivity.sourceReportId || safeActivity.activityId || ''),
+    sourceReportId: normalizeText(safeActivity.reportId || safeActivity.sourceReportId || safeActivity.activityId || ''),
     activityId: normalizeText(safeActivity.activityId || ''),
     templateType: templateType,
     title: normalizeText(safeActivity.title),

@@ -6,6 +6,7 @@ const { getDb, COLLECTIONS } = require('../_shared/db')
 const { getCredit } = require('../_shared/credit')
 const { successResponse, errorResponse } = require('../_shared/response')
 const activityStatus = require('../_shared/activityStatus')
+const { ensureActivityLifecycle } = require('../_shared/activityLifecycle')
 
 function shouldUnlockWechatId(participation, meetTime) {
   if (!participation) return false
@@ -80,7 +81,21 @@ exports.main = async (event) => {
       return errorResponse(1003, '活动不存在')
     }
 
-    const activity = activityList[0]
+    let activity = activityList[0]
+    const lifecycleResult = await ensureActivityLifecycle({
+      db,
+      activityId,
+      activity
+    })
+
+    if (lifecycleResult.changed) {
+      const { data: refreshedActivityList } = await db.collection(COLLECTIONS.ACTIVITIES)
+        .where({ _id: activityId })
+        .get()
+      if (refreshedActivityList && refreshedActivityList.length > 0) {
+        activity = refreshedActivityList[0]
+      }
+    }
     const currentParticipants = activity.currentParticipants || activity.approvedParticipants || 0
     const minParticipants = activity.minParticipants || Math.min(3, activity.maxParticipants || 3)
 

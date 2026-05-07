@@ -6,6 +6,7 @@ var pay = require('../_shared/pay')
 var config = require('../_shared/config')
 var activityStatus = require('../_shared/activityStatus')
 var activityFlow = require('../_shared/activityFlow')
+var activityLifecycle = require('../_shared/activityLifecycle')
 
 var SUCCESS_RESPONSE = { errcode: 0, errmsg: 'SUCCESS' }
 var FAIL_RESPONSE = { errcode: -1, errmsg: 'FAIL' }
@@ -115,6 +116,12 @@ exports.main = async function(event) {
           Object.assign({}, activityRes.data, { _id: participation.activityId }),
           syncParticipations
         )
+        await activityLifecycle.ensureActivityLifecycle({
+          db: database,
+          activityId: participation.activityId,
+          activity: activityRes.data,
+          participations: syncParticipations
+        })
       }
     } catch (activityErr) {
       console.error('payCallback: 活动同步失败, activityId=' + participation.activityId, activityErr)

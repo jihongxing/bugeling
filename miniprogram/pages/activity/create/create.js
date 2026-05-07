@@ -46,6 +46,18 @@ function toBoolean(value) {
   return null
 }
 
+function normalizeStringArray(value) {
+  if (!Array.isArray(value)) return []
+
+  return value
+    .filter(function(item) {
+      return typeof item === 'string' && item.trim()
+    })
+    .map(function(item) {
+      return item.trim()
+    })
+}
+
 function parseSeed(options) {
   if (!options || typeof options.seed !== 'string' || !options.seed) {
     return null
@@ -83,6 +95,8 @@ Page({
     genderLimit: 'none',
     allowAfterParty: false,
     sourceReportId: '',
+    seedSafetyTags: [],
+    seedAtmosphereTags: [],
     prefillHintText: '',
     submitting: false,
     minDate: '',
@@ -149,6 +163,8 @@ Page({
     if (isPresent(seed.genderLimit)) updates.genderLimit = decodeText(seed.genderLimit)
     if (realNameRequired !== null) updates.realNameRequired = realNameRequired
     if (allowAfterParty !== null) updates.allowAfterParty = allowAfterParty
+    updates.seedSafetyTags = normalizeStringArray(seed.safetyTags)
+    updates.seedAtmosphereTags = normalizeStringArray(seed.atmosphereTags)
 
     updates.sourceReportId = decodeText(seed.sourceReportId || seed.activityId || '')
     updates.prefillHintText = updates.sourceReportId

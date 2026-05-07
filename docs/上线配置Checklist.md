@@ -1,8 +1,10 @@
 # 上线配置 Checklist - 不鸽令 v0.9.0
 
+> 当前上线检查清单，面向已经升级为“同城低成本组局平台 + 底层线下契约引擎”的项目结构。
+
 ---
 
-## 一、数据库集合（6 个）
+## 一、数据库集合
 
 在云开发控制台 → 数据库 → 手动创建以下集合：
 
@@ -13,20 +15,21 @@
 | 3 | `credits` | 用户信用分表（_id = openId） |
 | 4 | `transactions` | 资金流水表（押金/退款/分账） |
 | 5 | `reports` | 举报记录表 |
-| 6 | `sitemap` | 微信自动生成，无需手动创建 |
+| 6 | `activity_reports_summary` | 活动战报摘要表（战报展示、发起同款复用） |
+| 7 | `sitemap` | 微信自动生成，无需手动创建 |
 
 创建完成后，将所有集合的权限设置为「仅管理端可读写」（对应 database.rules.json 中的 `.read: false, .write: false`）。
 
 ---
 
-## 二、数据库索引（17 个）
+## 二、数据库索引
 
 ### activities 集合（5 个索引）
 
 | # | 索引字段 | 索引类型 | 使用场景 |
 |---|----------|----------|----------|
 | 1 | `location` | **2dsphere（地理位置）** | getActivityList — geoNear 聚合查询，LBS 20km 范围活动列表 |
-| 2 | `status` + `meetTime` | 复合索引（升序） | autoArbitrate — 查询超时未核销的 confirmed 活动 |
+| 2 | `status` + `meetTime` | 复合索引（升序） | 生命周期收敛 — 查询超时活动与详情页补收敛 |
 | 3 | `initiatorId` + `meetTime` | 复合索引（升序） | getCalendarActivities — 发起人月度活动查询 |
 | 4 | `initiatorId` + `createdAt` | 复合索引（降序） | getMyActivities — 发起人历史活动分页；createActivity — 低信用用户每日限额检查 |
 | 5 | `initiatorId` + `status` + `meetTime` | 复合索引 | checkConflict — 发起人待进行活动查询 |
@@ -35,13 +38,13 @@
 
 | # | 索引字段 | 索引类型 | 使用场景 |
 |---|----------|----------|----------|
-| 6 | `activityId` + `status` | 复合索引 | autoArbitrate — 查询活动的 approved 参与者；cancelActivity — 查询需退款的参与者 |
+| 6 | `activityId` + `status` | 复合索引 | 生命周期收敛 — 查询活动参与记录；cancelActivity — 查询需退款的参与者 |
 | 7 | `activityId` + `participantId` | 复合索引 | getActivityDetail — 查询调用者参与记录；createDeposit — 重复报名检查 |
 | 8 | `participantId` + `createdAt` | 复合索引（降序） | getCalendarActivities — 参与者月度查询；getMyActivities — 参与者历史分页 |
 | 9 | `participantId` + `status` | 复合索引 | checkConflict — 参与者待进行活动查询 |
-| 10 | `status` + `breachedAt` | 复合索引 | executeSplit — 查询超过申诉期的违约记录 |
+| 10 | `status` + `breachedAt` | 复合索引 | 兼容批处理入口 / 历史数据排查 |
 | 11 | `participantId` + `activityId` + `status` | 复合索引 | verifyQrToken — 核销时查询 approved 参与记录；submitReport — 权限校验 |
-| 12 | `status` + `needsRefund` | 复合索引 | processVerifiedRefunds — 扫描待退款的 verified 记录 |
+| 12 | `status` + `needsRefund` | 复合索引 | 兼容批处理入口 / 历史数据排查 |
 
 ### transactions 集合（4 个索引）
 
@@ -62,7 +65,13 @@
 
 | # | 索引字段 | 索引类型 | 使用场景 |
 |---|----------|----------|----------|
-| 17 | `activityId` + `status` | 复合索引 | executeSplit — 检查是否存在待处理举报 |
+| 17 | `activityId` + `status` | 复合索引 | 生命周期收敛 — 检查是否存在待处理举报 |
+
+### activity_reports_summary 集合（1 个索引）
+
+| # | 索引字段 | 索引类型 | 使用场景 |
+|---|----------|----------|----------|
+| 18 | `activityId` | 单字段索引 | generateActivityReport / createActivityFromReport — 按活动读取或更新战报摘要 |
 
 ### 地理位置索引创建方式
 
@@ -114,7 +123,7 @@
 
 ---
 
-## 四、云函数部署清单（25 个）
+## 四、云函数部署清单
 
 | # | 云函数名 | 触发方式 | 定时器 |
 |---|----------|----------|--------|
@@ -130,8 +139,8 @@
 | 10 | generateQrToken | 用户调用 | — |
 | 11 | verifyQrToken | 用户调用 | — |
 | 12 | reportArrival | 用户调用 | — |
-| 13 | autoArbitrate | 定时触发 | `0 */15 * * * * *`（每 15 分钟） |
-| 14 | executeSplit | 定时触发 | `0 0 */1 * * * *`（每小时） |
+| 13 | autoArbitrate | 兼容入口 / 手动调用 | — |
+| 14 | executeSplit | 兼容入口 / 手动调用 | — |
 | 15 | getCreditInfo | 用户调用 | — |
 | 16 | getMyActivities | 用户调用 | — |
 | 17 | submitReport | 用户调用 | — |
@@ -142,46 +151,26 @@
 | 22 | getPosterData | 用户调用 | — |
 | 23 | cancelActivity | 用户调用 | — |
 | 24 | manualVerify | 用户调用 | — |
-| 25 | processVerifiedRefunds | 定时触发 | `0 */5 * * * * *`（每 5 分钟） |
+| 25 | processVerifiedRefunds | 兼容入口 / 手动调用 | — |
+| 26 | generateActivityReport | 用户调用 | — |
+| 27 | createActivityFromReport | 用户调用 | — |
 
 ---
 
-## 五、定时触发器配置
+## 五、生命周期收敛配置
 
-确认以下两个云函数的 `config.json` 已正确配置并部署触发器：
+当前版本已经移除高频定时触发器，不再部署以下 `config.json`：
 
-```json
-// cloudfunctions/autoArbitrate/config.json
-{
-  "triggers": [{
-    "name": "autoArbitrateTrigger",
-    "type": "timer",
-    "config": "0 */15 * * * * *"
-  }]
-}
-```
+- `cloudfunctions/autoArbitrate/config.json`
+- `cloudfunctions/executeSplit/config.json`
+- `cloudfunctions/processVerifiedRefunds/config.json`
+- `cloudfunctions/autoLockActivities/config.json`
 
-```json
-// cloudfunctions/executeSplit/config.json
-{
-  "triggers": [{
-    "name": "split-timer",
-    "type": "timer",
-    "config": "0 0 */1 * * * *"
-  }]
-}
-```
+请确认以下事实：
 
-```json
-// cloudfunctions/processVerifiedRefunds/config.json
-{
-  "triggers": [{
-    "name": "refundRetryTrigger",
-    "type": "timer",
-    "config": "0 */5 * * * * *"
-  }]
-}
-```
+- `cloudfunctions/_shared/activityLifecycle.js` 已随云函数一起上传
+- `getActivityDetail`、`approveParticipant`、`payCallback`、`reportArrival`、`verifyQrToken`、`manualVerify` 已上传最新版本
+- 云开发控制台中没有残留旧 timer
 
 ---
 
@@ -212,8 +201,37 @@
   "participations":  { ".read": false, ".write": false },
   "credits":         { ".read": false, ".write": false },
   "transactions":    { ".read": false, ".write": false },
-  "reports":         { ".read": false, ".write": false }
+  "reports":         { ".read": false, ".write": false },
+  "activity_reports_summary": { ".read": false, ".write": false }
 }
 ```
 
 前端无任何直接数据库操作（已验证），所有读写均通过云函数执行。
+
+---
+
+## 九、战报与同款复用增量部署清单
+
+- [ ] 创建 `activity_reports_summary` 集合
+- [ ] 为 `activity_reports_summary.activityId` 创建单字段索引
+- [ ] 将 `database.rules.json` 中的 `activity_reports_summary` 规则同步到云开发控制台
+- [ ] 上传并部署 `generateActivityReport`
+- [ ] 上传并部署 `createActivityFromReport`
+- [ ] 确认这两个云函数无需额外环境变量、无需定时触发器
+- [ ] 确认小程序战报页已包含“发起同款”按钮，并且页面代码已发布到体验版或开发版
+
+## 十、战报与同款复用手工验收路径
+
+建议在开发环境按下面这条链路验收一次：
+
+1. 先准备一条可展示战报的活动数据：活动需存在 `templateType`、`budgetType`、`serviceFee`、`bondAmount`、`minParticipants`、`maxParticipants`、`meetingPointText`，并且至少有 1 条参与记录。
+2. 在微信开发者工具上传并部署 `generateActivityReport` 和 `createActivityFromReport`，选择“云端安装依赖”。
+3. 打开小程序开发版，进入“我的历史活动”或活动详情页，点击“查看活动战报”。
+4. 首次打开战报页后，到云开发控制台检查 `activity_reports_summary`：
+   应新增或更新一条 `activityId = 当前活动 ID` 的摘要记录，且包含 `title`、`templateType`、`participantCount`、`meetingPointText`、`serviceFee`、`bondAmount`、`reportId/_id` 等字段。
+5. 在战报页点击“发起同款”。
+6. 确认已跳转到创建页，且以下字段已自动带入：模板类型、标题、一句话说明、预算类型、服务费、保证金、最低成局人数、人数上限、集合说明、安全相关开关。
+7. 手动补充新的时间和地点后发布活动。
+8. 到云开发控制台检查新生成的 `activities` 记录：
+   `sourceReportId` 应等于战报摘要的 `_id/reportId`，并且 `templateType`、`budgetType`、`serviceFee`、`bondAmount`、`meetingPointText` 与战报 seed 保持一致。
+9. 如需补充验证，再次打开新活动详情页和战报页，确认旧活动战报可重复复用，新活动本身不受影响。

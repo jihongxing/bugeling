@@ -26,6 +26,13 @@ function buildSafetyTags(formData) {
   if (formData.realNameRequired) tags.push('real_name')
   if (!formData.allowAfterParty) tags.push('no_after_party')
   if (formData.genderLimit === 'female_only') tags.push('women_friendly')
+  if (Array.isArray(formData.seedSafetyTags)) {
+    formData.seedSafetyTags.forEach(function(tag) {
+      if (typeof tag === 'string' && tag && tags.indexOf(tag) === -1) {
+        tags.push(tag)
+      }
+    })
+  }
   return tags
 }
 
@@ -55,7 +62,12 @@ function buildCreateRequest(formData) {
     realNameRequired: formData.realNameRequired,
     genderLimit: formData.genderLimit,
     allowAfterParty: formData.allowAfterParty,
-    safetyTags: buildSafetyTags(formData)
+    safetyTags: buildSafetyTags(formData),
+    atmosphereTags: Array.isArray(formData.seedAtmosphereTags)
+      ? formData.seedAtmosphereTags.filter(function(tag) {
+          return typeof tag === 'string' && tag
+        })
+      : []
   }
 }
 

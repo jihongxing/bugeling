@@ -1,9 +1,0 @@
-{
-  "triggers": [
-    {
-      "name": "refundRetryTrigger",
-      "type": "timer",
-      "config": "0 */5 * * * * *"
-    }
-  ]
-}

@@ -99,7 +99,14 @@ exports.main = async function(event, context) {
 
     // 10. 更新 participation 状态
     await database.collection(db.COLLECTIONS.PARTICIPATIONS)
-      .doc(participationId).update({ data: { status: 'settled' } })
+      .doc(participationId).update({
+        data: {
+          status: 'settled',
+          settlementStatus: 'success',
+          settlementRetryAt: null,
+          settledAt: database.serverDate()
+        }
+      })
 
     return response.successResponse({ success: true })
 

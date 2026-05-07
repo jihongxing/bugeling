@@ -1,8 +1,10 @@
 # 不鸽令 · BugeLing
 
-> 线下契约引擎 —— 消除线下约见的不确定性
+> 同城低成本组局平台，底层由线下契约引擎提供履约能力
 
-微信小程序，通过押金机制和信用体系，解决线下约见中"放鸽子"的痛点。用户发起活动并设定鸽子费，参与者支付押金报名，双方到场扫码核销后全额退款；违约方的押金将按比例补偿守约方。
+`不鸽令` 现在的产品结构分成两层。
+
+表层是“同城低成本组局平台”，强调模板化发局、附近分发、报名支付、签到评价、活动战报和发起同款。底层仍然是“线下契约引擎”，用押金机制、信用体系、签到/核销、自动仲裁和分账能力解决线下履约的不确定性。
 
 ## 技术栈
 
@@ -47,7 +49,7 @@ BugeLing/
 │   │   └── date.js               # 日期工具（日历专用）
 │   └── libs/                     # 第三方 SDK
 │
-├── cloudfunctions/               # 云函数（25个）
+├── cloudfunctions/               # 云函数
 │   ├── _shared/                  # 共享模块
 │   │   ├── db.js                 # 数据库封装
 │   │   ├── response.js           # 统一响应格式
@@ -59,10 +61,13 @@ BugeLing/
 │   │   ├── validator.js          # 参数校验
 │   │   ├── pagination.js         # 分页工具
 │   │   ├── safety.js             # 内容安全
-│   │   └── social.js             # 社交功能
+│   │   ├── social.js             # 社交功能
+│   │   └── reportBuilder.js      # 活动战报与同款复用构建
 │   ├── createActivity/           # 创建活动
+│   ├── createActivityFromReport/ # 从战报发起同款
 │   ├── getActivityList/          # 活动列表
 │   ├── getActivityDetail/        # 活动详情
+│   ├── generateActivityReport/   # 生成活动战报
 │   ├── approveParticipant/       # 同意参与者
 │   ├── rejectParticipant/        # 拒绝参与者
 │   ├── createDeposit/            # 创建押金支付
@@ -72,8 +77,8 @@ BugeLing/
 │   ├── generateQrToken/          # 生成核销码
 │   ├── verifyQrToken/            # 核销验证
 │   ├── reportArrival/            # 报告到达
-│   ├── autoArbitrate/            # 自动仲裁（定时）
-│   ├── executeSplit/             # 分账执行（定时）
+│   ├── autoArbitrate/            # 自动仲裁兼容入口
+│   ├── executeSplit/             # 分账执行兼容入口
 │   ├── getCreditInfo/            # 信用分查询
 │   ├── getMyActivities/          # 我的活动
 │   ├── submitReport/             # 提交举报
@@ -84,7 +89,7 @@ BugeLing/
 │   ├── getPosterData/            # 海报数据
 │   ├── cancelActivity/           # 取消活动
 │   ├── manualVerify/             # 手动确认到场
-│   └── processVerifiedRefunds/   # 已核销退款补偿定时任务
+│   └── processVerifiedRefunds/   # 已核销退款补偿兼容入口
 │
 ├── tests/                        # 测试套件
 │   ├── __tests__/                # 67 个测试文件，713 个测试用例
@@ -93,12 +98,15 @@ BugeLing/
 │   └── package.json
 │
 ├── docs/                         # 项目文档
-│   ├── PRD-不鸽令-线下契约引擎.md
-│   ├── 技术方案-不鸽令.md
+│   ├── 文档体系说明-不鸽令.md
+│   ├── UGC 同城低成本组局小程序.md
+│   ├── 实施计划-不鸽令UGC组局化改造.md
 │   ├── API接口文档-不鸽令.md
-│   ├── UI交互规范-不鸽令.md
 │   ├── 环境配置说明-不鸽令.md
 │   ├── 上线配置Checklist.md
+│   ├── PRD-不鸽令-线下契约引擎.md
+│   ├── 技术方案-不鸽令.md
+│   ├── UI交互规范-不鸽令.md
 │   └── 增长策略-微信群转发裂变.md
 │
 ├── .kiro/specs/                  # 功能规格文档（9个模块）
@@ -120,6 +128,14 @@ BugeLing/
 | 自动仲裁 | auto-arbitration | ✅ 完成 | 超时仲裁、裁决引擎、到场判定 |
 | 内容安全与举报 | content-safety-report | ✅ 完成 | 文本/图片审核、举报流程 |
 | 活动日历与海报 | activity-calendar-poster | ✅ 完成 | 月视图日历、冲突检测、Canvas 海报 |
+| 战报与同款复用 | activity-report-reuse | ✅ 完成 | 活动战报生成、战报落库、发起同款预填 |
+
+## 产品分层
+
+- 表层产品：同城低成本组局平台。用户看到的是模板发起、附近活动流、自动成局、签到评价、战报复用。
+- 底层引擎：线下契约引擎。系统依赖押金履约、信用分、支付退款、违约仲裁、内容安全来兜底。
+
+这两层不是两个项目，而是同一个项目的“用户界面层”和“履约基础设施层”。
 
 ## 快速开始
 
@@ -150,7 +166,7 @@ wx.cloud.init({ env: '<YOUR_CLOUD_ENV_ID>' })
 ```
 
 4. 创建数据库集合
-在云开发控制台创建：`activities`、`participations`、`credits`、`transactions`、`reports`
+在云开发控制台创建：`activities`、`participations`、`credits`、`transactions`、`reports`、`activity_reports_summary`
 
 5. 上传云函数
 在微信开发者工具中右键每个云函数目录 → "上传并部署：云端安装依赖"
@@ -180,11 +196,16 @@ npm run test:coverage  # 生成覆盖率报告
     ↓
 活动当天：双方到场 → 扫码核销 → 全额退款 + 信用分 +2
     ↓
-未核销超时 60 分钟 → 自动仲裁：
+未核销超时后由活动生命周期收敛：
   · 参与者未到场 → 押金 70% 补偿发起人，30% 平台
   · 发起人未到场 → 全额退款参与者
   · 双方未到场 → 各自退款，信用分 -5
 ```
+
+说明：
+
+- 当前已移除高频云函数定时器，改为按活动的事件驱动/懒收敛。
+- 锁局、仲裁、分账、退款补偿会在详情页读取、签到、核销、审批、支付回调等单活动入口上顺手推进。
 
 ## 测试覆盖
 
@@ -199,17 +220,21 @@ npm run test:coverage  # 生成覆盖率报告
 
 | 文档 | 说明 |
 |------|------|
-| [PRD](docs/PRD-不鸽令-线下契约引擎.md) | 产品需求文档 |
-| [技术方案](docs/技术方案-不鸽令.md) | 架构设计与数据模型 |
-| [API 接口文档](docs/API接口文档-不鸽令.md) | 全部云函数接口说明 |
-| [UI 交互规范](docs/UI交互规范-不鸽令.md) | 界面设计规范 |
-| [环境配置](docs/环境配置说明-不鸽令.md) | 开发环境搭建指南 |
+| [文档体系说明](docs/文档体系说明-不鸽令.md) | 当前文档分层、阅读顺序、事实优先级 |
+| [当前表层产品 PRD](docs/UGC%20同城低成本组局小程序.md) | 同城低成本组局平台的产品定义 |
+| [融合实施计划](docs/实施计划-不鸽令UGC组局化改造.md) | 组局平台与底层契约引擎的融合路线 |
+| [API 接口文档](docs/API接口文档-不鸽令.md) | 当前云函数接口说明 |
+| [环境配置](docs/环境配置说明-不鸽令.md) | 开发环境搭建与部署配置 |
+| [上线 Checklist](docs/上线配置Checklist.md) | 当前上线前检查项 |
+| [底层引擎 PRD](docs/PRD-不鸽令-线下契约引擎.md) | 早期线下契约引擎基线设计 |
+| [底层技术方案](docs/技术方案-不鸽令.md) | 早期引擎架构与能力基线 |
+| [底层 UI 规范](docs/UI交互规范-不鸽令.md) | 早期引擎界面规范参考 |
 | [安全规范](SECURITY.md) | 安全策略与防护措施 |
 | [更新日志](CHANGELOG.md) | 版本更新记录 |
 
 ## 开发状态
 
-当前为 MVP 阶段，核心功能代码已完成，测试套件当前已全量通过。待配置 AppID、云开发环境、数据库索引、支付证书和环境变量后即可进行端到端联调。
+当前为 MVP 阶段，核心功能代码已完成，测试套件当前已全量通过，战报与同款复用链路已接通。产品定位已经升级为“同城低成本组局平台 + 底层线下契约引擎”，文档也按这个结构重新整理。待配置 AppID、云开发环境、数据库索引、支付证书和环境变量后即可进行端到端联调。
 
 ## License
 

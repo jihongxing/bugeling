@@ -18,5 +18,9 @@
   "reports": {
     ".read": false,
     ".write": false
+  },
+  "activity_reports_summary": {
+    ".read": false,
+    ".write": false
   }
 }

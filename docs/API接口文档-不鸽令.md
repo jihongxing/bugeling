@@ -1,4 +1,6 @@
-# API 接口文档 - 不鸽令·线下契约引擎
+# API 接口文档 - 不鸽令同城低成本组局平台
+
+> 当前接口文档，覆盖的是已经演进后的组局平台能力，以及其复用的底层履约引擎接口。
 
 **调用方式：** `wx.cloud.callFunction({ name, data })`  
 **鉴权：** 云函数自动获取调用者 openId（`cloud.getWXContext().OPENID`）  
@@ -132,7 +134,104 @@
 
 ---
 
-### 1.4 approveParticipant — 同意参与者
+### 1.4 generateActivityReport — 生成活动战报
+
+**请求参数：**
+
+| 字段 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| activityId | string | 是 | 活动 ID |
+
+**响应 data：**
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| reportId | string | 战报摘要 ID，同时也是 `activity_reports_summary` 记录 ID |
+| activityId | string | 活动 ID |
+| phase | string | 战报阶段，如 `组局预告` / `活动摘要` / `活动战报` |
+| templateType | string | 模板类型 |
+| templateLabel | string | 模板文案标签 |
+| title | string | 战报标题 |
+| summary | string | 战报摘要 |
+| quote | string | 一句话引用 |
+| meetTime | string / Date | 活动时间 |
+| location | object | `{ name, address, latitude, longitude }` |
+| budgetType | string | 预算类型 |
+| budgetMin | number | 预算下限（分） |
+| budgetMax | number | 预算上限（分） |
+| budgetText | string | 预算展示文案 |
+| feeText | string | 费用展示文案 |
+| participantCount | number | 参与人数 |
+| minParticipants | number | 最低成局人数 |
+| maxParticipants | number | 人数上限 |
+| arrivedCount | number | 到场人数 |
+| completedCount | number | 完成人数 |
+| attendanceRate | number | 到场率（百分比整数） |
+| safetyTags | array | 安全标签 |
+| atmosphereTags | array | 氛围标签 |
+| riskLevel | string | 风险等级 |
+| initiatorCredit | number / null | 发起人信用分 |
+| realNameRequired | boolean | 是否实名 |
+| genderLimit | string | 性别限制 |
+| allowAfterParty | boolean | 是否允许转场 |
+| serviceFee | number | 服务费（分） |
+| bondAmount | number | 保证金（分） |
+| identityHint | string | 接头特征 |
+| meetingPointText | string | 集合说明 |
+| canReuse | boolean | 是否支持发起同款 |
+| sourceReportId | string | 来源战报 ID，如有 |
+
+**业务规则：**
+- `activityId` 为空时返回 1001
+- 活动不存在时返回 1003
+- 会基于活动主表、参与记录和发起人信用动态拼装战报
+- 返回前会将战报 upsert 到 `activity_reports_summary` 集合
+- 首次生成与重复打开共用同一条战报摘要记录，只更新内容并返回相同 `reportId`
+
+---
+
+### 1.5 createActivityFromReport — 从战报发起同款
+
+**请求参数：**
+
+| 字段 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| reportId | string | 否 | 战报摘要 ID，优先使用 |
+| activityId | string | 否 | 活动 ID；当未传 `reportId` 时可用于反查战报 |
+
+**响应 data：**
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| sourceReportId | string | 来源战报 ID，发布新活动时写入 `activities.sourceReportId` |
+| activityId | string | 原活动 ID |
+| templateType | string | 模板类型 |
+| title | string | 预填标题 |
+| summary | string | 预填摘要 |
+| budgetType | string | 预算类型 |
+| serviceFee | number | 服务费（分） |
+| bondAmount | number | 保证金（分） |
+| minParticipants | number | 最低成局人数 |
+| maxParticipants | number | 人数上限 |
+| identityHint | string | 接头特征 |
+| meetingPointText | string | 集合说明 |
+| realNameRequired | boolean | 是否实名 |
+| genderLimit | string | 性别限制 |
+| allowAfterParty | boolean | 是否允许转场 |
+| safetyTags | array | 可复用的安全标签 |
+| atmosphereTags | array | 可复用的氛围标签 |
+
+**业务规则：**
+- `reportId` 和 `activityId` 至少传一个，否则返回 1001
+- 传了 `reportId` 时优先按战报摘要主键读取
+- 仅传 `activityId` 时，先查 `activity_reports_summary`；若不存在，会内部调用 `generateActivityReport` 先生成摘要
+- 战报不存在时返回 1003
+- 若战报 `reusable/canReuse` 为 `false`，返回 1004
+- 该接口只返回“同款活动预填 seed”，真正创建活动仍需前端再调用 `createActivity`
+
+---
+
+### 1.6 approveParticipant — 同意参与者
 
 **请求参数：**
 
@@ -155,7 +254,7 @@
 
 ---
 
-### 1.5 rejectParticipant — 拒绝参与者
+### 1.7 rejectParticipant — 拒绝参与者
 
 **请求参数：**
 

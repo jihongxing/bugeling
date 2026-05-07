@@ -56,7 +56,15 @@ exports.main = async function(event, context) {
 
     // 7. 更新 participation 状态
     await database.collection(db.COLLECTIONS.PARTICIPATIONS)
-      .doc(participationId).update({ data: { status: 'refunded' } })
+      .doc(participationId).update({
+        data: {
+          status: 'refunded',
+          refundStatus: 'success',
+          refundRetryAt: null,
+          refundedAt: database.serverDate(),
+          needsRefund: false
+        }
+      })
 
     // 8. 创建 refund 类型的 transaction 记录
     await database.collection(db.COLLECTIONS.TRANSACTIONS).add({

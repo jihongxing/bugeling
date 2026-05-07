@@ -1,0 +1,9 @@
+{
+  "name": "createActivityFromReport",
+  "version": "1.0.0",
+  "description": "根据活动战报生成同款活动预填参数",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "~2.6.3"
+  }
+}

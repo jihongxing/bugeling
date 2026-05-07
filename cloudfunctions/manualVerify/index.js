@@ -6,6 +6,7 @@ cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 const { getDb, COLLECTIONS } = require('../_shared/db')
 const { successResponse, errorResponse } = require('../_shared/response')
 const { updateCredit } = require('../_shared/credit')
+const { RETRY_BACKOFF_MS, ensureActivityLifecycle } = require('../_shared/activityLifecycle')
 
 exports.main = async (event, context) => {
   const { OPENID: openId } = cloud.getWXContext()
@@ -64,6 +65,19 @@ exports.main = async (event, context) => {
       })
     } catch (refundErr) {
       console.error('[manualVerify] 退款失败:', refundErr)
+      const retryAt = new Date(Date.now() + RETRY_BACKOFF_MS)
+      await db.collection(COLLECTIONS.PARTICIPATIONS).doc(participationId).update({
+        data: {
+          refundStatus: 'pending_retry',
+          refundRetryAt: retryAt,
+          retryCount: Number(participation.retryCount || 0) + 1
+        }
+      })
+      await db.collection(COLLECTIONS.ACTIVITIES).doc(activityId).update({
+        data: {
+          nextActionAt: retryAt
+        }
+      })
     }
 
     // 8. 双方信用分 +2
@@ -85,6 +99,14 @@ exports.main = async (event, context) => {
         data: { status: 'verified' }
       })
     }
+
+    await ensureActivityLifecycle({
+      db,
+      activityId,
+      activity: Object.assign({}, activity, {
+        nextActionAt: activity.nextActionAt
+      })
+    })
 
     return successResponse({ success: true })
   } catch (err) {
