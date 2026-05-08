@@ -93,7 +93,7 @@
 }
 
 .date-cell.selected {
-  background: rgba(255, 107, 53, 0.1);
+  background: var(--accent-warm-bg-soft);
   border-radius: var(--radius-tag);
 }
 
@@ -110,19 +110,19 @@
 }
 
 .dot-verified {
-  background-color: #10B981;
+  background-color: var(--text-status-success);
 }
 
 .dot-upcoming {
-  background-color: #F59E0B;
+  background-color: var(--text-status-warning);
 }
 
 .dot-breached {
-  background-color: #EF4444;
+  background-color: var(--text-status-danger);
 }
 
 .dot-cancelled {
-  background-color: #9CA3AF;
+  background-color: var(--text-body-faint);
 }
 
 /* 区块标题 */
@@ -136,7 +136,7 @@
 /* 活动列表 */
 .activity-item {
   padding: 16rpx 0;
-  border-bottom: 1rpx solid #F3F4F6;
+  border-bottom: 1rpx solid var(--border-soft-2);
 }
 
 .activity-item:last-child {
@@ -160,22 +160,22 @@
 }
 
 .status-tag-verified {
-  color: #10B981;
+  color: var(--text-status-success);
   background: rgba(16, 185, 129, 0.1);
 }
 
 .status-tag-upcoming {
-  color: #F59E0B;
+  color: var(--text-status-warning);
   background: rgba(245, 158, 11, 0.1);
 }
 
 .status-tag-breached {
-  color: #EF4444;
+  color: var(--text-status-danger);
   background: rgba(239, 68, 68, 0.1);
 }
 
 .status-tag-cancelled {
-  color: #9CA3AF;
+  color: var(--text-body-faint);
   background: rgba(107, 114, 128, 0.1);
 }
 
@@ -205,7 +205,7 @@
 
 .today-item {
   padding: 16rpx 0;
-  border-bottom: 1rpx solid #F3F4F6;
+  border-bottom: 1rpx solid var(--border-soft-2);
 }
 
 .today-item:last-child {
@@ -237,7 +237,7 @@
 }
 
 .copy-btn:active {
-  background: rgba(255, 107, 53, 0.1);
+  background: var(--accent-warm-bg-soft);
 }
 
 /* 已计划支出 */

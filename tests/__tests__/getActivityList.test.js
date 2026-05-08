@@ -24,44 +24,68 @@ jest.mock('../../scripts/cloudfunction-shared-template/response', () => ({
 
 const cloud = require('wx-server-sdk')
 const { getCredit } = require('../../scripts/cloudfunction-shared-template/credit')
-const { main, validateParams, batchGetCredits, formatActivity } = require('../../cloudfunctions/getActivityList/index')
-
-// --- Aggregate chain mock setup ---
-let mockAggregateEnd
-let mockAggregateChain
+const {
+  main,
+  validateParams,
+  batchGetCredits,
+  formatActivity
+} = require('../../cloudfunctions/getActivityList/index')
 
 function createAggregateChain() {
-  mockAggregateEnd = jest.fn()
-  mockAggregateChain = {
+  const chain = {
     geoNear: jest.fn(),
     sort: jest.fn(),
     skip: jest.fn(),
     limit: jest.fn(),
     count: jest.fn(),
-    end: mockAggregateEnd
+    end: jest.fn()
   }
-  // Each method returns the chain itself
-  mockAggregateChain.geoNear.mockReturnValue(mockAggregateChain)
-  mockAggregateChain.sort.mockReturnValue(mockAggregateChain)
-  mockAggregateChain.skip.mockReturnValue(mockAggregateChain)
-  mockAggregateChain.limit.mockReturnValue(mockAggregateChain)
-  mockAggregateChain.count.mockReturnValue(mockAggregateChain)
-  return mockAggregateChain
+  chain.geoNear.mockReturnValue(chain)
+  chain.sort.mockReturnValue(chain)
+  chain.skip.mockReturnValue(chain)
+  chain.limit.mockReturnValue(chain)
+  chain.count.mockReturnValue(chain)
+  return chain
 }
 
-function setupAggregateMock() {
-  const chain = createAggregateChain()
+function createQueryChain() {
+  const chain = {
+    skip: jest.fn(),
+    limit: jest.fn(),
+    get: jest.fn()
+  }
+  chain.skip.mockReturnValue(chain)
+  chain.limit.mockReturnValue(chain)
+  return chain
+}
+
+function setupDbCollectionMock(options = {}) {
+  const { aggregateFactory, queryFactory } = options
   const db = cloud.database()
-  const mockAggregate = jest.fn(() => createAggregateChain())
-  // Override collection to include aggregate
-  db.collection.mockReturnValue({
-    ...db.collection(),
-    aggregate: mockAggregate
+
+  db.collection.mockImplementation(() => {
+    const base = {
+      add: jest.fn(),
+      doc: jest.fn(),
+      count: jest.fn(),
+      get: jest.fn(),
+      update: jest.fn()
+    }
+
+    if (aggregateFactory) {
+      base.aggregate = jest.fn(() => aggregateFactory())
+    }
+
+    if (queryFactory) {
+      base.where = jest.fn(() => queryFactory())
+    }
+
+    return base
   })
-  return { mockAggregate, getLatestChain: () => mockAggregateChain }
+
+  return db
 }
 
-/** Sample activity from DB */
 function sampleActivity(overrides = {}) {
   return {
     _id: 'act-001',
@@ -95,7 +119,8 @@ describe('getActivityList', () => {
         longitude: 116.19,
         radius: 20000,
         page: 1,
-        pageSize: 20
+        pageSize: 20,
+        lightweight: false
       })
     })
 
@@ -236,39 +261,18 @@ describe('getActivityList', () => {
   describe('main - happy path', () => {
     test('returns activity list with pagination info', async () => {
       const activities = [sampleActivity(), sampleActivity({ _id: 'act-002', initiatorId: 'user-002', distance: 3000 })]
-
-      // Setup aggregate mock - two calls: count + data
-      const db = cloud.database()
       let callCount = 0
-      const mockAggregate = jest.fn(() => {
-        callCount++
-        const chain = {
-          geoNear: jest.fn(),
-          sort: jest.fn(),
-          skip: jest.fn(),
-          limit: jest.fn(),
-          count: jest.fn(),
-          end: jest.fn()
+      const db = setupDbCollectionMock({
+        aggregateFactory: () => {
+          callCount++
+          const chain = createAggregateChain()
+          if (callCount === 1) {
+            chain.end.mockResolvedValue({ list: [{ total: 2 }] })
+          } else {
+            chain.end.mockResolvedValue({ list: activities })
+          }
+          return chain
         }
-        chain.geoNear.mockReturnValue(chain)
-        chain.sort.mockReturnValue(chain)
-        chain.skip.mockReturnValue(chain)
-        chain.limit.mockReturnValue(chain)
-        chain.count.mockReturnValue(chain)
-
-        if (callCount === 1) {
-          // Count query
-          chain.end.mockResolvedValue({ list: [{ total: 2 }] })
-        } else {
-          // Data query
-          chain.end.mockResolvedValue({ list: activities })
-        }
-        return chain
-      })
-
-      db.collection.mockReturnValue({
-        ...db.collection(),
-        aggregate: mockAggregate
       })
 
       getCredit
@@ -284,6 +288,24 @@ describe('getActivityList', () => {
       expect(result.data.list[0].activityId).toBe('act-001')
       expect(result.data.list[0].initiatorCredit).toBe(90)
       expect(result.data.list[1].activityId).toBe('act-002')
+      expect(db.collection).toHaveBeenCalled()
+    })
+
+    test('lightweight mode skips credit lookup and total count', async () => {
+      const activities = [sampleActivity()]
+      setupDbCollectionMock({
+        aggregateFactory: () => {
+          const chain = createAggregateChain()
+          chain.end.mockResolvedValue({ list: activities })
+          return chain
+        }
+      })
+
+      const result = await main({ latitude: 39.99, longitude: 116.19, lightweight: true }, {})
+
+      expect(result.code).toBe(0)
+      expect(result.data.list).toHaveLength(1)
+      expect(getCredit).not.toHaveBeenCalled()
     })
 
     test('falls back to approvedParticipants when currentParticipants is missing', async () => {
@@ -295,35 +317,18 @@ describe('getActivityList', () => {
         })
       ]
 
-      const db = cloud.database()
       let callCount = 0
-      const mockAggregate = jest.fn(() => {
-        callCount++
-        const chain = {
-          geoNear: jest.fn(),
-          sort: jest.fn(),
-          skip: jest.fn(),
-          limit: jest.fn(),
-          count: jest.fn(),
-          end: jest.fn()
+      setupDbCollectionMock({
+        aggregateFactory: () => {
+          callCount++
+          const chain = createAggregateChain()
+          if (callCount === 1) {
+            chain.end.mockResolvedValue({ list: [{ total: 1 }] })
+          } else {
+            chain.end.mockResolvedValue({ list: activities })
+          }
+          return chain
         }
-        chain.geoNear.mockReturnValue(chain)
-        chain.sort.mockReturnValue(chain)
-        chain.skip.mockReturnValue(chain)
-        chain.limit.mockReturnValue(chain)
-        chain.count.mockReturnValue(chain)
-
-        if (callCount === 1) {
-          chain.end.mockResolvedValue({ list: [{ total: 1 }] })
-        } else {
-          chain.end.mockResolvedValue({ list: activities })
-        }
-        return chain
-      })
-
-      db.collection.mockReturnValue({
-        ...db.collection(),
-        aggregate: mockAggregate
       })
 
       const result = await main({ latitude: 39.99, longitude: 116.19 }, {})
@@ -335,21 +340,13 @@ describe('getActivityList', () => {
     })
 
     test('returns empty list when no activities found', async () => {
-      const db = cloud.database()
-      const mockAggregate = jest.fn(() => {
-        const chain = {
-          geoNear: jest.fn(), sort: jest.fn(), skip: jest.fn(),
-          limit: jest.fn(), count: jest.fn(), end: jest.fn()
+      setupDbCollectionMock({
+        aggregateFactory: () => {
+          const chain = createAggregateChain()
+          chain.end.mockResolvedValue({ list: [] })
+          return chain
         }
-        chain.geoNear.mockReturnValue(chain)
-        chain.sort.mockReturnValue(chain)
-        chain.skip.mockReturnValue(chain)
-        chain.limit.mockReturnValue(chain)
-        chain.count.mockReturnValue(chain)
-        chain.end.mockResolvedValue({ list: [] })
-        return chain
       })
-      db.collection.mockReturnValue({ ...db.collection(), aggregate: mockAggregate })
 
       const result = await main({ latitude: 39.99, longitude: 116.19 }, {})
 
@@ -361,27 +358,19 @@ describe('getActivityList', () => {
 
     test('hasMore is true when more pages exist', async () => {
       const activities = [sampleActivity()]
-      const db = cloud.database()
       let callCount = 0
-      const mockAggregate = jest.fn(() => {
-        callCount++
-        const chain = {
-          geoNear: jest.fn(), sort: jest.fn(), skip: jest.fn(),
-          limit: jest.fn(), count: jest.fn(), end: jest.fn()
+      setupDbCollectionMock({
+        aggregateFactory: () => {
+          callCount++
+          const chain = createAggregateChain()
+          if (callCount === 1) {
+            chain.end.mockResolvedValue({ list: [{ total: 25 }] })
+          } else {
+            chain.end.mockResolvedValue({ list: activities })
+          }
+          return chain
         }
-        chain.geoNear.mockReturnValue(chain)
-        chain.sort.mockReturnValue(chain)
-        chain.skip.mockReturnValue(chain)
-        chain.limit.mockReturnValue(chain)
-        chain.count.mockReturnValue(chain)
-        if (callCount === 1) {
-          chain.end.mockResolvedValue({ list: [{ total: 25 }] })
-        } else {
-          chain.end.mockResolvedValue({ list: activities })
-        }
-        return chain
       })
-      db.collection.mockReturnValue({ ...db.collection(), aggregate: mockAggregate })
 
       const result = await main({ latitude: 39.99, longitude: 116.19, pageSize: 10 }, {})
 
@@ -391,41 +380,60 @@ describe('getActivityList', () => {
     })
 
     test('uses GeoPoint with correct longitude/latitude order', async () => {
-      const db = cloud.database()
-      let geoNearArgs = null
-      const mockAggregate = jest.fn(() => {
-        const chain = {
-          geoNear: jest.fn((args) => { geoNearArgs = args; return chain }),
-          sort: jest.fn().mockReturnThis(),
-          skip: jest.fn().mockReturnThis(),
-          limit: jest.fn().mockReturnThis(),
-          count: jest.fn().mockReturnThis(),
-          end: jest.fn().mockResolvedValue({ list: [] })
+      const geoNearArgs = []
+      const db = setupDbCollectionMock({
+        aggregateFactory: () => {
+          const chain = createAggregateChain()
+          chain.geoNear.mockImplementation((args) => {
+            geoNearArgs.push(args)
+            return chain
+          })
+          chain.end.mockResolvedValue({ list: [] })
+          return chain
         }
-        return chain
       })
-      db.collection.mockReturnValue({ ...db.collection(), aggregate: mockAggregate })
 
       await main({ latitude: 39.99, longitude: 116.19 }, {})
 
       expect(db.Geo.Point).toHaveBeenCalledWith(116.19, 39.99)
+      expect(geoNearArgs[0].key).toBe('location')
+      expect(geoNearArgs[0].includeLocs).toBe('location')
+      expect(geoNearArgs[0].limit).toBe(1000)
+      expect(geoNearArgs[1].limit).toBe(21)
+    })
+
+    test('count query uses required aggregate count field name', async () => {
+      let countArgs = null
+      setupDbCollectionMock({
+        aggregateFactory: () => {
+          const chain = createAggregateChain()
+          chain.count.mockImplementation((fieldName) => {
+            countArgs = fieldName
+            return chain
+          })
+          chain.end.mockResolvedValue({ list: [{ total: 0 }] })
+          return chain
+        }
+      })
+
+      await main({ latitude: 39.99, longitude: 116.19 }, {})
+
+      expect(countArgs).toBe('total')
     })
 
     test('applies default radius of 20000', async () => {
-      const db = cloud.database()
       let geoNearArgs = null
-      const mockAggregate = jest.fn(() => {
-        const chain = {
-          geoNear: jest.fn((args) => { geoNearArgs = args; return chain }),
-          sort: jest.fn().mockReturnThis(),
-          skip: jest.fn().mockReturnThis(),
-          limit: jest.fn().mockReturnThis(),
-          count: jest.fn().mockReturnThis(),
-          end: jest.fn().mockResolvedValue({ list: [] })
+      setupDbCollectionMock({
+        aggregateFactory: () => {
+          const chain = createAggregateChain()
+          chain.geoNear.mockImplementation((args) => {
+            geoNearArgs = args
+            return chain
+          })
+          chain.end.mockResolvedValue({ list: [] })
+          return chain
         }
-        return chain
       })
-      db.collection.mockReturnValue({ ...db.collection(), aggregate: mockAggregate })
 
       await main({ latitude: 39.99, longitude: 116.19 }, {})
 
@@ -434,38 +442,134 @@ describe('getActivityList', () => {
     })
 
     test('filters only pending activities', async () => {
-      const db = cloud.database()
       let geoNearArgs = null
-      const mockAggregate = jest.fn(() => {
-        const chain = {
-          geoNear: jest.fn((args) => { geoNearArgs = args; return chain }),
-          sort: jest.fn().mockReturnThis(),
-          skip: jest.fn().mockReturnThis(),
-          limit: jest.fn().mockReturnThis(),
-          count: jest.fn().mockReturnThis(),
-          end: jest.fn().mockResolvedValue({ list: [] })
+      setupDbCollectionMock({
+        aggregateFactory: () => {
+          const chain = createAggregateChain()
+          chain.geoNear.mockImplementation((args) => {
+            geoNearArgs = args
+            return chain
+          })
+          chain.end.mockResolvedValue({ list: [] })
+          return chain
         }
-        return chain
       })
-      db.collection.mockReturnValue({ ...db.collection(), aggregate: mockAggregate })
 
       await main({ latitude: 39.99, longitude: 116.19 }, {})
 
       expect(geoNearArgs.query).toEqual({ status: { $in: ['pending', 'confirmed'] } })
     })
+
+    test('falls back to JS distance query when geo index is missing during count query', async () => {
+      const nearbyActivity = sampleActivity({
+        _id: 'fallback-nearby',
+        initiatorId: 'fallback-user',
+        location: { type: 'Point', coordinates: [116.19, 39.9904] }
+      })
+      const farActivity = sampleActivity({
+        _id: 'fallback-far',
+        initiatorId: 'fallback-user-2',
+        location: { type: 'Point', coordinates: [121.47, 31.23] }
+      })
+
+      let aggregateCallCount = 0
+      let queryCallCount = 0
+      setupDbCollectionMock({
+        aggregateFactory: () => {
+          aggregateCallCount++
+          const chain = createAggregateChain()
+          if (aggregateCallCount === 1) {
+            chain.end.mockRejectedValue(new Error('planner returned error: unable to find index for $geoNear query'))
+          } else {
+            throw new Error('dataQuery should reuse fallback results instead of geoNear')
+          }
+          return chain
+        },
+        queryFactory: () => {
+          queryCallCount++
+          const chain = createQueryChain()
+          chain.get.mockResolvedValue({
+            data: queryCallCount === 1 ? [nearbyActivity, farActivity] : []
+          })
+          return chain
+        }
+      })
+
+      const result = await main({
+        latitude: 39.99,
+        longitude: 116.19,
+        radius: 1000
+      }, {})
+
+      expect(result.code).toBe(0)
+      expect(result.data.list).toHaveLength(1)
+      expect(result.data.list[0].activityId).toBe('fallback-nearby')
+      expect(result.data.total).toBe(1)
+      expect(result.data.hasMore).toBe(false)
+    })
+
+    test('falls back to JS distance query when geo index is missing during lightweight data query', async () => {
+      const nearbyActivity = sampleActivity({
+        _id: 'fallback-lightweight',
+        location: { type: 'Point', coordinates: [116.19, 39.9904] }
+      })
+      let queryCallCount = 0
+      setupDbCollectionMock({
+        aggregateFactory: () => {
+          const chain = createAggregateChain()
+          chain.end.mockRejectedValue(new Error('[FailedOperation] unable to find index for $geoNear query'))
+          return chain
+        },
+        queryFactory: () => {
+          queryCallCount++
+          const chain = createQueryChain()
+          chain.get.mockResolvedValue({
+            data: queryCallCount === 1 ? [nearbyActivity] : []
+          })
+          return chain
+        }
+      })
+
+      const result = await main({
+        latitude: 39.99,
+        longitude: 116.19,
+        radius: 1000,
+        lightweight: true
+      }, {})
+
+      expect(result.code).toBe(0)
+      expect(result.data.list).toHaveLength(1)
+      expect(result.data.total).toBe(1)
+      expect(result.data.hasMore).toBe(false)
+      expect(getCredit).not.toHaveBeenCalled()
+    })
   })
 
   describe('main - error handling', () => {
     test('returns 5001 on unexpected error', async () => {
-      const db = cloud.database()
-      db.collection.mockReturnValue({
-        aggregate: jest.fn(() => { throw new Error('aggregate failed') })
+      setupDbCollectionMock({
+        aggregateFactory: () => { throw new Error('aggregate failed') }
       })
 
       const result = await main({ latitude: 39.99, longitude: 116.19 }, {})
       expect(result.code).toBe(5001)
       expect(result.message).toContain('aggregate failed')
     })
+
+    test('reports the failing stage when lightweight geo query times out', async () => {
+      setupDbCollectionMock({
+        aggregateFactory: () => {
+          const chain = createAggregateChain()
+          chain.end.mockRejectedValue(new Error('timeout'))
+          return chain
+        }
+      })
+
+      const result = await main({ latitude: 39.99, longitude: 116.19, lightweight: true }, {})
+
+      expect(result.code).toBe(5001)
+      expect(result.message).toContain('[dataQuery]')
+      expect(result.message).toContain('timeout')
+    })
   })
 })
-

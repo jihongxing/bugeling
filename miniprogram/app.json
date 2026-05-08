@@ -2,6 +2,7 @@
   "pages": [
     "pages/index/index",
     "pages/activity/template-select/template-select",
+    "pages/activity/publish-list/publish-list",
     "pages/activity/create/create",
     "pages/activity/detail/detail",
     "pages/activity/checkin/checkin",

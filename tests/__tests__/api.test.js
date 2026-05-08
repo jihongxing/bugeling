@@ -90,5 +90,26 @@ describe('API Utils - Property-Based Tests', () => {
         { numRuns: 100 }
       )
     })
+
+    test('sync timeout throw is normalized to NETWORK_ERROR', async () => {
+      global.wx.cloud.callFunction = () => {
+        throw new Error('timeout')
+      }
+
+      await expect(callFunction('test')).rejects.toMatchObject({
+        code: 'NETWORK_ERROR',
+        message: '网络异常，请重试'
+      })
+    })
+
+    test('sync non-network throw is normalized to CALL_FAILED', async () => {
+      global.wx.cloud.callFunction = () => {
+        throw new Error('boom')
+      }
+
+      await expect(callFunction('test')).rejects.toMatchObject({
+        code: 'CALL_FAILED'
+      })
+    })
   })
 })

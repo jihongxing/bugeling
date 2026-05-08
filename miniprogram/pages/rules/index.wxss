@@ -4,21 +4,21 @@
 
 .hero-card,
 .section-card {
-  background: #FFFFFF;
+  background: var(--surface-card-base);
   border-radius: 28rpx;
   padding: 30rpx 28rpx;
-  box-shadow: 0 12rpx 32rpx rgba(15, 23, 42, 0.06);
+  box-shadow: var(--shadow-soft);
   margin-bottom: 24rpx;
 }
 
 .hero-card {
-  background: linear-gradient(135deg, #FFF7ED 0%, #FFFFFF 72%);
+  background: linear-gradient(135deg, var(--surface-card-warm) 0%, var(--surface-card-base) 72%);
 }
 
 .hero-kicker {
   display: block;
   font-size: 24rpx;
-  color: #C2410C;
+  color: var(--text-warm-strong);
   font-weight: 700;
   margin-bottom: 12rpx;
 }
@@ -27,7 +27,7 @@
   display: block;
   font-size: 40rpx;
   line-height: 1.35;
-  color: #111827;
+  color: var(--text-title-strong);
   font-weight: 700;
 }
 
@@ -36,13 +36,13 @@
   margin-top: 14rpx;
   font-size: 26rpx;
   line-height: 1.7;
-  color: #6B7280;
+  color: var(--text-body-muted);
 }
 
 .section-title {
   display: block;
   font-size: 30rpx;
-  color: #111827;
+  color: var(--text-title-strong);
   font-weight: 700;
   margin-bottom: 20rpx;
 }
@@ -66,8 +66,8 @@
   line-height: 52rpx;
   text-align: center;
   border-radius: 999rpx;
-  background: #FFF4EE;
-  color: #C2410C;
+  background: var(--surface-card-warm-soft);
+  color: var(--text-warm-strong);
   font-size: 22rpx;
   font-weight: 700;
 }
@@ -75,5 +75,11 @@
 .rule-text {
   font-size: 26rpx;
   line-height: 1.7;
-  color: #374151;
+  color: var(--text-body-strong);
+}
+
+@media (prefers-color-scheme: dark) {
+  .hero-card {
+    background: linear-gradient(135deg, var(--surface-card-warm) 0%, var(--surface-card-base) 72%);
+  }
 }

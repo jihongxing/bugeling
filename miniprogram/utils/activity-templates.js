@@ -172,6 +172,27 @@ var OFFICIAL_EXAMPLE_SEEDS = [
     templateType: 'sports'
   }
 ]
+var TEMPLATE_GROUPS = [
+  {
+    key: 'light_start',
+    title: '轻一点先发出去',
+    desc: '不用安排太多，适合先开口。',
+    templateTypes: ['walk', 'park_chill', 'convenience_store', 'photo_walk']
+  },
+  {
+    key: 'eat_and_play',
+    title: '边吃边聊更自然',
+    desc: '有个由头，不容易冷场。',
+    templateTypes: ['cheap_meal', 'night_market', 'boardgame', 'free_exhibition']
+  },
+  {
+    key: 'goal_first',
+    title: '带点目标更稳',
+    desc: '想运动、自习，或者有别的小想法。',
+    templateTypes: ['sports', 'study_buddy', 'other']
+  }
+]
+var DEFAULT_RECOMMEND_TEMPLATE_TYPES = ['park_chill', 'walk', 'cheap_meal', 'sports']
 
 TEMPLATE_OPTIONS.forEach(function(option) {
   TEMPLATE_META_MAP[option.type] = option
@@ -189,6 +210,17 @@ function normalizeLocationName(locationName) {
   if (typeof locationName !== 'string') return '附近'
   var text = locationName.trim()
   return text || '附近'
+}
+
+function normalizeText(value) {
+  if (value === undefined || value === null) return ''
+  return String(value).replace(/\s+/g, ' ').trim()
+}
+
+function toNumber(value) {
+  if (value === undefined || value === null || value === '') return undefined
+  var num = Number(value)
+  return isNaN(num) ? undefined : num
 }
 
 function buildDefaultTitle(templateType, locationName) {
@@ -222,21 +254,151 @@ function buildCreateUrlFromSeed(templateType, overrides) {
     + encodeURIComponent(JSON.stringify(seed))
 }
 
+function buildCreateUrlFromActivity(activity) {
+  var source = activity && typeof activity === 'object' ? activity : {}
+  var templateType = normalizeTemplateType(normalizeText(source.templateType))
+  var meetingPointText = normalizeText(
+    source.meetingPointText
+      || source.locationName
+      || (source.location && source.location.name)
+      || ''
+  )
+
+  return buildCreateUrlFromSeed(templateType, {
+    sourceReportId: normalizeText(source.sourceReportId || source.reportId || source.activityId || source._id),
+    activityId: normalizeText(source.activityId || source._id),
+    title: normalizeText(source.title),
+    summary: normalizeText(source.summary),
+    budgetType: normalizeText(source.budgetType) || getTemplateMeta(templateType).budgetType,
+    serviceFee: toNumber(source.serviceFee),
+    bondAmount: toNumber(source.bondAmount || source.depositTier),
+    minParticipants: toNumber(source.minParticipants),
+    maxParticipants: toNumber(source.maxParticipants),
+    identityHint: normalizeText(source.identityHint),
+    meetingPointText: meetingPointText,
+    realNameRequired: source.realNameRequired === true,
+    genderLimit: normalizeText(source.genderLimit) || 'none',
+    allowAfterParty: source.allowAfterParty === true
+  })
+}
+
 function mapTemplatesByTypes(typeList) {
   return typeList.map(function(type) {
     return getTemplateMeta(type)
   })
 }
 
+function buildTemplateCards(typeList) {
+  return mapTemplatesByTypes(typeList).map(function(item) {
+    return {
+      id: item.type,
+      type: item.type,
+      label: item.label,
+      desc: item.desc,
+      summary: item.summary,
+      budgetType: item.budgetType,
+      createUrl: '/pages/activity/create/create?templateType=' + encodeURIComponent(item.type)
+    }
+  })
+}
+
+function buildTemplateGroups() {
+  return TEMPLATE_GROUPS.map(function(group) {
+    return {
+      key: group.key,
+      title: group.title,
+      desc: group.desc,
+      list: buildTemplateCards(group.templateTypes)
+    }
+  })
+}
+
+function buildOfficialExampleCards() {
+  return OFFICIAL_EXAMPLE_SEEDS.map(function(item) {
+    return {
+      id: item.id,
+      badge: item.badge,
+      title: item.title,
+      summary: item.summary,
+      templateType: item.templateType,
+      createUrl: buildCreateUrlFromSeed(item.templateType, {
+        title: item.title,
+        summary: item.summary
+      })
+    }
+  })
+}
+
+function buildDefaultRecommendCards(limit) {
+  return buildTemplateCards(DEFAULT_RECOMMEND_TEMPLATE_TYPES)
+    .slice(0, limit || DEFAULT_RECOMMEND_TEMPLATE_TYPES.length)
+    .map(function(item) {
+      return {
+        id: 'default_' + item.type,
+        badge: '推荐起步',
+        title: item.label,
+        summary: item.desc,
+        templateType: item.type,
+        reason: '第一次发的话，从这个开始最轻松。',
+        createUrl: item.createUrl
+      }
+    })
+}
+
+function buildHistoryRecommendCards(activityList, limit) {
+  var list = Array.isArray(activityList) ? activityList : []
+  var result = []
+  var usedTypes = {}
+  var maxCount = limit || 4
+
+  list.forEach(function(activity, index) {
+    var templateType = normalizeTemplateType(normalizeText(activity && activity.templateType))
+    var meta = getTemplateMeta(templateType)
+    var id = normalizeText(activity && (activity._id || activity.activityId || activity.reportId || activity.sourceReportId))
+      || ('history_' + templateType + '_' + index)
+
+    if (!templateType || usedTypes[templateType] || result.length >= maxCount) return
+
+    usedTypes[templateType] = true
+    result.push({
+      id: id,
+      badge: activity && activity.participationStatus ? '最近参加' : '最近发过',
+      title: normalizeText(activity && activity.title) || meta.label,
+      summary: normalizeText(activity && activity.summary) || meta.summary,
+      templateType: templateType,
+      reason: activity && activity.participationStatus
+        ? '你最近参加过这类小局，可以直接沿着这个感觉发。'
+        : '你最近发过这类小局，改下时间地点就能再来一次。',
+      createUrl: buildCreateUrlFromActivity(activity)
+    })
+  })
+
+  if (result.length >= maxCount) return result.slice(0, maxCount)
+
+  return result.concat(
+    buildDefaultRecommendCards(maxCount).filter(function(item) {
+      return !usedTypes[item.templateType]
+    })
+  ).slice(0, maxCount)
+}
+
 module.exports = {
   TEMPLATE_OPTIONS: TEMPLATE_OPTIONS,
+  TEMPLATE_GROUPS: TEMPLATE_GROUPS,
   HOME_PRIMARY_TEMPLATE_TYPES: HOME_PRIMARY_TEMPLATE_TYPES,
   HOME_MORE_TEMPLATE_TYPES: HOME_MORE_TEMPLATE_TYPES,
   OFFICIAL_EXAMPLE_SEEDS: OFFICIAL_EXAMPLE_SEEDS,
+  DEFAULT_RECOMMEND_TEMPLATE_TYPES: DEFAULT_RECOMMEND_TEMPLATE_TYPES,
   normalizeTemplateType: normalizeTemplateType,
   getTemplateMeta: getTemplateMeta,
   buildDefaultTitle: buildDefaultTitle,
   buildTemplateSeed: buildTemplateSeed,
   buildCreateUrlFromSeed: buildCreateUrlFromSeed,
-  mapTemplatesByTypes: mapTemplatesByTypes
+  buildCreateUrlFromActivity: buildCreateUrlFromActivity,
+  mapTemplatesByTypes: mapTemplatesByTypes,
+  buildTemplateCards: buildTemplateCards,
+  buildTemplateGroups: buildTemplateGroups,
+  buildOfficialExampleCards: buildOfficialExampleCards,
+  buildDefaultRecommendCards: buildDefaultRecommendCards,
+  buildHistoryRecommendCards: buildHistoryRecommendCards
 }

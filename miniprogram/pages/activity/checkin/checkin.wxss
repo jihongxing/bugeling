@@ -3,11 +3,11 @@
 }
 
 .hero-card {
-  background: linear-gradient(135deg, #FFF4ED 0%, #FFFFFF 70%);
+  background: linear-gradient(135deg, var(--surface-card-warm-soft) 0%, var(--surface-card-base) 70%);
   border-radius: 24rpx;
   padding: 28rpx;
   margin-bottom: 20rpx;
-  box-shadow: 0 8rpx 24rpx rgba(255, 107, 53, 0.08);
+  box-shadow: var(--shadow-warm);
 }
 
 .hero-head {
@@ -21,8 +21,8 @@
   display: inline-flex;
   align-items: center;
   font-size: 22rpx;
-  color: #C2410C;
-  background: rgba(255, 107, 53, 0.12);
+  color: var(--text-warm-strong);
+  background: var(--accent-warm-bg);
   border-radius: 999rpx;
   padding: 8rpx 18rpx;
 }
@@ -39,7 +39,7 @@
   margin-top: 20rpx;
   font-size: 38rpx;
   line-height: 1.4;
-  color: #1A1A2E;
+  color: var(--text-title-strong);
   font-weight: 600;
 }
 
@@ -48,7 +48,7 @@
   margin-top: 12rpx;
   font-size: 26rpx;
   line-height: 1.7;
-  color: #6B7280;
+  color: var(--text-body-muted);
 }
 
 .hero-quick-grid {
@@ -59,7 +59,7 @@
 }
 
 .hero-quick-item {
-  background: rgba(255, 255, 255, 0.86);
+  background: var(--surface-overlay-medium);
   border-radius: 20rpx;
   padding: 18rpx;
 }
@@ -67,7 +67,7 @@
 .hero-quick-label {
   display: block;
   font-size: 22rpx;
-  color: #6B7280;
+  color: var(--text-body-muted);
 }
 
 .hero-quick-value {
@@ -75,7 +75,7 @@
   margin-top: 8rpx;
   font-size: 24rpx;
   line-height: 1.5;
-  color: #1A1A2E;
+  color: var(--text-title-strong);
   font-weight: 600;
 }
 
@@ -89,18 +89,18 @@
 
 .section-title {
   font-size: 30rpx;
-  color: #1A1A2E;
+  color: var(--text-title-strong);
   font-weight: 600;
 }
 
 .section-side {
   font-size: 24rpx;
-  color: #9CA3AF;
+  color: var(--text-body-faint);
 }
 
 .status-panel {
   border-radius: 18rpx;
-  background: #FFF7ED;
+  background: var(--surface-card-warm);
   padding: 24rpx;
   margin-top: 20rpx;
 }
@@ -108,7 +108,7 @@
 .status-title {
   display: block;
   font-size: 32rpx;
-  color: #9A3412;
+  color: var(--text-warm-soft);
   font-weight: 600;
 }
 
@@ -117,7 +117,7 @@
   margin-top: 12rpx;
   font-size: 26rpx;
   line-height: 1.7;
-  color: #7C2D12;
+  color: var(--text-warm-muted);
 }
 
 .status-meta {
@@ -125,7 +125,7 @@
   margin-top: 16rpx;
   font-size: 24rpx;
   line-height: 1.7;
-  color: #B45309;
+  color: var(--text-status-warning);
 }
 
 .info-item {
@@ -134,7 +134,7 @@
   justify-content: space-between;
   gap: 24rpx;
   padding: 18rpx 0;
-  border-bottom: 1rpx solid #F3F4F6;
+  border-bottom: 1rpx solid var(--border-soft-2);
 }
 
 .info-item:last-child {
@@ -145,14 +145,14 @@
 .info-label {
   flex: 0 0 140rpx;
   font-size: 26rpx;
-  color: #6B7280;
+  color: var(--text-body-muted);
 }
 
 .info-value {
   flex: 1;
   font-size: 26rpx;
   line-height: 1.6;
-  color: #1A1A2E;
+  color: var(--text-title-strong);
   text-align: right;
   word-break: break-all;
 }
@@ -161,14 +161,14 @@
   display: block;
   font-size: 30rpx;
   line-height: 1.6;
-  color: #1A1A2E;
+  color: var(--text-title-strong);
   font-weight: 500;
 }
 
 .distance-box {
   margin-top: 22rpx;
   padding-top: 22rpx;
-  border-top: 1rpx solid #F3F4F6;
+  border-top: 1rpx solid var(--border-soft-2);
 }
 
 .distance-head {
@@ -181,13 +181,13 @@
 
 .distance-title {
   font-size: 28rpx;
-  color: #1A1A2E;
+  color: var(--text-title-strong);
   font-weight: 600;
 }
 
 .distance-side {
   font-size: 24rpx;
-  color: #9CA3AF;
+  color: var(--text-body-faint);
 }
 
 .distance-subtext {
@@ -195,7 +195,7 @@
   margin-top: 12rpx;
   font-size: 24rpx;
   line-height: 1.7;
-  color: #6B7280;
+  color: var(--text-body-muted);
 }
 
 .action-area {
@@ -234,7 +234,7 @@
 
 .loading-text {
   font-size: 28rpx;
-  color: #6B7280;
+  color: var(--text-body-muted);
 }
 
 .empty-card {
@@ -244,7 +244,7 @@
 .empty-title {
   display: block;
   font-size: 32rpx;
-  color: #1A1A2E;
+  color: var(--text-title-strong);
   font-weight: 600;
 }
 
@@ -253,10 +253,16 @@
   margin-top: 16rpx;
   font-size: 26rpx;
   line-height: 1.7;
-  color: #6B7280;
+  color: var(--text-body-muted);
 }
 
 .retry-btn {
   width: 100%;
   margin-top: 28rpx;
+}
+
+@media (prefers-color-scheme: dark) {
+  .hero-quick-item {
+    background: var(--surface-card-base);
+  }
 }

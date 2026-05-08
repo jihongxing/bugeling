@@ -1,57 +1,66 @@
 var api = require('../../../utils/api')
 var templateUtil = require('../../../utils/activity-templates')
 
-var TEMPLATE_OPTIONS = templateUtil.TEMPLATE_OPTIONS
+function safeReportEvent(eventName, data) {
+  if (!eventName || typeof wx === 'undefined' || !wx || typeof wx.reportEvent !== 'function') return
+  try {
+    wx.reportEvent(eventName, data || {})
+  } catch (err) {}
+}
+
+function buildRecommendHint(recommendCards) {
+  var topCard = Array.isArray(recommendCards) && recommendCards.length ? recommendCards[0] : null
+  if (!topCard) return '看看你最近最可能发什么'
+  if (topCard.badge === '最近参加') return '沿着你最近参加过的感觉，顺手开一个同类局'
+  if (topCard.badge === '最近发过') return '把你最近发过的类型再来一次，改下时间地点就行'
+  return topCard.reason || '看看你最近最可能发什么'
+}
 
 Page({
   data: {
-    templateOptions: TEMPLATE_OPTIONS,
-    selectedType: '',
-    loading: false
+    recommendHint: '看看你最近最可能发什么'
   },
 
-  onLoad: function(options) {
-    this.setData({
-      selectedType: options && options.selected ? options.selected : ''
-    })
-    this.loadTemplates()
+  onLoad: function() {
+    safeReportEvent('publish_hub_exposure', {})
+    this.loadRecommendHint()
   },
 
-  loadTemplates: function() {
+  onShow: function() {
+    this.loadRecommendHint()
+  },
+
+  loadRecommendHint: function() {
     var self = this
 
-    self.setData({ loading: true })
-    api.callFunction('getActivityTemplates').then(function(result) {
-      if (result.code === 0 && result.data && Array.isArray(result.data.list) && result.data.list.length) {
-        self.setData({
-          templateOptions: result.data.list.map(function(item) {
-            return {
-              type: item.type,
-              label: item.label,
-              desc: item.desc,
-              summary: item.summary,
-              budgetType: item.budgetType,
-              serviceFee: item.recommendedServiceFee,
-              bondAmount: item.recommendedBondAmount
-            }
-          }),
-          loading: false
-        })
-        return
-      }
-
-      self.setData({ loading: false })
+    api.callFunction('getMyActivities', {
+      page: 1,
+      pageSize: 4
+    }).then(function(result) {
+      var recommendCards = templateUtil.buildHistoryRecommendCards(
+        result && result.data ? result.data.list : [],
+        1
+      )
+      self.setData({
+        recommendHint: buildRecommendHint(recommendCards)
+      })
     }).catch(function() {
-      self.setData({ loading: false })
+      self.setData({
+        recommendHint: '看看你最近最可能发什么'
+      })
     })
   },
 
-  chooseTemplate: function(e) {
-    var templateType = e.currentTarget.dataset.type
-    if (!templateType) return
+  goToPath: function(e) {
+    var mode = e.currentTarget.dataset.mode
+    if (!mode) return
+
+    safeReportEvent('publish_hub_click', {
+      mode: mode
+    })
 
     wx.navigateTo({
-      url: '/pages/activity/create/create?templateType=' + templateType
+      url: '/pages/activity/publish-list/publish-list?mode=' + mode
     })
   }
 })

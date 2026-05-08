@@ -5,7 +5,7 @@
   align-items: center;
   padding: 40rpx 32rpx;
   min-height: 100vh;
-  background: #F5F5F7;
+  background: var(--surface-page-muted);
 }
 
 .header {
@@ -15,7 +15,7 @@
 .title {
   font-size: 36rpx;
   font-weight: 600;
-  color: #1A1A1A;
+  color: var(--text-title-strong);
 }
 
 .qr-container {
@@ -24,9 +24,9 @@
   align-items: center;
   width: 480rpx;
   height: 480rpx;
-  background: #FFFFFF;
+  background: var(--surface-card-base);
   border-radius: 24rpx;
-  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.08);
+  box-shadow: var(--shadow-soft);
   margin-bottom: 32rpx;
 }
 
@@ -50,15 +50,15 @@
 }
 
 .error {
-  color: #FF4D4F;
+  color: var(--text-status-danger);
 }
 
 .retry-btn {
   margin-top: 20rpx;
   font-size: 28rpx;
-  color: #FF6B35;
+  color: var(--color-primary);
   background: transparent;
-  border: 2rpx solid #FF6B35;
+  border: 2rpx solid var(--color-primary);
   border-radius: 8rpx;
   padding: 8rpx 32rpx;
 }
@@ -69,7 +69,7 @@
 
 .countdown-text {
   font-size: 32rpx;
-  color: #FF6B35;
+  color: var(--color-primary);
   font-weight: 500;
 }
 
@@ -82,12 +82,12 @@
 
 .tip-text {
   font-size: 28rpx;
-  color: #6B7280;
+  color: var(--text-body-muted);
   line-height: 1.8;
 }
 
 .tip-text.warning {
-  color: #FF4D4F;
+  color: var(--text-status-danger);
   font-size: 24rpx;
 }
 
@@ -102,15 +102,21 @@
   line-height: 88rpx;
   font-size: 32rpx;
   color: #FFFFFF;
-  background: #FF6B35;
+  background: var(--color-primary);
   border-radius: 16rpx;
   border: none;
 }
 
 .arrival-btn.arrived {
-  background: #52C41A;
+  background: var(--text-status-success);
 }
 
 .arrival-btn[disabled] {
   opacity: 0.7;
+}
+
+@media (prefers-color-scheme: dark) {
+  .qr-container {
+    box-shadow: var(--shadow-soft);
+  }
 }

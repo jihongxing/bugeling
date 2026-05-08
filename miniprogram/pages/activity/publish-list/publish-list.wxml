@@ -1,0 +1,109 @@
+<view class="page publish-page">
+  <view class="hero-card">
+    <text class="hero-kicker">{{config.kicker}}</text>
+    <text class="hero-title">{{config.title}}</text>
+    <text class="hero-desc">{{config.desc}}</text>
+  </view>
+
+  <view wx:if="{{mode === 'types'}}" class="section-card">
+    <view class="section-head">
+      <text class="section-title">选一个类型</text>
+      <text class="section-desc">已经知道方向了，就不用再看长说明。</text>
+    </view>
+
+    <view class="grid-list">
+      <view
+        wx:for="{{typeCards}}"
+        wx:key="id"
+        class="grid-card {{item.selected ? 'active' : ''}}"
+        bindtap="goCreate"
+        data-type="{{item.type}}"
+        data-url="{{item.createUrl}}"
+      >
+        <text class="grid-badge" wx:if="{{item.selected}}">当前这个类型</text>
+        <text class="grid-title">{{item.label}}</text>
+        <text class="grid-desc">{{item.desc}}</text>
+        <text class="grid-action">直接开写</text>
+      </view>
+    </view>
+  </view>
+
+  <view wx:if="{{mode === 'examples'}}" class="section-card">
+    <view class="section-head">
+      <text class="section-title">照着发一个</text>
+      <text class="section-desc">平台示例只用来帮你起步，不代表真实活动。</text>
+    </view>
+
+    <view class="stack-list">
+      <view
+        wx:for="{{exampleCards}}"
+        wx:key="id"
+        class="list-card warm"
+        bindtap="goCreate"
+        data-type="{{item.templateType}}"
+        data-url="{{item.createUrl}}"
+      >
+        <view class="list-head">
+          <text class="list-badge">{{item.badge}}</text>
+          <text class="list-action">照着发这个 ›</text>
+        </view>
+        <text class="list-title">{{item.title}}</text>
+        <text class="list-desc">{{item.summary}}</text>
+      </view>
+    </view>
+  </view>
+
+  <view wx:if="{{mode === 'templates'}}" class="template-groups">
+    <view wx:for="{{templateGroups}}" wx:key="key" class="section-card">
+      <view class="section-head">
+        <text class="section-title">{{item.title}}</text>
+        <text class="section-desc">{{item.desc}}</text>
+      </view>
+
+      <view class="grid-list">
+        <view
+          wx:for="{{item.list}}"
+          wx:key="id"
+          class="grid-card compact {{item.selected ? 'active' : ''}}"
+          bindtap="goCreate"
+          data-type="{{item.type}}"
+          data-url="{{item.createUrl}}"
+        >
+          <text class="grid-title">{{item.label}}</text>
+          <text class="grid-desc">{{item.desc}}</text>
+          <text class="grid-action">按这个发</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <view wx:if="{{mode === 'recommend'}}" class="section-card">
+    <view class="section-head">
+      <text class="section-title">{{recommendHasHistory ? '根据你最近的节奏' : '先给你几个低门槛起点'}}</text>
+      <text class="section-desc">{{recommendHasHistory ? '优先从你最近发过或参加过的类型开始。' : '还没有历史记录时，先从这些更容易开口。'}}</text>
+    </view>
+
+    <view class="loading-state" wx:if="{{loadingRecommend}}">
+      <text class="loading-text">正在整理你最近可能想发的方向...</text>
+    </view>
+
+    <view class="stack-list" wx:else>
+      <view
+        wx:for="{{recommendCards}}"
+        wx:key="id"
+        class="list-card"
+        bindtap="goCreate"
+        data-type="{{item.templateType}}"
+        data-url="{{item.createUrl}}"
+      >
+        <view class="list-head">
+          <text class="list-badge cool">{{item.badge}}</text>
+          <text class="list-action">就从这个开始 ›</text>
+        </view>
+        <text class="list-title">{{item.title}}</text>
+        <text class="list-desc">{{item.summary}}</text>
+        <text class="list-reason">{{item.reason}}</text>
+      </view>
+    </view>
+  </view>
+</view>

@@ -12,6 +12,12 @@ var DEFAULT_FALLBACK_LOCATION = {
   name: '未定位（先看默认推荐）'
 }
 
+function traceLog() {
+  try {
+    console.log.apply(console, arguments)
+  } catch (err) {}
+}
+
 function hasValidCoordinates(latitude, longitude) {
   return typeof latitude === 'number' &&
     typeof longitude === 'number' &&
@@ -108,6 +114,27 @@ function buildOfficialExamples() {
   })
 }
 
+function getStartupLocation() {
+  var cached = location.getCachedLocation()
+  if (cached && hasValidCoordinates(cached.latitude, cached.longitude)) {
+    return {
+      latitude: cached.latitude,
+      longitude: cached.longitude,
+      name: cached.name || '当前位置',
+      isFallback: false
+    }
+  }
+
+  return Object.assign({ isFallback: true }, DEFAULT_FALLBACK_LOCATION)
+}
+
+function hasResolvedLocationName(name) {
+  return typeof name === 'string' &&
+    name.trim() !== '' &&
+    name !== '当前位置' &&
+    name !== DEFAULT_FALLBACK_LOCATION.name
+}
+
 function safeReportEvent(eventName, data) {
   if (!eventName || typeof wx === 'undefined' || !wx || typeof wx.reportEvent !== 'function') return
   try {
@@ -120,6 +147,7 @@ Page({
     locationName: '',
     latitude: 0,
     longitude: 0,
+    usingFallbackLocation: true,
     heroTitle: '附近还没人先开口的话，你可以先发一个',
     heroSubtitle: buildHeroSubtitle(false),
     rawActivityList: [],
@@ -144,11 +172,28 @@ Page({
   },
 
   onLoad: function() {
+    var self = this
+    traceLog('[HOME_TRACE] onLoad start')
     safeReportEvent('home_template_module_exposure', {
       primary_count: this.data.primaryTemplateList.length,
       example_count: this.data.officialExamples.length
     })
-    this.initLocation()
+    var startupLocation = getStartupLocation()
+    traceLog('[HOME_TRACE] startup location chosen', startupLocation)
+    this.setData({
+      latitude: startupLocation.latitude,
+      longitude: startupLocation.longitude,
+      locationName: startupLocation.name,
+      usingFallbackLocation: startupLocation.isFallback === true
+    }, function() {
+      if (startupLocation.isFallback) {
+        traceLog('[HOME_TRACE] onLoad fallback location set, skip nearby query')
+        return
+      }
+
+      traceLog('[HOME_TRACE] onLoad after setData, calling loadActivities')
+      self.loadActivities({ silentOnTimeout: true, lightweight: true })
+    })
   },
 
   onShow: function() {},
@@ -176,22 +221,40 @@ Page({
       self.setData({
         latitude: res.latitude,
         longitude: res.longitude,
-        locationName: res.name || '当前位置'
+        locationName: res.name || '当前位置',
+        usingFallbackLocation: false
       })
       self.loadActivities()
     }).catch(function(err) {
       self.setData({
         latitude: DEFAULT_FALLBACK_LOCATION.latitude,
         longitude: DEFAULT_FALLBACK_LOCATION.longitude,
-        locationName: DEFAULT_FALLBACK_LOCATION.name
+        locationName: DEFAULT_FALLBACK_LOCATION.name,
+        usingFallbackLocation: true
       })
-      self.loadActivities()
+      wx.stopPullDownRefresh()
+
+      if (err && (String(err.code).toUpperCase() === 'AUTH_DENIED' || String(err.code).toUpperCase() === 'LOCATION_PERMISSION_DENIED')) {
+        wx.showToast({ title: '定位权限未开启，先按默认位置展示', icon: 'none' })
+        return
+      }
+
+      if (err && String(err.code).toUpperCase() === 'LOCATION_TIMEOUT') {
+        return
+      }
+
       wx.showToast({ title: err.message || '定位失败，先按默认位置展示', icon: 'none' })
     })
   },
 
   refreshLocation: function() {
     var now = Date.now()
+    traceLog('[HOME_TRACE] refreshLocation tapped', {
+      latitude: this.data.latitude,
+      longitude: this.data.longitude,
+      loading: this.data.loading,
+      lastRefreshAt: this.data.lastRefreshAt
+    })
     if (now - this.data.lastRefreshAt < REFRESH_THROTTLE_MS) {
       wx.showToast({ title: '刷新太频繁，稍等一下', icon: 'none' })
       return
@@ -206,36 +269,26 @@ Page({
       feedTitle: this.data.activityList.length > 0 ? '附近已经有人在发' : '附近暂时还没有人发，你可以做第一个'
     })
 
-    if (hasValidCoordinates(this.data.latitude, this.data.longitude)) {
-      this.loadActivities({ preserveOnFailure: true, silentOnTimeout: true })
-      this.refreshDeviceLocationSilently()
+    if (this.data.usingFallbackLocation || !hasValidCoordinates(this.data.latitude, this.data.longitude)) {
+      traceLog('[HOME_TRACE] refreshLocation requesting real device location')
+      this.initLocation()
       return
     }
 
+    if (!hasResolvedLocationName(this.data.locationName)) {
+      traceLog('[HOME_TRACE] refreshLocation missing resolved location name, reloading device location')
+      this.initLocation()
+      return
+    }
+
+    if (hasValidCoordinates(this.data.latitude, this.data.longitude)) {
+      traceLog('[HOME_TRACE] refreshLocation using current coordinates')
+      this.loadActivities({ preserveOnFailure: true, silentOnTimeout: true, lightweight: true })
+      return
+    }
+
+    traceLog('[HOME_TRACE] refreshLocation falling back to initLocation')
     this.initLocation()
-  },
-
-  refreshDeviceLocationSilently: function() {
-    var self = this
-    location.getCurrentLocation({ useCache: false }).then(function(res) {
-      var latitude = Number(res.latitude)
-      var longitude = Number(res.longitude)
-      if (!hasValidCoordinates(latitude, longitude)) return
-
-      var changed = Math.abs(latitude - self.data.latitude) > 0.0003 ||
-        Math.abs(longitude - self.data.longitude) > 0.0003
-
-      self.setData({
-        latitude: latitude,
-        longitude: longitude,
-        locationName: res.name || self.data.locationName || '当前位置'
-      })
-
-      if (changed && !self.data.loading) {
-        self.setData({ page: 1, hasMore: true })
-        self.loadActivities({ preserveOnFailure: true, silentOnTimeout: true })
-      }
-    }).catch(function() {})
   },
 
   loadActivities: function(options) {
@@ -243,15 +296,31 @@ Page({
     options = options || {}
     var preserveOnFailure = options.preserveOnFailure !== false
     var silentOnTimeout = options.silentOnTimeout === true
+    var lightweight = options.lightweight === true
     if (self.data.loading) return
+    traceLog('[HOME_TRACE] loadActivities start', {
+      page: self.data.page,
+      latitude: self.data.latitude,
+      longitude: self.data.longitude,
+      preserveOnFailure: preserveOnFailure,
+      silentOnTimeout: silentOnTimeout,
+      lightweight: lightweight
+    })
     self.setData({ loading: true })
 
     withTimeout(api.callFunction('getActivityList', {
       latitude: self.data.latitude,
       longitude: self.data.longitude,
       page: self.data.page,
-      pageSize: 20
+      pageSize: 20,
+      lightweight: lightweight
     }), ACTIVITY_LIST_TIMEOUT_MS).then(function(result) {
+      traceLog('[HOME_TRACE] loadActivities success', {
+        code: result && result.code,
+        message: result && result.message,
+        listLength: result && result.data && result.data.list ? result.data.list.length : 0,
+        hasMore: result && result.data ? result.data.hasMore : undefined
+      })
       if (result.code === 0 && result.data) {
         var incomingList = result.data.list || []
         var rawList = self.data.page === 1
@@ -288,6 +357,11 @@ Page({
       }
       wx.stopPullDownRefresh()
     }).catch(function(err) {
+      traceLog('[HOME_TRACE] loadActivities catch', err && {
+        code: err.code,
+        message: err.message,
+        rawErrMsg: err.rawErrMsg
+      })
       var isTimeout = isTimeoutError(err)
       var keepExistingList = preserveOnFailure && self.data.activityList.length > 0
 

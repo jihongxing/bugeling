@@ -1,22 +1,22 @@
 /* pages/user/history/history.wxss */
 .page {
   padding: 24rpx;
-  background: #f5f5f5;
+  background: var(--surface-page-muted);
   min-height: 100vh;
 }
 
 .hero-card {
-  background: linear-gradient(135deg, #FFF7ED 0%, #FFFFFF 72%);
+  background: linear-gradient(135deg, var(--surface-card-warm) 0%, var(--surface-card-base) 72%);
   border-radius: 24rpx;
   padding: 28rpx;
   margin-bottom: 20rpx;
-  box-shadow: 0 8rpx 24rpx rgba(255, 107, 53, 0.08);
+  box-shadow: var(--shadow-warm);
 }
 
 .hero-kicker {
   display: block;
   font-size: 24rpx;
-  color: #C2410C;
+  color: var(--text-warm-strong);
   font-weight: 600;
   margin-bottom: 12rpx;
 }
@@ -25,7 +25,7 @@
   display: block;
   font-size: 38rpx;
   line-height: 1.35;
-  color: #111827;
+  color: var(--text-title-strong);
   font-weight: 700;
   margin-bottom: 10rpx;
 }
@@ -33,7 +33,7 @@
 .hero-desc {
   font-size: 26rpx;
   line-height: 1.7;
-  color: #6B7280;
+  color: var(--text-body-muted);
 }
 
 .activity-list {
@@ -43,10 +43,10 @@
 }
 
 .activity-item {
-  background: #fff;
+  background: var(--surface-card-base);
   border-radius: 20rpx;
   padding: 28rpx 24rpx;
-  box-shadow: 0 8rpx 24rpx rgba(15, 23, 42, 0.06);
+  box-shadow: var(--shadow-soft);
 }
 
 .activity-header {
@@ -59,7 +59,7 @@
 .activity-title {
   font-size: 30rpx;
   font-weight: 500;
-  color: #111827;
+  color: var(--text-title-strong);
   flex: 1;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -75,22 +75,22 @@
 }
 
 .status-pending {
-  color: #F59E0B;
+  color: var(--text-status-warning);
   background: rgba(245, 158, 11, 0.1);
 }
 
 .status-active {
-  color: #10B981;
+  color: var(--text-status-success);
   background: rgba(16, 185, 129, 0.1);
 }
 
 .status-completed {
-  color: #6B7280;
+  color: var(--text-body-muted);
   background: rgba(107, 114, 128, 0.1);
 }
 
 .status-cancelled {
-  color: #EF4444;
+  color: var(--text-status-danger);
   background: rgba(239, 68, 68, 0.1);
 }
 
@@ -100,14 +100,14 @@
 
 .activity-time {
   font-size: 24rpx;
-  color: #6B7280;
+  color: var(--text-body-muted);
 }
 
 .participation-status {
   font-size: 24rpx;
-  color: #6B7280;
+  color: var(--text-body-muted);
   padding-top: 8rpx;
-  border-top: 1rpx solid #F1F5F9;
+  border-top: 1rpx solid var(--border-soft-3);
   margin-top: 8rpx;
 }
 
@@ -133,13 +133,13 @@
 
 .empty-text {
   font-size: 28rpx;
-  color: #6B7280;
+  color: var(--text-body-muted);
 }
 
 .loading {
   text-align: center;
   padding: 32rpx;
-  color: #999;
+  color: var(--text-body-faint);
   font-size: 26rpx;
 }
 
@@ -150,5 +150,12 @@
 
 .load-more-text {
   font-size: 24rpx;
-  color: #ccc;
+  color: var(--text-body-faint);
+}
+
+@media (prefers-color-scheme: dark) {
+  .hero-card,
+  .activity-item {
+    box-shadow: var(--shadow-soft);
+  }
 }

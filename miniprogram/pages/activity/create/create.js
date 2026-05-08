@@ -310,7 +310,7 @@ Page({
 
   goTemplateSelect: function() {
     wx.navigateTo({
-      url: '/pages/activity/template-select/template-select?selected=' + this.data.templateType
+      url: '/pages/activity/publish-list/publish-list?mode=types&selected=' + encodeURIComponent(this.data.templateType)
     })
   },
 

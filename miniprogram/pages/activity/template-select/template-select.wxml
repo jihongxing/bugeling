@@ -1,27 +1,44 @@
 <view class="page template-page">
   <view class="hero-card">
-    <text class="hero-kicker">今天想发个什么小局</text>
-    <text class="hero-title">先挑一个你现在最愿意顺手发出去的</text>
-    <text class="hero-desc">散步、坐坐、吃点便宜的，别太正式就行。</text>
+    <text class="hero-title">今天想攒个什么局？</text>
+    <text class="hero-desc">先选一种发法，细节后面再补。</text>
   </view>
 
-  <view class="template-list">
-    <view
-      wx:for="{{templateOptions}}"
-      wx:key="type"
-      class="template-card {{selectedType === item.type ? 'active' : ''}}"
-      bindtap="chooseTemplate"
-      data-type="{{item.type}}"
-    >
-      <view class="template-head">
-        <text class="template-title">{{item.label}}</text>
-        <text class="template-badge">{{selectedType === item.type ? '当前已选' : '推荐模板'}}</text>
-      </view>
-      <text class="template-desc">{{item.desc}}</text>
-      <text class="template-summary">{{item.summary}}</text>
-      <view class="template-footer">
-        <text class="template-action">就发这个 ›</text>
-      </view>
+  <view class="path-card primary" bindtap="goToPath" data-mode="types">
+    <view class="path-copy">
+      <text class="path-kicker">主入口</text>
+      <text class="path-title">我知道要约什么</text>
+      <text class="path-desc">已经有想法了，直接选类型开写。</text>
     </view>
+    <text class="path-arrow">›</text>
+  </view>
+
+  <view class="secondary-grid">
+    <view class="path-card secondary" bindtap="goToPath" data-mode="examples">
+      <view class="path-copy">
+        <text class="path-kicker">照着改</text>
+        <text class="path-title">照着示例发</text>
+        <text class="path-desc">不想从零开始，就照平台示例改一版。</text>
+      </view>
+      <text class="path-arrow">›</text>
+    </view>
+
+    <view class="path-card secondary cool" bindtap="goToPath" data-mode="templates">
+      <view class="path-copy">
+        <text class="path-kicker">稳一点</text>
+        <text class="path-title">按模板发</text>
+        <text class="path-desc">按场景一步步填，最稳。</text>
+      </view>
+      <text class="path-arrow">›</text>
+    </view>
+  </view>
+
+  <view class="path-card light" bindtap="goToPath" data-mode="recommend">
+    <view class="path-copy">
+      <text class="path-kicker">轻推荐</text>
+      <text class="path-title">猜你想发</text>
+      <text class="path-desc">{{recommendHint}}</text>
+    </view>
+    <text class="path-arrow">›</text>
   </view>
 </view>

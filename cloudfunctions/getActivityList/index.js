@@ -4,6 +4,7 @@ cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 
 const { getDb, COLLECTIONS } = require('./_shared/db')
 const { getCredit } = require('./_shared/credit')
+const { haversineDistance } = require('./_shared/distance')
 const { successResponse, errorResponse } = require('./_shared/response')
 const activityStatus = require('./_shared/activityStatus')
 
@@ -22,9 +23,49 @@ const TEMPLATE_TYPES = [
 ]
 const BUDGET_TYPES = ['free', 'under_20', 'under_50', 'aa']
 const GENDER_LIMITS = ['none', 'female_only']
+const GEO_NEAR_COUNT_LIMIT = 1000
+const GEO_NEAR_OVERFLOW = 1
+const GEO_FALLBACK_BATCH_SIZE = 100
+
+function traceLog() {
+  try {
+    console.log.apply(console, arguments)
+  } catch (err) {}
+}
+
+function getErrorMessage(err) {
+  if (!err) return ''
+
+  const directMessage = err.message || err.errMsg || err.errorMessage || err.msg
+  if (typeof directMessage === 'string' && directMessage) {
+    return directMessage
+  }
+
+  const nestedSources = [
+    err.originalError,
+    err.original,
+    err.cause,
+    err.response && err.response.data,
+    err.data
+  ]
+
+  for (const source of nestedSources) {
+    if (!source) continue
+    const nestedMessage = getErrorMessage(source)
+    if (nestedMessage) return nestedMessage
+  }
+
+  return typeof err === 'string' ? err : String(err)
+}
+
+function isMissingGeoIndexError(err) {
+  const message = getErrorMessage(err)
+  return message.includes('unable to find index for $geoNear query') ||
+    (message.includes('DATABASE_REQUEST_FAILED') && message.includes('$geoNear'))
+}
 
 function validateParams(params) {
-  const { latitude, longitude, radius, page, pageSize, budgetType, templateType, genderLimit } = params || {}
+  const { latitude, longitude, radius, page, pageSize, budgetType, templateType, genderLimit, lightweight } = params || {}
 
   if (typeof latitude !== 'number' || isNaN(latitude)) {
     return { valid: false, error: 'latitude 为必填数值参数' }
@@ -65,7 +106,8 @@ function validateParams(params) {
       longitude,
       radius: parsedRadius,
       page: parsedPage,
-      pageSize: parsedPageSize
+      pageSize: parsedPageSize,
+      lightweight: lightweight === true
     }, budgetType ? { budgetType } : {}, templateType ? { templateType } : {}, genderLimit ? { genderLimit } : {}, params && params.realNameRequired === true ? { realNameRequired: true } : {}, Array.isArray(params && params.safetyTags) && params.safetyTags.length > 0 ? { safetyTags: params.safetyTags } : {})
   }
 }
@@ -153,6 +195,25 @@ function normalizeLocation(activity) {
   }
 }
 
+function getActivityCoordinates(activity) {
+  const location = activity && activity.location ? activity.location : {}
+  const coordinates = Array.isArray(location.coordinates) ? location.coordinates : []
+  const latitude = coordinates[1] !== undefined ? Number(coordinates[1]) : Number(location.latitude)
+  const longitude = coordinates[0] !== undefined ? Number(coordinates[0]) : Number(location.longitude)
+
+  if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+    return null
+  }
+
+  return { latitude, longitude }
+}
+
+function compareActivitiesByDistance(a, b) {
+  const distanceDiff = Number(a.distance || 0) - Number(b.distance || 0)
+  if (distanceDiff !== 0) return distanceDiff
+  return String(a._id || '').localeCompare(String(b._id || ''))
+}
+
 function scoreActivity(activity) {
   const distanceValue = Number(activity.distance)
   const distance = Number.isFinite(distanceValue) ? distanceValue : 0
@@ -238,44 +299,204 @@ function enrichActivity(activity) {
   })
 }
 
+async function buildGeoFallbackContext(db, params) {
+  const { latitude, longitude, radius } = params
+  const baseQuery = {
+    status: db.command.in(activityStatus.JOINABLE_ACTIVITY_STATUSES)
+  }
+  const candidates = []
+  let skip = 0
+  let scanned = 0
+  let truncated = false
+
+  while (scanned < GEO_NEAR_COUNT_LIMIT) {
+    const batchSize = Math.min(GEO_FALLBACK_BATCH_SIZE, GEO_NEAR_COUNT_LIMIT - scanned)
+    const result = await db.collection(COLLECTIONS.ACTIVITIES)
+      .where(baseQuery)
+      .skip(skip)
+      .limit(batchSize)
+      .get()
+    const batch = result && Array.isArray(result.data) ? result.data : []
+
+    if (batch.length === 0) break
+
+    scanned += batch.length
+    skip += batch.length
+
+    batch.forEach(activity => {
+      const coordinates = getActivityCoordinates(activity)
+      if (!coordinates) return
+
+      const distance = haversineDistance(
+        latitude,
+        longitude,
+        coordinates.latitude,
+        coordinates.longitude
+      )
+
+      if (!Number.isFinite(distance) || distance > radius) return
+
+      candidates.push(Object.assign({}, activity, { distance }))
+    })
+
+    if (batch.length < batchSize) break
+    if (scanned >= GEO_NEAR_COUNT_LIMIT) truncated = true
+  }
+
+  candidates.sort(compareActivitiesByDistance)
+
+  return {
+    activities: candidates,
+    total: candidates.length,
+    scanned,
+    truncated
+  }
+}
+
 exports.main = async (event) => {
+  let currentStage = 'init'
+  let stageStartedAt = Date.now()
+
+  function markStage(stage, extra) {
+    currentStage = stage
+    stageStartedAt = Date.now()
+    traceLog('[CF_TRACE] stage enter', Object.assign({ stage }, extra || {}))
+  }
+
   try {
+    traceLog('[CF_TRACE] getActivityList enter', {
+      latitude: event && event.latitude,
+      longitude: event && event.longitude,
+      page: event && event.page,
+      pageSize: event && event.pageSize,
+      lightweight: event && event.lightweight
+    })
     const validation = validateParams(event)
     if (!validation.valid) {
+      traceLog('[CF_TRACE] getActivityList validation failed', validation.error)
       return errorResponse(1001, validation.error)
     }
 
-    const { latitude, longitude, radius, page, pageSize } = validation.parsed
+    const { latitude, longitude, radius, page, pageSize, lightweight } = validation.parsed
     const db = getDb()
+    traceLog('[CF_TRACE] getActivityList validated', {
+      latitude,
+      longitude,
+      radius,
+      page,
+      pageSize,
+      lightweight
+    })
 
-    const buildAggregate = () => db.collection(COLLECTIONS.ACTIVITIES).aggregate()
+    function buildGeoNearLimit(forCount) {
+      if (forCount) return GEO_NEAR_COUNT_LIMIT
+      return page * pageSize + GEO_NEAR_OVERFLOW
+    }
+
+    let geoFallbackContext = null
+    async function getGeoFallbackContext() {
+      if (!geoFallbackContext) {
+        geoFallbackContext = await buildGeoFallbackContext(db, validation.parsed)
+        traceLog('[CF_TRACE] getActivityList geo fallback ready', {
+          total: geoFallbackContext.total,
+          scanned: geoFallbackContext.scanned,
+          truncated: geoFallbackContext.truncated
+        })
+      }
+      return geoFallbackContext
+    }
+
+    const buildAggregate = (forCount) => db.collection(COLLECTIONS.ACTIVITIES).aggregate()
       .geoNear({
         distanceField: 'distance',
         spherical: true,
         near: db.Geo.Point(longitude, latitude),
+        key: 'location',
+        includeLocs: 'location',
+        limit: buildGeoNearLimit(forCount),
         maxDistance: radius,
         query: {
           status: db.command.in(activityStatus.JOINABLE_ACTIVITY_STATUSES)
         }
       })
 
-    const countResult = await buildAggregate().count().end()
-    const total = countResult.list && countResult.list[0] ? countResult.list[0].total : 0
+    let total = 0
+    let usedGeoFallback = false
+    if (!lightweight) {
+      markStage('countQuery', { page, pageSize, radius })
+      try {
+        const countResult = await buildAggregate(true).count('total').end()
+        total = countResult.list && countResult.list[0] ? countResult.list[0].total : 0
+      } catch (err) {
+        if (!isMissingGeoIndexError(err)) throw err
+        const fallbackContext = await getGeoFallbackContext()
+        total = fallbackContext.total
+        usedGeoFallback = true
+        traceLog('[CF_TRACE] getActivityList count fallback activated', {
+          message: getErrorMessage(err),
+          total,
+          scanned: fallbackContext.scanned,
+          truncated: fallbackContext.truncated
+        })
+      }
+      traceLog('[CF_TRACE] getActivityList count result', {
+        total,
+        durationMs: Date.now() - stageStartedAt
+      })
+    }
 
-    const dataResult = await buildAggregate()
-      .sort({ distance: 1 })
-      .skip((page - 1) * pageSize)
-      .limit(pageSize)
-      .end()
+    markStage('dataQuery', { page, pageSize, radius, lightweight })
+    let dataResult
+    if (usedGeoFallback) {
+      const fallbackContext = await getGeoFallbackContext()
+      const sliceStart = (page - 1) * pageSize
+      dataResult = {
+        list: fallbackContext.activities.slice(sliceStart, sliceStart + pageSize + GEO_NEAR_OVERFLOW)
+      }
+    } else {
+      try {
+        dataResult = await buildAggregate(false)
+          .skip((page - 1) * pageSize)
+          .limit(pageSize + GEO_NEAR_OVERFLOW)
+          .end()
+      } catch (err) {
+        if (!isMissingGeoIndexError(err)) throw err
+        const fallbackContext = await getGeoFallbackContext()
+        const sliceStart = (page - 1) * pageSize
+        dataResult = {
+          list: fallbackContext.activities.slice(sliceStart, sliceStart + pageSize + GEO_NEAR_OVERFLOW)
+        }
+        total = fallbackContext.total
+        usedGeoFallback = true
+        traceLog('[CF_TRACE] getActivityList data fallback activated', {
+          message: getErrorMessage(err),
+          total,
+          scanned: fallbackContext.scanned,
+          truncated: fallbackContext.truncated
+        })
+      }
+    }
 
     const activities = dataResult.list || []
-    if (activities.length === 0) {
+    const hasOverflowItem = activities.length > pageSize
+    const pageActivities = hasOverflowItem ? activities.slice(0, pageSize) : activities
+    traceLog('[CF_TRACE] getActivityList data fetched', {
+      activities: pageActivities.length,
+      overflow: hasOverflowItem,
+      durationMs: Date.now() - stageStartedAt
+    })
+    if (pageActivities.length === 0) {
       return successResponse({ list: [], total: 0, hasMore: false })
     }
 
-    const filteredActivities = activities.filter(item => matchesFilters(item, validation.parsed))
+    markStage('postFilter', { activities: pageActivities.length })
+    const filteredActivities = pageActivities.filter(item => matchesFilters(item, validation.parsed))
+    traceLog('[CF_TRACE] getActivityList filtered', { activities: pageActivities.length, filtered: filteredActivities.length })
     const initiatorIds = filteredActivities.map(item => item.initiatorId)
-    const creditMap = await batchGetCredits(db, initiatorIds)
+    markStage('creditLookup', { lightweight, creditIds: initiatorIds.length })
+    const creditMap = lightweight ? {} : await batchGetCredits(db, initiatorIds)
+    traceLog('[CF_TRACE] getActivityList credits ready', { lightweight, creditIds: initiatorIds.length })
+    markStage('formatResult', { filtered: filteredActivities.length })
     const formatted = filteredActivities
       .map(item => enrichActivity(formatActivity(item, creditMap)))
       .sort(compareActivitiesForFeed)
@@ -288,12 +509,21 @@ exports.main = async (event) => {
 
     return successResponse({
       list,
-      total,
-      hasMore: total > page * pageSize
+      total: lightweight
+        ? (usedGeoFallback
+          ? total
+          : ((page - 1) * pageSize) + list.length + (hasOverflowItem ? 1 : 0))
+        : Math.max(total, ((page - 1) * pageSize) + list.length + (hasOverflowItem ? 1 : 0)),
+      hasMore: hasOverflowItem || total > page * pageSize
     })
   } catch (err) {
+    traceLog('[CF_TRACE] getActivityList error', {
+      stage: currentStage,
+      durationMs: Date.now() - stageStartedAt,
+      message: getErrorMessage(err)
+    })
     console.error('getActivityList error:', err)
-    return errorResponse(5001, err.message || '系统内部错误')
+    return errorResponse(5001, '[' + currentStage + '] ' + (getErrorMessage(err) || '系统内部错误'))
   }
 }
 

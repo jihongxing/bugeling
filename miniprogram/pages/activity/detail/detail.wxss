@@ -5,9 +5,9 @@
 .hero-card,
 .card,
 .note-box {
-  background: #FFFFFF;
+  background: var(--surface-card-base);
   border-radius: 28rpx;
-  box-shadow: 0 12rpx 32rpx rgba(15, 23, 42, 0.06);
+  box-shadow: var(--shadow-soft);
 }
 
 .hero-card {
@@ -40,8 +40,8 @@
 
 .hero-badge {
   font-size: 24rpx;
-  color: #C2410C;
-  background: #FFF4EE;
+  color: var(--text-warm-strong);
+  background: var(--surface-card-warm-soft);
   border-radius: 999rpx;
   padding: 8rpx 18rpx;
   font-weight: 600;
@@ -58,7 +58,7 @@
   display: block;
   font-size: 40rpx;
   line-height: 1.35;
-  color: #111827;
+  color: var(--text-title-strong);
   font-weight: 700;
   margin-bottom: 12rpx;
 }
@@ -66,7 +66,7 @@
 .hero-summary {
   font-size: 26rpx;
   line-height: 1.7;
-  color: #6B7280;
+  color: var(--text-body-muted);
 }
 
 .hero-badges,
@@ -85,7 +85,7 @@
 }
 
 .hero-quick-item {
-  background: #F8FAFC;
+  background: var(--surface-card-muted);
   border-radius: 20rpx;
   padding: 18rpx;
 }
@@ -93,7 +93,7 @@
 .hero-quick-label {
   display: block;
   font-size: 22rpx;
-  color: #6B7280;
+  color: var(--text-body-muted);
 }
 
 .hero-quick-value {
@@ -101,15 +101,15 @@
   margin-top: 8rpx;
   font-size: 24rpx;
   line-height: 1.5;
-  color: #111827;
+  color: var(--text-title-strong);
   font-weight: 600;
 }
 
 .hero-tag,
 .tag-item {
   font-size: 24rpx;
-  color: #374151;
-  background: #F3F4F6;
+  color: var(--text-body-strong);
+  background: var(--surface-card-neutral-soft);
   border-radius: 999rpx;
   padding: 10rpx 18rpx;
 }
@@ -118,7 +118,7 @@
 .info-label,
 .credit-label {
   font-size: 24rpx;
-  color: #6B7280;
+  color: var(--text-body-muted);
 }
 
 .metric-value,
@@ -127,7 +127,7 @@
   display: block;
   margin-top: 8rpx;
   font-size: 28rpx;
-  color: #111827;
+  color: var(--text-title-strong);
   font-weight: 600;
 }
 
@@ -138,20 +138,20 @@
 
 .section-title {
   font-size: 30rpx;
-  color: #111827;
+  color: var(--text-title-strong);
   font-weight: 700;
 }
 
 .subsection-title {
   display: block;
   font-size: 28rpx;
-  color: #111827;
+  color: var(--text-title-strong);
   font-weight: 700;
 }
 
 .section-side {
   font-size: 24rpx;
-  color: #6B7280;
+  color: var(--text-body-muted);
   text-align: right;
 }
 
@@ -168,32 +168,32 @@
 
 .progress-ready .progress-chip-text,
 .progress-fill.progress-ready {
-  background: #DCFCE7;
-  color: #15803D;
+  background: var(--surface-card-success-soft);
+  color: var(--text-status-success);
 }
 
 .progress-almost .progress-chip-text,
 .progress-fill.progress-almost {
-  background: #FEF3C7;
-  color: #B45309;
+  background: var(--surface-progress-almost);
+  color: var(--text-status-warning);
 }
 
 .progress-forming .progress-chip-text,
 .progress-fill.progress-forming {
-  background: #E0F2FE;
-  color: #0369A1;
+  background: var(--surface-card-info-soft);
+  color: var(--text-status-info);
 }
 
 .progress-full .progress-chip-text,
 .progress-fill.progress-full {
-  background: #E5E7EB;
-  color: #4B5563;
+  background: var(--surface-card-neutral-strong);
+  color: var(--text-status-neutral);
 }
 
 .progress-track {
   height: 18rpx;
   border-radius: 999rpx;
-  background: #F3F4F6;
+  background: var(--border-soft-2);
   overflow: hidden;
   margin-top: 20rpx;
 }
@@ -207,12 +207,12 @@
   display: block;
   margin-top: 16rpx;
   font-size: 24rpx;
-  color: #6B7280;
+  color: var(--text-body-muted);
 }
 
 .info-item {
   padding: 18rpx 0;
-  border-bottom: 1rpx solid #F3F4F6;
+  border-bottom: 1rpx solid var(--border-soft-2);
   align-items: flex-start;
 }
 
@@ -230,7 +230,7 @@
 .contract-box,
 .note-box {
   margin-top: 24rpx;
-  background: #FFF7ED;
+  background: var(--surface-card-warm);
   border-radius: 24rpx;
   padding: 22rpx 24rpx;
 }
@@ -238,7 +238,7 @@
 .contract-title {
   display: block;
   font-size: 26rpx;
-  color: #C2410C;
+  color: var(--text-warm-strong);
   font-weight: 700;
   margin-bottom: 8rpx;
 }
@@ -249,21 +249,21 @@
 .note-text {
   font-size: 26rpx;
   line-height: 1.7;
-  color: #4B5563;
+  color: var(--text-body-soft);
 }
 
 .pay-breakdown-card {
   margin-top: 20rpx;
   padding: 20rpx 22rpx;
   border-radius: 20rpx;
-  background: #FFF9F2;
-  border: 1rpx solid #F5DDC5;
+  background: var(--surface-card-warm-faint);
+  border: 1rpx solid var(--border-warm-soft);
 }
 
 .pay-breakdown-title {
   display: block;
   font-size: 25rpx;
-  color: #9F3616;
+  color: var(--text-warm-soft);
   font-weight: 700;
   margin-bottom: 10rpx;
 }
@@ -273,7 +273,7 @@
   justify-content: space-between;
   gap: 14rpx;
   padding: 12rpx 0;
-  border-bottom: 1rpx solid rgba(159, 54, 22, 0.1);
+  border-bottom: 1rpx solid var(--border-warm-ink);
 }
 
 .pay-breakdown-row:last-of-type {
@@ -287,7 +287,7 @@
 .pay-breakdown-label {
   display: block;
   font-size: 24rpx;
-  color: #3F2C22;
+  color: var(--text-brown-strong);
   font-weight: 600;
 }
 
@@ -296,12 +296,12 @@
   margin-top: 4rpx;
   font-size: 22rpx;
   line-height: 1.5;
-  color: #7C5A4A;
+  color: var(--text-warm-muted);
 }
 
 .pay-breakdown-value {
   font-size: 26rpx;
-  color: #111827;
+  color: var(--text-title-strong);
   font-weight: 700;
 }
 
@@ -314,13 +314,13 @@
 
 .pay-breakdown-total-label {
   font-size: 24rpx;
-  color: #3F2C22;
+  color: var(--text-brown-strong);
   font-weight: 600;
 }
 
 .pay-breakdown-total-value {
   font-size: 30rpx;
-  color: #9F3616;
+  color: var(--text-warm-soft);
   font-weight: 700;
 }
 
@@ -329,7 +329,7 @@
   margin-top: 10rpx;
   font-size: 22rpx;
   line-height: 1.6;
-  color: #7C5A4A;
+  color: var(--text-warm-muted);
 }
 
 .paragraph + .paragraph {
@@ -344,19 +344,19 @@
 
 .more-info-text {
   font-size: 26rpx;
-  color: #C2410C;
+  color: var(--text-warm-strong);
   font-weight: 600;
 }
 
 .more-info-arrow {
   font-size: 24rpx;
-  color: #C2410C;
+  color: var(--text-warm-strong);
 }
 
 .card-section + .card-section {
   margin-top: 28rpx;
   padding-top: 28rpx;
-  border-top: 1rpx solid #F3F4F6;
+  border-top: 1rpx solid var(--border-soft-2);
 }
 
 .rule-list {
@@ -370,7 +370,7 @@
 
 .rule-dot {
   width: 24rpx;
-  color: #FF6B35;
+  color: var(--color-primary);
 }
 
 .credit-grid {
@@ -381,7 +381,7 @@
 }
 
 .credit-item {
-  background: #F8FAFC;
+  background: var(--surface-card-muted);
   border-radius: 20rpx;
   padding: 18rpx;
 }
@@ -402,7 +402,7 @@
 
 .status-tip,
 .countdown-tip {
-  background: #F8FAFC;
+  background: var(--surface-card-muted);
   border-radius: 20rpx;
   padding: 20rpx 24rpx;
   margin-bottom: 16rpx;
@@ -411,7 +411,7 @@
 .status-tip-text,
 .countdown-tip text {
   font-size: 26rpx;
-  color: #4B5563;
+  color: var(--text-body-soft);
 }
 
 .loading-state {
@@ -423,7 +423,7 @@
 
 .loading-text {
   font-size: 28rpx;
-  color: #6B7280;
+  color: var(--text-body-muted);
 }
 
 .detail-empty-state {
@@ -441,7 +441,7 @@
 .empty-title {
   display: block;
   font-size: 32rpx;
-  color: #111827;
+  color: var(--text-title-strong);
   font-weight: 700;
   text-align: center;
 }
@@ -451,11 +451,29 @@
   margin-top: 14rpx;
   font-size: 26rpx;
   line-height: 1.6;
-  color: #6B7280;
+  color: var(--text-body-muted);
   text-align: center;
 }
 
 .empty-btn {
   width: 100%;
   margin-top: 18rpx;
+}
+
+@media (prefers-color-scheme: dark) {
+  .hero-card,
+  .card,
+  .note-box,
+  .credit-item,
+  .status-tip,
+  .countdown-tip,
+  .hero-quick-item {
+    background: var(--surface-card-base);
+  }
+
+  .contract-box,
+  .note-box,
+  .pay-breakdown-card {
+    box-shadow: none;
+  }
 }
