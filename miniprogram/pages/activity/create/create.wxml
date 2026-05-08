@@ -18,7 +18,15 @@
   <view class="section-card">
     <text class="section-mark">01</text>
     <text class="section-title">你想约个什么</text>
-    <view class="template-grid">
+    <text class="section-tip">{{customMode ? '直接写你自己的想法，系统会按通用活动结构帮你补齐后面内容。' : '先选一个模板，后面可以继续改。'}}</text>
+    <view wx:if="{{customMode}}">
+      <textarea class="form-textarea custom-idea" placeholder="比如：下班后想找 2-3 个人去公园走走，顺便聊聊天，不喝酒" maxlength="120" value="{{summary}}" bindinput="onSummaryInput"></textarea>
+      <view class="form-group">
+        <text class="form-label">这局怎么说更顺口</text>
+        <input class="form-input" placeholder="可以留空，系统会帮你起一个" maxlength="50" value="{{title}}" bindinput="onTitleInput" />
+      </view>
+    </view>
+    <view class="template-grid" wx:else>
       <view
         wx:for="{{templateOptions}}"
         wx:key="type"
@@ -84,10 +92,62 @@
     </view>
   </view>
 
+  <view class="section-card" wx:if="{{customMode}}">
+    <text class="section-mark">02</text>
+    <text class="section-title">大概什么时候、在哪</text>
+    <text class="section-tip">这部分和模板局一样，照样填时间和地点就行。</text>
+
+    <view class="form-group" bindtap="chooseLocation">
+      <text class="form-label">大概在哪碰头</text>
+      <view class="form-picker">
+        <text class="{{location ? 'picker-value' : 'picker-placeholder'}}">{{location.name || '选个你们方便碰头的地方'}}</text>
+        <text class="picker-arrow">›</text>
+      </view>
+    </view>
+    <view class="location-help-row">
+      <text class="location-help-link" bindtap="useCurrentLocationAsMeetPoint">地图打不开？使用当前位置</text>
+    </view>
+
+    <view class="form-group">
+      <text class="form-label">什么时候方便</text>
+      <view class="time-picker-row">
+        <picker mode="date" start="{{minDate}}" bindchange="onDateChange">
+          <view class="form-picker half">
+            <text class="{{meetTimeDisplay ? 'picker-value' : 'picker-placeholder'}}">{{meetTimeDisplay || '选择日期'}}</text>
+          </view>
+        </picker>
+        <picker mode="time" start="{{minTime}}" bindchange="onTimeChange">
+          <view class="form-picker half">
+            <text class="{{_timeStr ? 'picker-value' : 'picker-placeholder'}}">{{_timeStr || '选择时间'}}</text>
+          </view>
+        </picker>
+      </view>
+    </view>
+
+    <view class="dual-stepper-row">
+      <view class="stepper-card">
+        <text class="form-label">几个人你就愿意去了</text>
+        <view class="stepper">
+          <view class="stepper-btn" bindtap="adjustParticipants" data-field="minParticipants" data-delta="-1">-</view>
+          <text class="stepper-value">{{minParticipants}}</text>
+          <view class="stepper-btn" bindtap="adjustParticipants" data-field="minParticipants" data-delta="1">+</view>
+        </view>
+      </view>
+      <view class="stepper-card">
+        <text class="form-label">最多想约几个人</text>
+        <view class="stepper">
+          <view class="stepper-btn" bindtap="adjustParticipants" data-field="maxParticipants" data-delta="-1">-</view>
+          <text class="stepper-value">{{maxParticipants}}</text>
+          <view class="stepper-btn" bindtap="adjustParticipants" data-field="maxParticipants" data-delta="1">+</view>
+        </view>
+      </view>
+    </view>
+  </view>
+
   <view class="section-card">
-    <text class="section-mark">03</text>
+    <text class="section-mark">{{customMode ? '03' : '02'}}</text>
     <text class="section-title">花费大概怎么算</text>
-    <text class="section-tip">这部分已经按模板预填好了，想改再改。</text>
+    <text class="section-tip">{{customMode ? '预算建议自由设定，不套模板。' : '这部分已经按模板预填好了，想改再改。'}}</text>
 
     <view class="option-grid">
       <view
@@ -136,12 +196,12 @@
     <view class="optional-wrap" wx:if="{{showMoreFields}}">
       <view class="optional-divider"></view>
 
-      <view class="form-group">
+      <view class="form-group" wx:if="{{!customMode}}">
         <text class="form-label">这局怎么说更顺口</text>
         <input class="form-input" placeholder="可以留空，系统会帮你起一个" maxlength="50" value="{{title}}" bindinput="onTitleInput" />
       </view>
 
-      <view class="form-group">
+      <view class="form-group" wx:if="{{!customMode}}">
         <text class="form-label">补一句也行</text>
         <textarea class="form-textarea" placeholder="比如：下班后附近走走，不喝酒不转场" maxlength="120" value="{{summary}}" bindinput="onSummaryInput"></textarea>
       </view>

@@ -218,9 +218,9 @@ Page({
         templateType: '',
         title: '',
         summary: '',
-        budgetType: 'aa',
-        serviceFee: 0,
-        bondAmount: 0,
+        budgetType: 'under_20',
+        serviceFee: 290,
+        bondAmount: 1990,
         minParticipants: 2,
         maxParticipants: 4,
         realNameRequired: false,
@@ -325,7 +325,7 @@ Page({
     if (this.data.customMode) {
       this.setData({
         budgetPreviewText: '自由设定，不套模板',
-        feePreviewText: '不强制服务费 / 保证金'
+        feePreviewText: '20 元以内 / 小约束 19.9 元'
       })
       return
     }
@@ -403,7 +403,7 @@ Page({
             meetingPointText: self.data.meetingPointText || normalizedLocation.name
           }
 
-          if (!self.data.titleTouched) {
+          if (!self.data.titleTouched && !self.data.customMode) {
             updates.title = templateUtil.buildDefaultTitle(currentTemplate, normalizedLocation.name || '')
           }
 
@@ -500,7 +500,7 @@ Page({
           updates.meetingPointText = '当前位置碰头'
         }
 
-        if (!self.data.titleTouched) {
+        if (!self.data.titleTouched && !self.data.customMode) {
           updates.title = templateUtil.buildDefaultTitle(options.templateType || self.data.templateType, locationName)
         }
 
