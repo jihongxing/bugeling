@@ -12,6 +12,27 @@ function normalizeText(value) {
   return String(value).replace(/\s+/g, ' ').trim()
 }
 
+function translateSafetyTag(tag) {
+  var map = {
+    public_space: '公共场所',
+    low_budget: '低消费',
+    no_alcohol: '不喝酒',
+    daytime: '白天见面',
+    women_friendly: '女生友好',
+    no_after_party: '不转场',
+    real_name: '实名可见',
+    aa_friendly: '现场 AA',
+    free_entry: '免费入场',
+    daytime_friendly: '白天见面',
+    quiet_mode: '安静一点',
+    night_scene: '夜间场景',
+    consume_clear: '花费清楚'
+  }
+  var text = normalizeText(tag)
+  if (!text) return ''
+  return map[text] || text.replace(/_/g, ' ')
+}
+
 function toNumber(value) {
   if (!isPresent(value)) return null
   var num = Number(value)
@@ -198,6 +219,9 @@ function buildMeetingSection(activity) {
   var location = activity.location || {}
   var locationName = normalizeText(location.name || activity.meetingPointText || '')
   var locationAddress = normalizeText(location.address || '')
+  var latitude = toNumber(location.latitude)
+  var longitude = toNumber(location.longitude)
+  var canNavigate = latitude !== null && longitude !== null
   var rows = []
 
   rows.push({
@@ -221,6 +245,9 @@ function buildMeetingSection(activity) {
     rows: rows,
     locationName: locationName || '待补充',
     locationAddress: locationAddress,
+    latitude: latitude,
+    longitude: longitude,
+    canNavigate: canNavigate,
     timeText: activity.meetTime ? formatUtil.formatMeetTime(activity.meetTime) : '待补充'
   }
 }
@@ -229,21 +256,6 @@ function normalizeSafetyTagTag(item) {
   if (typeof item === 'string') return normalizeText(item)
   if (!item || typeof item !== 'object') return ''
   return normalizeText(item.label || item.name || item.text || item.title)
-}
-
-function translateSafetyTag(tag) {
-  var map = {
-    public_space: '公共场所',
-    low_budget: '低消费',
-    no_alcohol: '不喝酒',
-    daytime: '白天见面',
-    women_friendly: '女生友好',
-    no_after_party: '不转场',
-    real_name: '实名可见'
-  }
-  var text = normalizeText(tag)
-  if (!text) return ''
-  return map[text] || text.replace(/_/g, ' ')
 }
 
 function buildSafetySection(activity) {
@@ -329,7 +341,7 @@ function buildCreditSection(activity) {
   return {
     score: score,
     levelText: level || 'active',
-    summaryText: score >= 100 ? '最近看起来比较稳，顺手加入问题不大' : '先看看对不对味，再决定要不要去',
+    summaryText: score >= 100 ? '发起人最近看起来比较稳' : '发起人情况先给你做个参考',
     items: items
   }
 }
@@ -338,10 +350,79 @@ function buildDescriptionParagraphs(activity) {
   var text = normalizeText(activity.description || activity.summary || '')
   if (!text) return []
   return text.split(/\n+/).map(function(item) {
-    return normalizeText(item)
+    var line = normalizeText(item)
+    if (!line) return ''
+
+    return line
+      .replace(/\bpublic_space\b/g, '公共场所')
+      .replace(/\blow_budget\b/g, '低消费')
+      .replace(/\bno_alcohol\b/g, '不喝酒')
+      .replace(/\bdaytime\b/g, '白天见面')
+      .replace(/\bwomen_friendly\b/g, '女生友好')
+      .replace(/\bno_after_party\b/g, '不转场')
+      .replace(/\breal_name\b/g, '实名可见')
+      .replace(/\baa_friendly\b/g, '现场 AA')
+      .replace(/\bfree_entry\b/g, '免费入场')
+      .replace(/\bdaytime_friendly\b/g, '白天见面')
+      .replace(/\bquiet_mode\b/g, '安静一点')
+      .replace(/\bnight_scene\b/g, '夜间场景')
+      .replace(/\bconsume_clear\b/g, '花费清楚')
   }).filter(function(item) {
     return !!item
   })
+}
+
+function buildDecisionSnapshot(activity, myParticipation, progress, fee, meeting, safety, credit, distanceText) {
+  var current = progress.currentText
+  var remaining = progress.remainingText
+  var isReady = progress.state === 'ready' || progress.state === 'full'
+  var budgetText = fee.budgetTypeText || '费用待补充'
+  var feeText = fee.totalText || '¥0'
+  var locationText = meeting.locationName || '地点待补充'
+  var meetText = meeting.timeText || '待补充'
+  var safetyText = safety.realNameText === '需要实名'
+    ? '已实名可见'
+    : '平台留痕'
+  var decisionText = ''
+  var timingText = ''
+  var costText = ''
+  var trustText = ''
+  var locationLine = ''
+  var distanceLine = ''
+  var reasonTags = []
+
+  if (isReady) {
+    decisionText = '这局已经能走了'
+  } else if (toNumber(remaining) === 1) {
+    decisionText = '再来 1 个人就能走'
+  } else {
+    decisionText = '还差 ' + remaining + ' 个人'
+  }
+
+  if (myParticipation) {
+    decisionText = '你已经在这局里了'
+  }
+
+  timingText = meetText
+  costText = budgetText === '费用待补充' ? feeText : budgetText
+  trustText = credit.summaryText || safetyText
+  locationLine = locationText
+  distanceLine = distanceText || ''
+
+  if (progress.state === 'almost') reasonTags.push('差1人成局')
+  if (progress.state === 'ready') reasonTags.push('今晚可去')
+  if (budgetText) reasonTags.push(budgetText)
+  if (safety.realNameText === '需要实名') reasonTags.push('已实名可见')
+
+  return {
+    decisionText: decisionText,
+    timingText: timingText,
+    costText: costText,
+    trustText: trustText,
+    locationLine: locationLine,
+    distanceLine: distanceLine,
+    reasonTags: reasonTags.slice(0, 2)
+  }
 }
 
 function buildDetailView(activity, myParticipation) {
@@ -352,25 +433,22 @@ function buildDetailView(activity, myParticipation) {
   var safety = buildSafetySection(safeActivity)
   var credit = buildCreditSection(safeActivity)
   var paragraphs = buildDescriptionParagraphs(safeActivity)
-  var summaryText = normalizeText(safeActivity.summary) || normalizeText(safeActivity.description) || '时间地点差不多定了，觉得合适就顺手来。'
+  var summaryText = normalizeText(safeActivity.summary) || normalizeText(safeActivity.description) || '先给你看最重要的。'
   var depositText = formatUtil.formatDeposit(toNumber(safeActivity.depositTier || safeActivity.bondAmount || 0) || 0)
-  var heroBadges = []
   var paymentBreakdown = buildPaymentBreakdown(safeActivity, fee, myParticipation)
-
-  addUnique(heroBadges, fee.budgetTypeText)
-  addUnique(heroBadges, progress.stateText)
-  addUnique(heroBadges, safety.genderText)
+  var distanceText = normalizeText(safeActivity.distanceText || '')
+  var decisionSnapshot = buildDecisionSnapshot(safeActivity, myParticipation, progress, fee, meeting, safety, credit, distanceText)
 
   return {
     title: normalizeText(safeActivity.title) || '活动详情',
     summaryText: summaryText,
     descriptionParagraphs: paragraphs,
-    heroBadges: heroBadges,
     templateText: getTemplateLabel(safeActivity),
     budgetText: fee.budgetTypeText,
     budgetRangeText: formatBudgetRange(safeActivity),
     depositText: depositText,
     totalFeeText: fee.totalText,
+    decisionSnapshot: decisionSnapshot,
     paymentBreakdown: paymentBreakdown,
     feeRows: fee.rows,
     progress: progress,
@@ -378,6 +456,7 @@ function buildDetailView(activity, myParticipation) {
     safety: safety,
     credit: credit,
     contractText: buildContractText(safeActivity, fee),
+    decisionReasonText: decisionSnapshot.reasonTags.join(' · '),
     participationNote: myParticipation && ['paid', 'approved', 'confirmed', 'checked_in', 'completed'].indexOf(myParticipation.status) !== -1
       ? '你已经占上位置了，临近见面时间会解锁对方的微信'
       : ''

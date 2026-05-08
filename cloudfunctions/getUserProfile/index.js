@@ -2,9 +2,9 @@ const cloud = require('wx-server-sdk')
 
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 
-const { getDb, COLLECTIONS } = require('../../scripts/cloudfunction-shared-template/db')
-const { successResponse, errorResponse } = require('../../scripts/cloudfunction-shared-template/response')
-const { buildDefaultUserProfile, normalizeUserProfile } = require('../../scripts/cloudfunction-shared-template/userProfile')
+const { getDb, COLLECTIONS } = require('./_shared/db')
+const { successResponse, errorResponse } = require('./_shared/response')
+const { buildDefaultUserProfile, normalizeUserProfile } = require('./_shared/userProfile')
 
 exports.main = async () => {
   try {

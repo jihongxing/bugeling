@@ -1,9 +1,39 @@
 // pages/activity/detail/detail.js - 活动详情
 var api = require('../../../utils/api')
 var formatUtil = require('../../../utils/format')
+var locationUtil = require('../../../utils/location')
 var statusUtil = require('../../../utils/status')
 var detailHelpers = require('./helpers')
 var socialUtil = require('../../../utils/social')
+
+function hasValidCoordinates(latitude, longitude) {
+  return typeof latitude === 'number' &&
+    typeof longitude === 'number' &&
+    isFinite(latitude) &&
+    isFinite(longitude) &&
+    Math.abs(latitude) <= 90 &&
+    Math.abs(longitude) <= 180 &&
+    !(latitude === 0 && longitude === 0)
+}
+
+function buildDistanceText(activity) {
+  var currentLocation = locationUtil.getCachedLocation()
+  var targetLocation = activity && activity.location ? activity.location : null
+
+  if (!currentLocation || !targetLocation) return ''
+  if (!hasValidCoordinates(currentLocation.latitude, currentLocation.longitude)) return ''
+  if (!hasValidCoordinates(targetLocation.latitude, targetLocation.longitude)) return ''
+
+  var distanceMeters = locationUtil.calculateDistance(
+    currentLocation.latitude,
+    currentLocation.longitude,
+    targetLocation.latitude,
+    targetLocation.longitude
+  )
+
+  if (!isFinite(distanceMeters) || distanceMeters <= 0) return ''
+  return '离你 ' + locationUtil.formatDistance(distanceMeters)
+}
 
 Page({
   data: {
@@ -95,6 +125,10 @@ Page({
         if (data.myParticipationMeta && data.myParticipation) {
           data.myParticipation = Object.assign({}, data.myParticipation, data.myParticipationMeta)
         }
+        var distanceText = buildDistanceText(data)
+        if (distanceText) {
+          data.distanceText = distanceText
+        }
         var isInitiator = data.isInitiator || false
         var myParticipation = data.myParticipation || null
         var detailView = detailHelpers.buildDetailView(data, myParticipation)
@@ -151,6 +185,21 @@ Page({
     if (this.data.activity && this.data.activity.wechatId) {
       wx.setClipboardData({ data: this.data.activity.wechatId })
     }
+  },
+
+  openMeetingLocation: function() {
+    var meeting = this.data.detailView && this.data.detailView.meeting
+    if (!meeting || !meeting.canNavigate) {
+      wx.showToast({ title: '暂时没有可导航坐标', icon: 'none' })
+      return
+    }
+
+    wx.openLocation({
+      latitude: meeting.latitude,
+      longitude: meeting.longitude,
+      name: meeting.locationName || '活动集合点',
+      address: meeting.locationAddress || meeting.locationName || ''
+    })
   },
 
   goManage: function() {

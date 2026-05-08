@@ -2,15 +2,35 @@
 var api = require('../../utils/api')
 var location = require('../../utils/location')
 var activityFeedAdapter = require('../../components/activity-card/activity-feed-adapter')
+var templateUtil = require('../../utils/activity-templates')
 var userProfileUtil = require('../../utils/user-profile')
 
 var ACTIVITY_LIST_TIMEOUT_MS = 8000
 var REFRESH_THROTTLE_MS = 2000
+var PUBLISH_GUIDE_MAX_VISIBLE_COUNT = 3
+var PUBLISH_GUIDE_TEMPLATE_TYPE = 'walk'
+var CITY_RECENT_STORAGE_KEY = 'index_recent_cities_v1'
+var CITY_RECENT_LIMIT = 6
 var FALLBACK_COORDS = {
   latitude: 23.1291,
   longitude: 113.2644
 }
 var FALLBACK_DISPLAY_NAME = '未定位，先看广州推荐'
+var HOT_CITY_NAMES = [
+  '广州',
+  '深圳',
+  '上海',
+  '北京',
+  '杭州',
+  '成都',
+  '武汉',
+  '南京',
+  '长沙',
+  '重庆',
+  '西安',
+  '郑州',
+  '苏州'
+]
 var SEED_CITIES = [
   { name: '广州', latitude: 23.1291, longitude: 113.2644 },
   { name: '深圳', latitude: 22.5431, longitude: 114.0579 },
@@ -32,6 +52,12 @@ function normalizeText(value) {
   return value.replace(/\s+/g, ' ').trim()
 }
 
+function normalizeCityName(value) {
+  var text = normalizeText(value)
+  if (!text) return ''
+  return text.replace(/(市|特别行政区)$/, '')
+}
+
 function pickFirstNonEmpty() {
   var i = 0
   for (i = 0; i < arguments.length; i++) {
@@ -46,6 +72,7 @@ function buildFixedFallbackLocation() {
     latitude: FALLBACK_COORDS.latitude,
     longitude: FALLBACK_COORDS.longitude,
     name: FALLBACK_DISPLAY_NAME,
+    cityName: '广州',
     isFallback: true
   }
 }
@@ -77,11 +104,229 @@ function getNearestSeedCity(latitude, longitude) {
   return nearestCity
 }
 
+function createCityOption(city, options) {
+  var safeCity = city || {}
+  var safeOptions = options || {}
+  var name = normalizeCityName(safeCity.name || safeOptions.name)
+  if (!name) return null
+
+  return {
+    name: name,
+    latitude: safeCity.latitude,
+    longitude: safeCity.longitude,
+    locationName: normalizeText(safeOptions.locationName) || name,
+    source: normalizeText(safeOptions.source) || 'seed',
+    note: normalizeText(safeOptions.note),
+    distanceText: normalizeText(safeOptions.distanceText),
+    isCurrent: safeOptions.isCurrent === true
+  }
+}
+
+function dedupeCityOptions(list) {
+  var seen = {}
+  return (list || []).filter(function(item) {
+    var key = item && item.name ? item.name : ''
+    if (!key || seen[key]) return false
+    seen[key] = true
+    return true
+  })
+}
+
+function getSeedCityOption(name) {
+  var normalizedName = normalizeCityName(name)
+  var found = null
+
+  SEED_CITIES.forEach(function(city) {
+    if (found) return
+    if (normalizeCityName(city.name) === normalizedName) {
+      found = city
+    }
+  })
+
+  return found ? createCityOption(found, { source: 'seed' }) : null
+}
+
+function getSeedCityOptions() {
+  return SEED_CITIES.map(function(city) {
+    return createCityOption(city, { source: 'seed' })
+  }).filter(Boolean)
+}
+
+function loadRecentCities() {
+  try {
+    if (!wx || typeof wx.getStorageSync !== 'function') return []
+    var raw = wx.getStorageSync(CITY_RECENT_STORAGE_KEY)
+    if (!Array.isArray(raw)) return []
+    return raw.map(function(city) {
+      return createCityOption({
+        name: city && city.name,
+        latitude: city && city.latitude,
+        longitude: city && city.longitude
+      }, {
+        locationName: city && city.locationName,
+        source: city && city.source,
+        note: city && city.note,
+        distanceText: city && city.distanceText,
+        isCurrent: city && city.isCurrent === true
+      })
+    }).filter(Boolean)
+  } catch (err) {
+    return []
+  }
+}
+
+function saveRecentCity(city) {
+  var recentCities = loadRecentCities()
+  var nextCity = city && city.name ? createCityOption({
+    name: city.name,
+    latitude: city.latitude,
+    longitude: city.longitude
+  }, {
+    locationName: city.locationName,
+    source: city.source,
+    note: city.note,
+    distanceText: city.distanceText,
+    isCurrent: city.isCurrent === true
+  }) : null
+
+  if (!nextCity) return
+
+  recentCities = recentCities.filter(function(item) {
+    return item && item.name !== nextCity.name
+  })
+  recentCities.unshift(nextCity)
+
+  try {
+    if (wx && typeof wx.setStorageSync === 'function') {
+      wx.setStorageSync(CITY_RECENT_STORAGE_KEY, recentCities.slice(0, CITY_RECENT_LIMIT))
+    }
+  } catch (err) {}
+}
+
+function getRecentCityOptions(currentLocation) {
+  var storedCities = loadRecentCities()
+  var currentCity = currentLocation && currentLocation.cityName ? createCityOption({
+    name: currentLocation.cityName,
+    latitude: currentLocation.latitude,
+    longitude: currentLocation.longitude
+  }, {
+    locationName: currentLocation.name,
+    source: currentLocation.isFallback ? 'fallback' : 'current',
+    note: currentLocation.isFallback ? '兜底' : '当前',
+    isCurrent: true
+  }) : null
+
+  var recent = []
+  if (currentCity) {
+    recent.push(currentCity)
+  }
+
+  storedCities.forEach(function(city) {
+    if (!city || !city.name) return
+    if (currentCity && currentCity.name === city.name) return
+    recent.push(city)
+  })
+
+  return dedupeCityOptions(recent).slice(0, CITY_RECENT_LIMIT)
+}
+
+function getNearbyCityOptions(currentLocation) {
+  var latitude = currentLocation && currentLocation.latitude
+  var longitude = currentLocation && currentLocation.longitude
+  if (!hasValidCoordinates(latitude, longitude)) return []
+
+  return SEED_CITIES.map(function(city) {
+    var distance = location.calculateDistance(
+      latitude,
+      longitude,
+      city.latitude,
+      city.longitude
+    )
+
+    return createCityOption(city, {
+      source: 'nearby',
+      distanceText: location.formatDistance(distance)
+    })
+  }).filter(Boolean).slice(0, 4)
+}
+
+function getHotCityOptions(excludedNames) {
+  var excluded = {}
+  ;(excludedNames || []).forEach(function(name) {
+    if (name) excluded[name] = true
+  })
+
+  return HOT_CITY_NAMES.map(function(name) {
+    return getSeedCityOption(name)
+  }).filter(function(city) {
+    return Boolean(city && !excluded[city.name])
+  }).slice(0, 6)
+}
+
+function getAllCityOptions(excludedNames) {
+  var excluded = {}
+  ;(excludedNames || []).forEach(function(name) {
+    if (name) excluded[name] = true
+  })
+
+  return getSeedCityOptions().filter(function(city) {
+    return Boolean(city && !excluded[city.name])
+  })
+}
+
+function buildCityPickerSections(currentLocation) {
+  var recent = getRecentCityOptions(currentLocation)
+  var excludedNames = recent.map(function(item) {
+    return item.name
+  })
+  var nearby = getNearbyCityOptions(currentLocation).filter(function(city) {
+    return excludedNames.indexOf(city.name) === -1
+  })
+  var hot = getHotCityOptions(excludedNames.concat(nearby.map(function(item) {
+    return item.name
+  })))
+  var all = getAllCityOptions(excludedNames.concat(nearby.map(function(item) {
+    return item.name
+  })).concat(hot.map(function(item) {
+    return item.name
+  })))
+
+  return [
+    {
+      key: 'recent',
+      title: '最近城市',
+      hint: '上次看过的地方',
+      cities: recent
+    },
+    {
+      key: 'nearby',
+      title: '附近城市',
+      hint: '按当前位置优先',
+      cities: nearby
+    },
+    {
+      key: 'hot',
+      title: '热门城市',
+      hint: '先从高密度城市看',
+      cities: hot
+    },
+    {
+      key: 'all',
+      title: '全部城市',
+      hint: '完整列表',
+      cities: all
+    }
+  ].filter(function(section) {
+    return Array.isArray(section.cities) && section.cities.length > 0
+  })
+}
+
 function buildDisplayLocation(rawLocation) {
   if (!rawLocation || !hasValidCoordinates(rawLocation.latitude, rawLocation.longitude)) {
     return buildFixedFallbackLocation()
   }
 
+  var nearestCity = getNearestSeedCity(rawLocation.latitude, rawLocation.longitude)
   var resolvedName = ''
   if (location.hasMeaningfulLocationName && location.hasMeaningfulLocationName(rawLocation)) {
     resolvedName = normalizeText(rawLocation.name)
@@ -93,15 +338,16 @@ function buildDisplayLocation(rawLocation) {
       latitude: rawLocation.latitude,
       longitude: rawLocation.longitude,
       name: resolvedName,
+      cityName: normalizeCityName(rawLocation.city) || normalizeCityName(rawLocation.district) || normalizeCityName((nearestCity && nearestCity.name) || rawLocation.name),
       isFallback: false
     }
   }
 
-  var nearestCity = getNearestSeedCity(rawLocation.latitude, rawLocation.longitude)
   return {
     latitude: rawLocation.latitude,
     longitude: rawLocation.longitude,
     name: buildSeedRecommendationName(nearestCity && nearestCity.name),
+    cityName: normalizeCityName((nearestCity && nearestCity.name) || rawLocation.city || rawLocation.name),
     isFallback: false
   }
 }
@@ -154,14 +400,45 @@ function isTimeoutError(err) {
   return code.indexOf('timeout') !== -1 || message.indexOf('timeout') !== -1 || message.indexOf('超时') !== -1
 }
 
-function buildHeroSubtitle(hasActivities) {
-  if (hasActivities) return '先看看附近现在有人在约什么'
-  return '先看附近有没有新局，再决定要不要出门'
+function buildHeroTitle(cityName, usingFallbackLocation) {
+  var safeCity = normalizeCityName(cityName) || '附近'
+  return usingFallbackLocation ? '先看' + safeCity + '的局' : '正在看' + safeCity + '的局'
+}
+
+function buildHeroSubtitle(hasActivities, locationName, cityName, usingFallbackLocation) {
+  var safeCity = normalizeCityName(cityName) || '附近'
+  var preciseLocation = normalizeText(locationName)
+
+  if (usingFallbackLocation) {
+    return '没拿到当前位置，先用' + safeCity + '兜底，点一下可切城市'
+  }
+
+  if (hasActivities) {
+    if (preciseLocation && preciseLocation !== safeCity) {
+      return '当前位置是' + preciseLocation + '，先看看' + safeCity + '现在有哪些局'
+    }
+    return '已自动更新，先看看' + safeCity + '现在有哪些局'
+  }
+
+  if (preciseLocation && preciseLocation !== safeCity) {
+    return '当前位置是' + preciseLocation + '，这座城暂时局不多'
+  }
+
+  return safeCity + '这边暂时局不多，换个城市也行'
+}
+
+function buildFeedTitle(cityName, hasActivities) {
+  var safeCity = normalizeCityName(cityName)
+  if (!safeCity) {
+    return hasActivities ? '附近已经有人在发' : '附近暂时还没有人发'
+  }
+
+  return hasActivities ? safeCity + '里已经有人在发' : safeCity + '里暂时还没有人发'
 }
 
 function buildFeedSubtitle(summary, loading) {
-  if (loading && (!summary || !summary.total)) return '正在看看附近有没有新局'
-  if (!summary || !summary.total) return '附近暂时还没有新局'
+  if (loading && (!summary || !summary.total)) return '正在看看这座城有没有新局'
+  if (!summary || !summary.total) return '这座城暂时还没有新局'
 
   if (summary.almostReadyCount > 0 && summary.lowBudgetCount > 0) {
     return '有 ' + summary.almostReadyCount + ' 个快成了，' + summary.lowBudgetCount + ' 个花得不多'
@@ -179,7 +456,49 @@ function buildFeedSubtitle(summary, loading) {
     return '有 ' + summary.lowBudgetCount + ' 个花得不多，适合先看看'
   }
 
-  return '先按距离给你看看附近正在约的几个小局'
+  return '先按距离给你看看这座城正在约的几个小局'
+}
+
+function buildPublishGuideState(cityName, activityCount) {
+  var safeCity = normalizeCityName(cityName) || '这座城'
+  var count = typeof activityCount === 'number' ? activityCount : 0
+  var isEmpty = count === 0
+  var isLowSupply = count > 0 && count <= PUBLISH_GUIDE_MAX_VISIBLE_COUNT
+  var visible = isEmpty || isLowSupply
+
+  if (!visible) {
+    return {
+      showPublishGuide: false,
+      publishGuideTitle: '',
+      publishGuideDesc: '',
+      publishGuideBadge: '',
+      publishGuideActionText: '',
+      publishGuideSecondaryText: '',
+      publishGuideCreateUrl: ''
+    }
+  }
+
+  return {
+    showPublishGuide: true,
+    publishGuideTitle: isEmpty
+      ? safeCity + '现在还没什么局'
+      : safeCity + '现在局还不多',
+    publishGuideDesc: isEmpty
+      ? '你先发一个，附近的人才知道这里有人在约。'
+      : '你发一个，列表会更热，也更容易补足成局。',
+    publishGuideBadge: isEmpty ? '冷启动' : '少量供给',
+    publishGuideActionText: isEmpty ? '我来发一个' : '我来补一个',
+    publishGuideSecondaryText: '先看模板',
+    publishGuideCreateUrl: templateUtil.buildCreateUrlFromSeed(PUBLISH_GUIDE_TEMPLATE_TYPE, {
+      title: safeCity + '顺手走走',
+      summary: '先发一个轻松的小局，看看有没有人也想去。',
+      budgetType: 'under_20',
+      serviceFee: 290,
+      bondAmount: 990,
+      minParticipants: 2,
+      maxParticipants: 4
+    })
+  }
 }
 
 function getCachedUserProfile() {
@@ -229,11 +548,12 @@ function hasResolvedLocationName(name) {
 Page({
   data: {
     locationName: '',
+    cityName: '',
     latitude: 0,
     longitude: 0,
     usingFallbackLocation: true,
-    heroTitle: '先看看附近现在有没有局',
-    heroSubtitle: buildHeroSubtitle(false),
+    heroTitle: buildHeroTitle('广州', true),
+    heroSubtitle: buildHeroSubtitle(false, '', '广州', true),
     rawActivityList: [],
     activityList: [],
     feedSummary: {
@@ -242,8 +562,18 @@ Page({
       almostReadyCount: 0,
       readyCount: 0
     },
-    feedTitle: '附近暂时还没有人发',
+    feedTitle: buildFeedTitle('广州', false),
     feedSubtitle: '刷新一下，看看附近有没有新局',
+    cityPickerVisible: false,
+    cityPickerSections: [],
+    cityPickerHint: '点一下直接切换城市，选完自动刷新',
+    showPublishGuide: false,
+    publishGuideTitle: '',
+    publishGuideDesc: '',
+    publishGuideBadge: '',
+    publishGuideActionText: '',
+    publishGuideSecondaryText: '',
+    publishGuideCreateUrl: '',
     page: 1,
     hasMore: true,
     loading: false,
@@ -256,14 +586,44 @@ Page({
     traceLog('[HOME_TRACE] onLoad start')
     var startupLocation = getStartupLocation()
     traceLog('[HOME_TRACE] startup location chosen', startupLocation)
+    var publishGuideState = buildPublishGuideState(
+      startupLocation.cityName || startupLocation.name,
+      0
+    )
     this.setData({
       latitude: startupLocation.latitude,
       longitude: startupLocation.longitude,
       locationName: startupLocation.name,
-      usingFallbackLocation: startupLocation.isFallback === true
+      cityName: startupLocation.cityName || normalizeCityName(startupLocation.name) || '广州',
+      usingFallbackLocation: startupLocation.isFallback === true,
+      heroTitle: buildHeroTitle(startupLocation.cityName || startupLocation.name, startupLocation.isFallback === true),
+      heroSubtitle: buildHeroSubtitle(
+        false,
+        startupLocation.name,
+        startupLocation.cityName || startupLocation.name,
+        startupLocation.isFallback === true
+      ),
+      feedTitle: buildFeedTitle(startupLocation.cityName || startupLocation.name, false),
+      showPublishGuide: publishGuideState.showPublishGuide,
+      publishGuideTitle: publishGuideState.publishGuideTitle,
+      publishGuideDesc: publishGuideState.publishGuideDesc,
+      publishGuideBadge: publishGuideState.publishGuideBadge,
+      publishGuideActionText: publishGuideState.publishGuideActionText,
+      publishGuideSecondaryText: publishGuideState.publishGuideSecondaryText,
+      publishGuideCreateUrl: publishGuideState.publishGuideCreateUrl
     }, function() {
       traceLog('[HOME_TRACE] onLoad after setData, calling loadActivities', {
         usingFallbackLocation: startupLocation.isFallback === true
+      })
+      self.refreshCityPickerSections(startupLocation)
+      saveRecentCity({
+        name: startupLocation.cityName || normalizeCityName(startupLocation.name) || '广州',
+        latitude: startupLocation.latitude,
+        longitude: startupLocation.longitude,
+        locationName: startupLocation.name,
+        source: startupLocation.isFallback ? 'fallback' : 'startup',
+        note: startupLocation.isFallback ? '兜底' : '当前',
+        isCurrent: true
       })
       self.loadActivities({ silentOnTimeout: true, lightweight: true })
     })
@@ -275,9 +635,14 @@ Page({
     this.setData({
       page: 1,
       hasMore: true,
-      feedSubtitle: '正在刷新附近组局信息',
-      heroSubtitle: buildHeroSubtitle(this.data.activityList.length > 0),
-      feedTitle: this.data.activityList.length > 0 ? '附近已经有人在发' : '附近暂时还没有人发'
+      feedSubtitle: '正在刷新当前城市的组局信息',
+      heroSubtitle: buildHeroSubtitle(
+        this.data.activityList.length > 0,
+        this.data.locationName,
+        this.data.cityName,
+        this.data.usingFallbackLocation
+      ),
+      feedTitle: buildFeedTitle(this.data.cityName, this.data.activityList.length > 0)
     })
     this.refreshLocation()
   },
@@ -292,26 +657,77 @@ Page({
     var self = this
     location.getCurrentLocation().then(function(res) {
       var displayLocation = buildDisplayLocation(res)
+      var publishGuideState = buildPublishGuideState(
+        displayLocation.cityName || displayLocation.name,
+        self.data.activityList.length
+      )
       self.setData({
         latitude: displayLocation.latitude,
         longitude: displayLocation.longitude,
         locationName: displayLocation.name,
-        usingFallbackLocation: displayLocation.isFallback === true
+        cityName: displayLocation.cityName || normalizeCityName(displayLocation.name) || '广州',
+        usingFallbackLocation: displayLocation.isFallback === true,
+        heroTitle: buildHeroTitle(displayLocation.cityName || displayLocation.name, displayLocation.isFallback === true),
+        heroSubtitle: buildHeroSubtitle(
+          self.data.activityList.length > 0,
+          displayLocation.name,
+          displayLocation.cityName || displayLocation.name,
+          displayLocation.isFallback === true
+        ),
+        feedTitle: buildFeedTitle(displayLocation.cityName || displayLocation.name, self.data.activityList.length > 0),
+        showPublishGuide: publishGuideState.showPublishGuide,
+        publishGuideTitle: publishGuideState.publishGuideTitle,
+        publishGuideDesc: publishGuideState.publishGuideDesc,
+        publishGuideBadge: publishGuideState.publishGuideBadge,
+        publishGuideActionText: publishGuideState.publishGuideActionText,
+        publishGuideSecondaryText: publishGuideState.publishGuideSecondaryText,
+        publishGuideCreateUrl: publishGuideState.publishGuideCreateUrl
+      })
+      self.refreshCityPickerSections(displayLocation)
+      saveRecentCity({
+        name: displayLocation.cityName || normalizeCityName(displayLocation.name) || '广州',
+        latitude: displayLocation.latitude,
+        longitude: displayLocation.longitude,
+        locationName: displayLocation.name,
+        source: displayLocation.isFallback ? 'fallback' : 'location',
+        note: displayLocation.isFallback ? '兜底' : '当前',
+        isCurrent: true
       })
       self.loadActivities()
     }).catch(function(err) {
       var fallbackLocation = buildFixedFallbackLocation()
+      var fallbackPublishGuideState = buildPublishGuideState(
+        fallbackLocation.cityName || fallbackLocation.name,
+        self.data.activityList.length
+      )
       self.setData({
         latitude: fallbackLocation.latitude,
         longitude: fallbackLocation.longitude,
         locationName: fallbackLocation.name,
-        usingFallbackLocation: true
+        cityName: fallbackLocation.cityName || '广州',
+        usingFallbackLocation: true,
+        heroTitle: buildHeroTitle(fallbackLocation.cityName || fallbackLocation.name, true),
+        heroSubtitle: buildHeroSubtitle(
+          self.data.activityList.length > 0,
+          fallbackLocation.name,
+          fallbackLocation.cityName || fallbackLocation.name,
+          true
+        ),
+        feedTitle: buildFeedTitle(fallbackLocation.cityName || fallbackLocation.name, self.data.activityList.length > 0),
+        showPublishGuide: fallbackPublishGuideState.showPublishGuide,
+        publishGuideTitle: fallbackPublishGuideState.publishGuideTitle,
+        publishGuideDesc: fallbackPublishGuideState.publishGuideDesc,
+        publishGuideBadge: fallbackPublishGuideState.publishGuideBadge,
+        publishGuideActionText: fallbackPublishGuideState.publishGuideActionText,
+        publishGuideSecondaryText: fallbackPublishGuideState.publishGuideSecondaryText,
+        publishGuideCreateUrl: fallbackPublishGuideState.publishGuideCreateUrl
       })
+      self.refreshCityPickerSections(fallbackLocation)
       self.loadActivities({ silentOnTimeout: true, lightweight: true })
       wx.stopPullDownRefresh()
 
       if (err && (String(err.code).toUpperCase() === 'AUTH_DENIED' || String(err.code).toUpperCase() === 'LOCATION_PERMISSION_DENIED')) {
-        wx.showToast({ title: '未开启定位，先看广州推荐', icon: 'none' })
+        wx.showToast({ title: '未开启定位，先看广州的局', icon: 'none' })
         return
       }
 
@@ -319,7 +735,7 @@ Page({
         return
       }
 
-      wx.showToast({ title: err.message || '定位失败，先看广州推荐', icon: 'none' })
+      wx.showToast({ title: err.message || '定位失败，先看广州的局', icon: 'none' })
     })
   },
 
@@ -340,9 +756,14 @@ Page({
       page: 1,
       hasMore: true,
       lastRefreshAt: now,
-      feedSubtitle: '正在刷新附近组局信息',
-      heroSubtitle: buildHeroSubtitle(this.data.activityList.length > 0),
-      feedTitle: this.data.activityList.length > 0 ? '附近已经有人在发' : '附近暂时还没有人发'
+      feedSubtitle: '正在刷新当前城市的组局信息',
+      heroSubtitle: buildHeroSubtitle(
+        this.data.activityList.length > 0,
+        this.data.locationName,
+        this.data.cityName,
+        this.data.usingFallbackLocation
+      ),
+      feedTitle: buildFeedTitle(this.data.cityName, this.data.activityList.length > 0)
     })
 
     if (this.data.usingFallbackLocation || !hasValidCoordinates(this.data.latitude, this.data.longitude)) {
@@ -365,6 +786,111 @@ Page({
 
     traceLog('[HOME_TRACE] refreshLocation falling back to initLocation')
     this.initLocation()
+  },
+
+  goPublishActivity: function() {
+    var url = this.data.publishGuideCreateUrl || templateUtil.buildCreateUrlFromSeed(PUBLISH_GUIDE_TEMPLATE_TYPE)
+    wx.navigateTo({ url: url })
+  },
+
+  goTemplateSelect: function() {
+    wx.navigateTo({ url: '/pages/activity/template-select/template-select' })
+  },
+
+  refreshCityPickerSections: function(currentLocation) {
+    var currentState = currentLocation || {
+      latitude: this.data.latitude,
+      longitude: this.data.longitude,
+      name: this.data.locationName,
+      cityName: this.data.cityName,
+      isFallback: this.data.usingFallbackLocation
+    }
+
+    this.setData({
+      cityPickerSections: buildCityPickerSections(currentState),
+      cityPickerHint: currentState && currentState.isFallback
+        ? '没拿到当前位置，先从热门城市开始'
+        : '点一下直接切换城市，选完自动刷新'
+    })
+  },
+
+  openCityPicker: function() {
+    this.refreshCityPickerSections()
+    this.setData({ cityPickerVisible: true })
+  },
+
+  closeCityPicker: function() {
+    this.setData({ cityPickerVisible: false })
+  },
+
+  selectCity: function(e) {
+    var dataset = e && e.currentTarget && e.currentTarget.dataset ? e.currentTarget.dataset : {}
+    var selectedCity = {
+      name: normalizeCityName(dataset.cityName),
+      latitude: dataset.latitude,
+      longitude: dataset.longitude,
+      locationName: normalizeText(dataset.locationName) || normalizeCityName(dataset.cityName),
+      source: normalizeText(dataset.source) || 'picker',
+      note: normalizeText(dataset.note),
+      isCurrent: dataset.isCurrent === true || dataset.isCurrent === 'true'
+    }
+    var selectedPublishGuideState = buildPublishGuideState(
+      selectedCity.name,
+      this.data.activityList.length
+    )
+
+    if (!selectedCity.name || !hasValidCoordinates(selectedCity.latitude, selectedCity.longitude)) {
+      wx.showToast({ title: '城市信息不完整', icon: 'none' })
+      return
+    }
+
+    if (
+      selectedCity.name === normalizeCityName(this.data.cityName) &&
+      selectedCity.latitude === this.data.latitude &&
+      selectedCity.longitude === this.data.longitude
+    ) {
+      this.closeCityPicker()
+      return
+    }
+
+    this.closeCityPicker()
+    this.setData({
+      page: 1,
+      hasMore: true,
+      latitude: selectedCity.latitude,
+      longitude: selectedCity.longitude,
+      locationName: selectedCity.locationName,
+      cityName: selectedCity.name,
+      usingFallbackLocation: false,
+      heroTitle: buildHeroTitle(selectedCity.name, false),
+      heroSubtitle: buildHeroSubtitle(
+        this.data.activityList.length > 0,
+        selectedCity.locationName,
+        selectedCity.name,
+        false
+      ),
+      feedTitle: buildFeedTitle(selectedCity.name, this.data.activityList.length > 0),
+      showPublishGuide: selectedPublishGuideState.showPublishGuide,
+      publishGuideTitle: selectedPublishGuideState.publishGuideTitle,
+      publishGuideDesc: selectedPublishGuideState.publishGuideDesc,
+      publishGuideBadge: selectedPublishGuideState.publishGuideBadge,
+      publishGuideActionText: selectedPublishGuideState.publishGuideActionText,
+      publishGuideSecondaryText: selectedPublishGuideState.publishGuideSecondaryText,
+      publishGuideCreateUrl: selectedPublishGuideState.publishGuideCreateUrl,
+      feedSubtitle: '正在切换城市，马上更新'
+    })
+
+    saveRecentCity({
+      name: selectedCity.name,
+      latitude: selectedCity.latitude,
+      longitude: selectedCity.longitude,
+      locationName: selectedCity.locationName,
+      source: selectedCity.source,
+      note: selectedCity.note || '最近',
+      isCurrent: true
+    })
+    this.refreshCityPickerSections(selectedCity)
+    this.loadActivities({ preserveOnFailure: true, silentOnTimeout: true, lightweight: true })
   },
 
   loadActivities: function(options) {
@@ -413,28 +939,54 @@ Page({
         })
         var feedSummary = activityFeedAdapter.summarizeActivities(list)
         var hasActivities = list.length > 0
+        var publishGuideState = buildPublishGuideState(self.data.cityName, list.length)
 
         self.setData({
           rawActivityList: rawList,
           activityList: list,
           feedSummary: feedSummary,
-          heroSubtitle: buildHeroSubtitle(hasActivities),
-          feedTitle: hasActivities ? '附近已经有人在发' : '附近暂时还没有人发',
+        heroTitle: buildHeroTitle(self.data.cityName || self.data.locationName, self.data.usingFallbackLocation),
+          heroSubtitle: buildHeroSubtitle(
+            hasActivities,
+            self.data.locationName,
+            self.data.cityName,
+            self.data.usingFallbackLocation
+          ),
+          feedTitle: buildFeedTitle(self.data.cityName, hasActivities),
           feedSubtitle: buildFeedSubtitle(feedSummary, false),
+          showPublishGuide: publishGuideState.showPublishGuide,
+          publishGuideTitle: publishGuideState.publishGuideTitle,
+          publishGuideDesc: publishGuideState.publishGuideDesc,
+          publishGuideBadge: publishGuideState.publishGuideBadge,
+          publishGuideActionText: publishGuideState.publishGuideActionText,
+          publishGuideSecondaryText: publishGuideState.publishGuideSecondaryText,
+          publishGuideCreateUrl: publishGuideState.publishGuideCreateUrl,
           hasMore: Boolean(result.data.hasMore) && incomingList.length > 0,
           isEmpty: !hasActivities,
           loading: false
         })
         self._lastLoadErrorAt = 0
       } else {
+        var fallbackPublishGuideState = buildPublishGuideState(self.data.cityName, self.data.activityList.length)
         self.setData({
           loading: false,
           hasMore: false,
           isEmpty: self.data.activityList.length === 0,
-          heroSubtitle: buildHeroSubtitle(self.data.activityList.length > 0),
-          feedTitle: self.data.activityList.length > 0
-            ? '附近已经有人在发'
-            : '附近暂时还没有人发',
+          heroTitle: buildHeroTitle(self.data.cityName || self.data.locationName, self.data.usingFallbackLocation),
+        heroSubtitle: buildHeroSubtitle(
+          self.data.activityList.length > 0,
+          self.data.locationName,
+          self.data.cityName,
+          self.data.usingFallbackLocation
+          ),
+          feedTitle: buildFeedTitle(self.data.cityName, self.data.activityList.length > 0),
+          showPublishGuide: fallbackPublishGuideState.showPublishGuide,
+          publishGuideTitle: fallbackPublishGuideState.publishGuideTitle,
+          publishGuideDesc: fallbackPublishGuideState.publishGuideDesc,
+          publishGuideBadge: fallbackPublishGuideState.publishGuideBadge,
+          publishGuideActionText: fallbackPublishGuideState.publishGuideActionText,
+          publishGuideSecondaryText: fallbackPublishGuideState.publishGuideSecondaryText,
+          publishGuideCreateUrl: fallbackPublishGuideState.publishGuideCreateUrl,
           feedSubtitle: buildFeedSubtitle(self.data.feedSummary, false)
         })
         wx.showToast({ title: '加载失败，请重试', icon: 'none' })
@@ -448,15 +1000,27 @@ Page({
       })
       var isTimeout = isTimeoutError(err)
       var keepExistingList = preserveOnFailure && self.data.activityList.length > 0
+      var keepGuideState = buildPublishGuideState(self.data.cityName, self.data.activityList.length)
 
       self.setData({
         loading: false,
         hasMore: keepExistingList ? self.data.hasMore : false,
         isEmpty: self.data.activityList.length === 0,
-        heroSubtitle: buildHeroSubtitle(self.data.activityList.length > 0),
-        feedTitle: self.data.activityList.length > 0
-          ? '附近已经有人在发'
-          : '附近暂时还没有人发',
+        heroTitle: buildHeroTitle(self.data.cityName || self.data.locationName, self.data.usingFallbackLocation),
+        heroSubtitle: buildHeroSubtitle(
+          self.data.activityList.length > 0,
+          self.data.locationName,
+          self.data.cityName,
+          self.data.usingFallbackLocation
+        ),
+        feedTitle: buildFeedTitle(self.data.cityName, self.data.activityList.length > 0),
+        showPublishGuide: keepGuideState.showPublishGuide,
+        publishGuideTitle: keepGuideState.publishGuideTitle,
+        publishGuideDesc: keepGuideState.publishGuideDesc,
+        publishGuideBadge: keepGuideState.publishGuideBadge,
+        publishGuideActionText: keepGuideState.publishGuideActionText,
+        publishGuideSecondaryText: keepGuideState.publishGuideSecondaryText,
+        publishGuideCreateUrl: keepGuideState.publishGuideCreateUrl,
         feedSubtitle: keepExistingList
           ? '网络有点慢，先展示上次结果'
           : (isTimeout ? '网络有点慢，刷新一下再试' : buildFeedSubtitle(self.data.feedSummary, false))

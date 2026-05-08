@@ -209,11 +209,70 @@
 }
 
 @media (prefers-color-scheme: dark) {
+  .hero-card,
+  .section-card,
+  .list-card,
+  .grid-card {
+    background: var(--surface-card-strong);
+    border-color: var(--color-border-soft);
+    box-shadow: var(--shadow-soft);
+  }
+
   .hero-card {
-    background: linear-gradient(135deg, var(--surface-card-warm) 0%, var(--surface-card-base) 72%);
+    background: linear-gradient(135deg, #2A2432 0%, #202432 72%);
+  }
+
+  .hero-kicker {
+    background: var(--accent-warm-bg);
+    color: #FFD8C5;
+  }
+
+  .hero-title,
+  .section-title,
+  .grid-title,
+  .list-title {
+    color: var(--text-title-strong);
+  }
+
+  .hero-desc,
+  .section-desc,
+  .grid-desc,
+  .list-desc,
+  .list-reason {
+    color: var(--text-body-muted);
+  }
+
+  .section-card {
+    background: var(--surface-card-base);
+  }
+
+  .grid-card {
+    background: var(--surface-card-muted);
+  }
+
+  .grid-card.active {
+    background: var(--surface-card-warm-faint);
+    border-color: var(--accent-warm-border-strong);
+  }
+
+  .grid-badge,
+  .list-badge {
+    background: var(--accent-warm-bg);
+    color: #FFD8C5;
+  }
+
+  .list-badge.cool {
+    background: var(--accent-cool-bg-soft);
+    color: #BFEAEC;
+  }
+
+  .grid-action,
+  .list-action {
+    color: #FFB08D;
   }
 
   .list-card.warm {
-    background: linear-gradient(140deg, var(--surface-card-warm-faint) 0%, var(--surface-card-base) 100%);
+    background: linear-gradient(140deg, #2B2630 0%, var(--surface-card-base) 100%);
+    border-color: var(--accent-warm-border-soft);
   }
 }

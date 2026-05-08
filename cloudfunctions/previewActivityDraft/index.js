@@ -23,6 +23,27 @@ const {
   getFeeText
 } = require('./_shared/pricing')
 
+function translateSafetyTag(tag) {
+  const map = {
+    public_space: '公共场所',
+    low_budget: '低消费',
+    no_alcohol: '不喝酒',
+    daytime: '白天见面',
+    women_friendly: '女生友好',
+    no_after_party: '不转场',
+    real_name: '实名可见',
+    aa_friendly: '现场 AA',
+    free_entry: '免费入场',
+    daytime_friendly: '白天见面',
+    quiet_mode: '安静一点',
+    night_scene: '夜间场景',
+    consume_clear: '花费清楚'
+  }
+  const text = String(tag || '').trim()
+  if (!text) return ''
+  return map[text] || text.replace(/_/g, ' ')
+}
+
 function getTimeSlotLabel(meetTime) {
   const hour = new Date(meetTime).getHours()
   if (hour < 12) return '上午'
@@ -92,9 +113,12 @@ exports.main = async function(event) {
     const summary = typeof (event && event.summary) === 'string' && event.summary.trim()
       ? event.summary.trim()
       : getDefaultSummary(templateType)
+    const translatedSafetyTags = Array.isArray(safetyTags)
+      ? safetyTags.map(translateSafetyTag).filter(Boolean)
+      : []
     const description = typeof (event && event.description) === 'string' && event.description.trim()
       ? event.description.trim()
-      : buildDefaultDescription(templateType, budgetType, safetyTags, allowAfterParty)
+      : buildDefaultDescription(templateType, budgetType, translatedSafetyTags, allowAfterParty)
     const riskLevel = computeRiskLevel(
       templateType,
       safetyTags,

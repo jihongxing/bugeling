@@ -38,6 +38,8 @@ describe('previewActivityDraft', () => {
       feeText: expect.any(String),
       rules: expect.any(Array)
     }))
+    expect(result.data.description).not.toContain('public_space')
+    expect(result.data.description).toContain('公共场所')
   })
 
   test('keeps explicit summary and description', async () => {

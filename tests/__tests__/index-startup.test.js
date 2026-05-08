@@ -22,6 +22,9 @@ jest.mock('../../miniprogram/utils/location', function () {
       var dx = lat1 - lat2
       var dy = lng1 - lng2
       return Math.sqrt(dx * dx + dy * dy)
+    }),
+    formatDistance: jest.fn(function (meters) {
+      return meters < 1000 ? Math.round(meters) + 'm' : (meters / 1000).toFixed(1) + 'km'
     })
   }
 })
@@ -96,7 +99,9 @@ describe('index page startup behavior', function () {
       showToast: jest.fn(),
       reportEvent: jest.fn(),
       stopPullDownRefresh: jest.fn(),
-      navigateTo: jest.fn()
+      navigateTo: jest.fn(),
+      getStorageSync: jest.fn(function () { return [] }),
+      setStorageSync: jest.fn()
     }
   })
 
@@ -110,7 +115,7 @@ describe('index page startup behavior', function () {
 
     expect(page.data.latitude).toBe(23.1291)
     expect(page.data.longitude).toBe(113.2644)
-    expect(page.data.locationName).toBe('未定位，先看广州推荐')
+    expect(page.data.cityName).toBe('广州')
     expect(page.data.usingFallbackLocation).toBe(true)
     expect(page.loadActivities).toHaveBeenCalledWith({
       silentOnTimeout: true,
@@ -134,27 +139,7 @@ describe('index page startup behavior', function () {
     expect(page.data.latitude).toBe(31.2304)
     expect(page.data.longitude).toBe(121.4737)
     expect(page.data.locationName).toBe('黄浦区·人民广场')
-    expect(page.data.usingFallbackLocation).toBe(false)
-    expect(page.loadActivities).toHaveBeenCalledWith({
-      silentOnTimeout: true,
-      lightweight: true
-    })
-  })
-
-  test('onLoad maps cached coordinates to nearest seed city when city name is unavailable', function () {
-    mockGetCachedLocation.mockReturnValue({
-      latitude: 39.9,
-      longitude: 116.4
-    })
-
-    var page = createPageInstance()
-    page.loadActivities = jest.fn()
-
-    page.onLoad.call(page)
-
-    expect(page.data.latitude).toBe(39.9)
-    expect(page.data.longitude).toBe(116.4)
-    expect(page.data.locationName).toBe('未定位，先看北京推荐')
+    expect(page.data.cityName).toBe('上海')
     expect(page.data.usingFallbackLocation).toBe(false)
     expect(page.loadActivities).toHaveBeenCalledWith({
       silentOnTimeout: true,
@@ -176,7 +161,7 @@ describe('index page startup behavior', function () {
 
     expect(page.data.latitude).toBe(23.1291)
     expect(page.data.longitude).toBe(113.2644)
-    expect(page.data.locationName).toBe('未定位，先看广州推荐')
+    expect(page.data.cityName).toBe('广州')
     expect(page.data.usingFallbackLocation).toBe(true)
     expect(page.loadActivities).toHaveBeenCalledWith({
       silentOnTimeout: true,
@@ -184,25 +169,6 @@ describe('index page startup behavior', function () {
     })
     expect(global.wx.stopPullDownRefresh).toHaveBeenCalled()
     expect(global.wx.showToast).not.toHaveBeenCalled()
-  })
-
-  test('initLocation maps bare coordinates to nearest seed city before loading activities', async function () {
-    mockGetCurrentLocation.mockResolvedValue({
-      latitude: 30.67,
-      longitude: 104.06
-    })
-
-    var page = createPageInstance()
-    page.loadActivities = jest.fn()
-
-    page.initLocation.call(page)
-    await flushPromises()
-
-    expect(page.data.latitude).toBe(30.67)
-    expect(page.data.longitude).toBe(104.06)
-    expect(page.data.locationName).toBe('未定位，先看成都推荐')
-    expect(page.data.usingFallbackLocation).toBe(false)
-    expect(page.loadActivities).toHaveBeenCalled()
   })
 
   test('refreshLocation only refreshes activities when coordinates are already available', function () {
@@ -216,6 +182,7 @@ describe('index page startup behavior', function () {
     page.data.latitude = 39.9
     page.data.longitude = 116.4
     page.data.locationName = '北京'
+    page.data.cityName = '北京'
     page.data.usingFallbackLocation = false
     page.loadActivities = jest.fn()
     page.initLocation = jest.fn()
@@ -231,40 +198,32 @@ describe('index page startup behavior', function () {
     expect(mockGetCurrentLocation).not.toHaveBeenCalled()
   })
 
-  test('refreshLocation asks for real location when still on fallback coordinates', function () {
-    mockGetCachedLocation.mockReturnValue(null)
-
-    var page = createPageInstance()
-    page.data.latitude = 31.2304
-    page.data.longitude = 121.4737
-    page.data.usingFallbackLocation = true
-    page.loadActivities = jest.fn()
-    page.initLocation = jest.fn()
-
-    page.refreshLocation.call(page)
-
-    expect(page.initLocation).toHaveBeenCalled()
-    expect(page.loadActivities).not.toHaveBeenCalled()
-  })
-
-  test('refreshLocation reloads device location when current label is still generic', function () {
+  test('openCityPicker builds a city picker list', function () {
     mockGetCachedLocation.mockReturnValue({
-      latitude: 39.9,
-      longitude: 116.4,
-      name: '当前位置'
+      latitude: 31.2304,
+      longitude: 121.4737,
+      name: '黄浦区·人民广场'
     })
 
     var page = createPageInstance()
-    page.data.latitude = 39.9
-    page.data.longitude = 116.4
-    page.data.locationName = '当前位置'
-    page.data.usingFallbackLocation = false
     page.loadActivities = jest.fn()
-    page.initLocation = jest.fn()
+    page.onLoad.call(page)
+    page.openCityPicker.call(page)
 
-    page.refreshLocation.call(page)
+    expect(page.data.cityPickerVisible).toBe(true)
+    expect(page.data.cityPickerSections.length).toBeGreaterThan(0)
+  })
 
-    expect(page.initLocation).toHaveBeenCalled()
-    expect(page.loadActivities).not.toHaveBeenCalled()
+  test('showPublishGuide appears when the city is empty', function () {
+    mockGetCachedLocation.mockReturnValue(null)
+
+    var page = createPageInstance()
+    page.loadActivities = jest.fn()
+
+    page.onLoad.call(page)
+
+    expect(page.data.showPublishGuide).toBe(true)
+    expect(page.data.publishGuideActionText).toBe('我来发一个')
+    expect(page.data.publishGuideCreateUrl).toContain('/pages/activity/create/create')
   })
 })

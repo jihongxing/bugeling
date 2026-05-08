@@ -10,14 +10,66 @@
     </view>
 
     <view class="hero-toolbar">
-      <view class="location-chip">
+      <view class="location-chip" bindtap="openCityPicker">
         <text class="location-dot"></text>
-        <text class="location-name">{{locationName || '定位中...'}}</text>
+        <view class="location-copy">
+          <text class="location-name">{{cityName || '广州'}}</text>
+          <text class="location-meta">{{usingFallbackLocation ? '当前为兜底城市' : locationName || '已自动定位'}}</text>
+        </view>
       </view>
 
       <view class="refresh-btn" bindtap="refreshLocation">
         <text class="refresh-icon">↻</text>
-        <text class="refresh-text">刷新附近</text>
+        <text class="refresh-text">重新定位</text>
+      </view>
+    </view>
+
+    <view class="hero-actions">
+      <view class="hero-action primary" bindtap="openCityPicker">
+        <text>切换城市</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="city-panel" wx:if="{{cityPickerVisible}}">
+    <view class="city-panel-mask" bindtap="closeCityPicker"></view>
+    <view class="city-panel-sheet">
+      <view class="city-panel-head">
+        <text class="city-panel-title">切换城市</text>
+        <text class="city-panel-hint">{{cityPickerHint}}</text>
+      </view>
+
+      <block wx:for="{{cityPickerSections}}" wx:for-item="section" wx:key="key">
+        <view class="city-section">
+          <view class="city-section-head">
+            <text class="city-section-title">{{section.title}}</text>
+            <text class="city-section-hint">{{section.hint}}</text>
+          </view>
+
+          <view class="city-chip-list">
+            <view
+              class="city-chip"
+              wx:for="{{section.cities}}"
+              wx:for-item="city"
+              wx:key="name"
+              data-city-name="{{city.name}}"
+              data-latitude="{{city.latitude}}"
+              data-longitude="{{city.longitude}}"
+              data-location-name="{{city.locationName}}"
+              data-source="{{city.source}}"
+              data-note="{{city.note}}"
+              data-is-current="{{city.isCurrent}}"
+              bindtap="selectCity"
+            >
+              <text class="city-chip-name">{{city.name}}</text>
+              <text class="city-chip-meta">{{city.distanceText || city.note || city.locationName}}</text>
+            </view>
+          </view>
+        </view>
+      </block>
+
+      <view class="city-panel-close" bindtap="closeCityPicker">
+        <text>收起</text>
       </view>
     </view>
   </view>
@@ -32,6 +84,20 @@
       <text class="feed-count" wx:if="{{activityList.length > 0}}">{{activityList.length}} 个局</text>
     </view>
 
+    <view class="publish-guide-card" wx:if="{{showPublishGuide}}">
+      <view class="publish-guide-badge">{{publishGuideBadge}}</view>
+      <text class="publish-guide-title">{{publishGuideTitle}}</text>
+      <text class="publish-guide-desc">{{publishGuideDesc}}</text>
+      <view class="publish-guide-actions">
+        <view class="publish-guide-primary" bindtap="goPublishActivity">
+          <text>{{publishGuideActionText}}</text>
+        </view>
+        <view class="publish-guide-secondary" bindtap="goTemplateSelect">
+          <text>{{publishGuideSecondaryText}}</text>
+        </view>
+      </view>
+    </view>
+
     <view class="activity-list" wx:if="{{activityList.length > 0}}">
       <activity-card
         wx:for="{{activityList}}"
@@ -44,18 +110,21 @@
         <text>正在加载更多组局...</text>
       </view>
       <view class="no-more-tip" wx:if="{{!hasMore && activityList.length > 0}}">
-        <text>附近就这些了，换个位置再看看</text>
+        <text>这座城就这些了，换个城市再看看</text>
       </view>
     </view>
 
-    <view class="feed-empty-card" wx:if="{{activityList.length === 0 && !loading}}">
-      <text class="feed-empty-title">附近暂时还没有人发</text>
-      <text class="feed-empty-desc">先刷新一下位置和附近列表，看看有没有新局冒出来。</text>
+    <view class="feed-empty-card" wx:if="{{activityList.length === 0 && !loading && !showPublishGuide}}">
+      <text class="feed-empty-title">这座城暂时还没有人发</text>
+      <text class="feed-empty-desc">先换个城市看看，或者重新定位试试附近有没有新局。</text>
+      <view class="feed-empty-action" bindtap="goPublishActivity">
+        <text>我来发一个</text>
+      </view>
     </view>
   </view>
 
   <view class="loading-state" wx:if="{{loading && activityList.length === 0}}">
-    <text class="loading-title">正在查找附近组局</text>
+    <text class="loading-title">正在查找这座城的组局</text>
     <text class="loading-desc">优先拉取离你更近、更容易成局的活动</text>
   </view>
 </view>

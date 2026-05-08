@@ -18,7 +18,9 @@
 .hero-head,
 .section-head,
 .info-item,
-.rule-item {
+.rule-item,
+.snapshot-line,
+.compact-row {
   display: flex;
   justify-content: space-between;
   gap: 16rpx;
@@ -54,13 +56,22 @@
   font-weight: 600;
 }
 
+.hero-hook {
+  display: block;
+  font-size: 28rpx;
+  line-height: 1.5;
+  color: var(--text-warm-strong);
+  font-weight: 700;
+  margin-bottom: 10rpx;
+}
+
 .hero-title {
   display: block;
   font-size: 40rpx;
   line-height: 1.35;
   color: var(--text-title-strong);
   font-weight: 700;
-  margin-bottom: 12rpx;
+  margin-bottom: 10rpx;
 }
 
 .hero-summary {
@@ -74,35 +85,7 @@
   display: flex;
   flex-wrap: wrap;
   gap: 12rpx;
-  margin-top: 20rpx;
-}
-
-.hero-quick-grid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 12rpx;
-  margin-top: 24rpx;
-}
-
-.hero-quick-item {
-  background: var(--surface-card-muted);
-  border-radius: 20rpx;
-  padding: 18rpx;
-}
-
-.hero-quick-label {
-  display: block;
-  font-size: 22rpx;
-  color: var(--text-body-muted);
-}
-
-.hero-quick-value {
-  display: block;
-  margin-top: 8rpx;
-  font-size: 24rpx;
-  line-height: 1.5;
-  color: var(--text-title-strong);
-  font-weight: 600;
+  margin-top: 18rpx;
 }
 
 .hero-tag,
@@ -114,21 +97,46 @@
   padding: 10rpx 18rpx;
 }
 
-.metric-label,
-.info-label,
-.credit-label {
-  font-size: 24rpx;
-  color: var(--text-body-muted);
+.hero-snapshot {
+  margin-top: 24rpx;
+  background: var(--surface-card-muted);
+  border-radius: 24rpx;
+  padding: 20rpx 22rpx;
 }
 
-.metric-value,
+.snapshot-line {
+  align-items: baseline;
+  padding: 12rpx 0;
+}
+
+.snapshot-line-link.is-link .snapshot-value {
+  color: var(--color-primary);
+}
+
+.snapshot-line + .snapshot-line {
+  border-top: 1rpx solid var(--border-soft-2);
+}
+
+.snapshot-label,
+.info-label,
+.credit-label,
+.compact-label {
+  font-size: 24rpx;
+  color: var(--text-body-muted);
+  flex-shrink: 0;
+}
+
+.snapshot-value,
 .info-value,
-.credit-value {
+.credit-value,
+.compact-value {
   display: block;
-  margin-top: 8rpx;
-  font-size: 28rpx;
+  text-align: right;
+  font-size: 26rpx;
+  line-height: 1.5;
   color: var(--text-title-strong);
   font-weight: 600;
+  flex: 1;
 }
 
 .card {
@@ -210,142 +218,21 @@
   color: var(--text-body-muted);
 }
 
-.info-item {
-  padding: 18rpx 0;
-  border-bottom: 1rpx solid var(--border-soft-2);
-  align-items: flex-start;
+.compact-card {
+  background: linear-gradient(180deg, rgba(255, 247, 238, 0.85) 0%, var(--surface-card-base) 100%);
 }
 
-.info-item:last-child {
-  border-bottom: none;
-}
-
-.info-value {
-  flex: 1;
-  text-align: right;
-  margin-top: 0;
-  line-height: 1.5;
-}
-
-.contract-box,
-.note-box {
-  margin-top: 24rpx;
-  background: var(--surface-card-warm);
-  border-radius: 24rpx;
-  padding: 22rpx 24rpx;
-}
-
-.contract-title {
-  display: block;
-  font-size: 26rpx;
-  color: var(--text-warm-strong);
-  font-weight: 700;
-  margin-bottom: 8rpx;
-}
-
-.contract-text,
-.paragraph,
-.rule-text,
-.note-text {
-  font-size: 26rpx;
-  line-height: 1.7;
-  color: var(--text-body-soft);
-}
-
-.pay-breakdown-card {
-  margin-top: 20rpx;
-  padding: 20rpx 22rpx;
-  border-radius: 20rpx;
-  background: var(--surface-card-warm-faint);
-  border: 1rpx solid var(--border-warm-soft);
-}
-
-.pay-breakdown-title {
-  display: block;
-  font-size: 25rpx;
-  color: var(--text-warm-soft);
-  font-weight: 700;
-  margin-bottom: 10rpx;
-}
-
-.pay-breakdown-row {
-  display: flex;
-  justify-content: space-between;
-  gap: 14rpx;
-  padding: 12rpx 0;
-  border-bottom: 1rpx solid var(--border-warm-ink);
-}
-
-.pay-breakdown-row:last-of-type {
-  border-bottom: none;
-}
-
-.pay-breakdown-main {
-  flex: 1;
-}
-
-.pay-breakdown-label {
-  display: block;
-  font-size: 24rpx;
-  color: var(--text-brown-strong);
-  font-weight: 600;
-}
-
-.pay-breakdown-hint {
-  display: block;
-  margin-top: 4rpx;
-  font-size: 22rpx;
-  line-height: 1.5;
-  color: var(--text-warm-muted);
-}
-
-.pay-breakdown-value {
-  font-size: 26rpx;
-  color: var(--text-title-strong);
-  font-weight: 700;
-}
-
-.pay-breakdown-total {
-  margin-top: 14rpx;
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-}
-
-.pay-breakdown-total-label {
-  font-size: 24rpx;
-  color: var(--text-brown-strong);
-  font-weight: 600;
-}
-
-.pay-breakdown-total-value {
-  font-size: 30rpx;
-  color: var(--text-warm-soft);
-  font-weight: 700;
-}
-
-.pay-breakdown-tip {
-  display: block;
-  margin-top: 10rpx;
-  font-size: 22rpx;
-  line-height: 1.6;
-  color: var(--text-warm-muted);
-}
-
-.paragraph + .paragraph {
-  margin-top: 12rpx;
-}
-
-.more-info-toggle {
-  display: flex;
+.compact-row {
   align-items: center;
-  justify-content: space-between;
+  padding: 16rpx 0;
 }
 
-.more-info-text {
-  font-size: 26rpx;
-  color: var(--text-warm-strong);
-  font-weight: 600;
+.compact-row + .compact-row {
+  border-top: 1rpx solid var(--border-soft-2);
+}
+
+.summary-card {
+  padding-bottom: 20rpx;
 }
 
 .more-info-arrow {
@@ -467,13 +354,11 @@
   .credit-item,
   .status-tip,
   .countdown-tip,
-  .hero-quick-item {
+  .hero-snapshot {
     background: var(--surface-card-base);
   }
 
-  .contract-box,
-  .note-box,
-  .pay-breakdown-card {
-    box-shadow: none;
+  .compact-card {
+    background: var(--surface-card-base);
   }
 }

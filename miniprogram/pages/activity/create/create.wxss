@@ -446,12 +446,54 @@
 }
 
 @media (prefers-color-scheme: dark) {
+  .hero-card,
+  .section-card,
+  .preview-card {
+    background: var(--surface-card-strong);
+    border-color: var(--color-border-soft);
+    box-shadow: var(--shadow-soft);
+  }
+
   .hero-card {
-    background: linear-gradient(145deg, #272034 0%, #1E2433 65%, #273142 100%);
+    background: linear-gradient(145deg, #2A2432 0%, #202432 66%, #252B3A 100%);
+  }
+
+  .hero-kicker {
+    background: var(--accent-warm-bg);
+    color: #FFD8C5;
+    border-color: var(--accent-warm-border-soft);
+  }
+
+  .hero-title,
+  .section-title,
+  .template-label,
+  .option-title,
+  .picker-value,
+  .preview-value,
+  .stepper-value {
+    color: var(--text-title-strong);
+  }
+
+  .hero-desc,
+  .section-tip,
+  .template-desc,
+  .option-desc,
+  .picker-placeholder,
+  .preview-label,
+  .form-label,
+  .location-help-link {
+    color: var(--text-body-muted);
   }
 
   .hero-link-btn {
-    background: rgba(255, 255, 255, 0.04);
+    background: rgba(255, 255, 255, 0.06);
+    color: #F3F6FA;
+    border-color: rgba(255, 255, 255, 0.08);
+  }
+
+  .hero-link-btn.secondary {
+    background: rgba(255, 255, 255, 0.03);
+    color: #D9E1EE;
   }
 
   .template-card,
@@ -459,9 +501,55 @@
   .stepper-card,
   .deposit-option,
   .segment,
+  .more-toggle,
   .form-input,
   .form-textarea,
   .form-picker {
+    background: var(--surface-card-muted);
     border-color: var(--color-border-soft);
+  }
+
+  .template-card.active,
+  .option-card.active,
+  .segment.active,
+  .deposit-option.selected {
+    background: var(--surface-card-warm-faint);
+    border-color: var(--accent-warm-border-strong);
+    color: #FFD8C5;
+  }
+
+  .form-input,
+  .form-textarea,
+  .form-picker {
+    color: var(--text-title-strong);
+  }
+
+  .stepper-card {
+    background: linear-gradient(145deg, #252B3A 0%, #202432 100%);
+  }
+
+  .stepper-btn {
+    background: var(--surface-card-base);
+    border-color: var(--color-border-soft);
+    color: #FFD8C5;
+  }
+
+  .preview-card {
+    background: linear-gradient(145deg, rgba(43, 38, 48, 0.96) 0%, var(--surface-card-base) 100%);
+  }
+
+  .more-toggle {
+    background: rgba(240, 123, 78, 0.12);
+    border-color: var(--accent-warm-border-soft);
+  }
+
+  .more-toggle-text,
+  .more-toggle-arrow,
+  .picker-arrow {
+    color: #FFB08D;
+  }
+
+  .location-help-link {
+    color: #FFB08D;
   }
 }

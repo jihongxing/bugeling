@@ -9,25 +9,35 @@
         </text>
       </view>
     </view>
+
+    <text class="hero-hook">{{detailView.decisionSnapshot.decisionText}}</text>
     <text class="hero-title">{{detailView.title}}</text>
     <text class="hero-summary">{{detailView.summaryText}}</text>
 
-    <view class="hero-badges" wx:if="{{detailView.heroBadges.length}}">
-      <text class="hero-tag" wx:for="{{detailView.heroBadges}}" wx:key="index">{{item}}</text>
+    <view class="hero-badges" wx:if="{{detailView.decisionSnapshot.reasonTags.length}}">
+      <text class="hero-tag" wx:for="{{detailView.decisionSnapshot.reasonTags}}" wx:key="index">{{item}}</text>
     </view>
 
-    <view class="hero-quick-grid">
-      <view class="hero-quick-item">
-        <text class="hero-quick-label">什么时候见</text>
-        <text class="hero-quick-value">{{detailView.meeting.timeText}}</text>
+    <view class="hero-snapshot">
+      <view class="snapshot-line">
+        <text class="snapshot-label">什么时候</text>
+        <text class="snapshot-value">{{detailView.decisionSnapshot.timingText}}</text>
       </view>
-      <view class="hero-quick-item">
-        <text class="hero-quick-label">大概会花</text>
-        <text class="hero-quick-value">{{detailView.budgetRangeText}}</text>
+      <view class="snapshot-line">
+        <text class="snapshot-label">要花多少</text>
+        <text class="snapshot-value">{{detailView.decisionSnapshot.costText}}</text>
       </view>
-      <view class="hero-quick-item">
-        <text class="hero-quick-label">加入要付</text>
-        <text class="hero-quick-value">{{detailView.totalFeeText}}</text>
+      <view class="snapshot-line">
+        <text class="snapshot-label">离你多远</text>
+        <text class="snapshot-value">{{detailView.decisionSnapshot.distanceLine || '距离待补充'}}</text>
+      </view>
+      <view class="snapshot-line snapshot-line-link {{detailView.meeting.canNavigate ? 'is-link' : ''}}" bindtap="openMeetingLocation" wx:if="{{detailView.meeting.locationName}}">
+        <text class="snapshot-label">在哪见</text>
+        <text class="snapshot-value">{{detailView.decisionSnapshot.locationLine}}</text>
+      </view>
+      <view class="snapshot-line">
+        <text class="snapshot-label">靠不靠谱</text>
+        <text class="snapshot-value">{{detailView.decisionSnapshot.trustText}}</text>
       </view>
     </view>
   </view>
@@ -46,62 +56,40 @@
     <text class="progress-hint">{{detailView.progress.hintText}}</text>
   </view>
 
-  <view class="card">
+  <view class="card compact-card">
     <view class="section-head">
-      <text class="section-title">这局怎么约</text>
+      <text class="section-title">先看这 3 件事</text>
+      <text class="section-side">{{detailView.decisionReasonText}}</text>
     </view>
-    <view class="info-item" wx:for="{{detailView.meeting.rows}}" wx:key="label">
-      <text class="info-label">{{item.label}}</text>
-      <text class="info-value">{{item.value}}</text>
+    <view class="compact-row">
+      <text class="compact-label">时间</text>
+      <text class="compact-value">{{detailView.meeting.timeText}}</text>
     </view>
-    <view class="info-item" wx:for="{{detailView.feeRows}}" wx:key="label">
-      <text class="info-label">{{item.label}}</text>
-      <text class="info-value">{{item.value}}</text>
+    <view class="compact-row">
+      <text class="compact-label">预算</text>
+      <text class="compact-value">{{detailView.budgetRangeText}}</text>
     </view>
-    <view class="contract-box">
-      <text class="contract-title">先看一眼</text>
-      <text class="contract-text">{{detailView.contractText}}</text>
-    </view>
-
-    <view class="pay-breakdown-card" wx:if="{{detailView.paymentBreakdown}}">
-      <text class="pay-breakdown-title">加入费用拆分</text>
-      <view class="pay-breakdown-row">
-        <view class="pay-breakdown-main">
-          <text class="pay-breakdown-label">平台服务费</text>
-          <text class="pay-breakdown-hint">{{detailView.paymentBreakdown.serviceFeeHint}}</text>
-        </view>
-        <text class="pay-breakdown-value">{{detailView.paymentBreakdown.serviceFeeText}}</text>
-      </view>
-      <view class="pay-breakdown-row">
-        <view class="pay-breakdown-main">
-          <text class="pay-breakdown-label">活动押金</text>
-          <text class="pay-breakdown-hint">{{detailView.paymentBreakdown.bondAmountHint}}</text>
-        </view>
-        <text class="pay-breakdown-value">{{detailView.paymentBreakdown.bondAmountText}}</text>
-      </view>
-      <view class="pay-breakdown-total">
-        <text class="pay-breakdown-total-label">合计先付</text>
-        <text class="pay-breakdown-total-value">{{detailView.paymentBreakdown.totalText}}</text>
-      </view>
-      <text class="pay-breakdown-tip">押金不是平台收入，会根据活动履约结果进行结算。</text>
+    <view class="compact-row">
+      <text class="compact-label">费用</text>
+      <text class="compact-value">{{detailView.totalFeeText}}</text>
     </view>
   </view>
 
-  <view class="card more-info-card" wx:if="{{detailView.descriptionParagraphs.length || detailView.safety.tags.length || detailView.credit.items.length || detailView.participationNote}}">
-    <view class="more-info-toggle" bindtap="toggleMoreInfo">
-      <text class="more-info-text">{{showMoreInfo ? '先收起来' : '想多看一点再展开'}}</text>
+  <view class="card summary-card">
+    <view class="section-head" bindtap="toggleMoreInfo">
+      <text class="section-title">想多看一点再展开</text>
       <text class="more-info-arrow">{{showMoreInfo ? '︿' : '﹀'}}</text>
     </view>
 
     <view wx:if="{{showMoreInfo}}">
       <view class="card-section" wx:if="{{detailView.descriptionParagraphs.length}}">
-        <text class="subsection-title">再补几句</text>
+        <text class="subsection-title">补充说明</text>
         <text class="paragraph" wx:for="{{detailView.descriptionParagraphs}}" wx:key="index">{{item}}</text>
       </view>
 
       <view class="card-section" wx:if="{{detailView.safety.tags.length || detailView.safety.rules.length}}">
         <view class="section-head">
-          <text class="subsection-title">几个小提醒</text>
+          <text class="subsection-title">安全和规则</text>
           <text class="section-side">{{detailView.safety.riskText}}</text>
         </view>
         <view class="tag-list" wx:if="{{detailView.safety.tags.length}}">

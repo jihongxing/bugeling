@@ -119,15 +119,56 @@
 }
 
 @media (prefers-color-scheme: dark) {
+  .hero-card,
+  .path-card {
+    background: var(--surface-card-strong);
+    border-color: var(--color-border-soft);
+    box-shadow: var(--shadow-soft);
+  }
+
   .hero-card {
-    background: linear-gradient(135deg, var(--surface-card-warm) 0%, var(--surface-card-base) 72%);
+    background: linear-gradient(135deg, #2A2432 0%, #202432 72%);
+  }
+
+  .hero-title,
+  .path-title {
+    color: var(--text-title-strong);
+  }
+
+  .hero-desc,
+  .path-desc {
+    color: var(--text-body-muted);
   }
 
   .path-card.primary {
-    background: linear-gradient(140deg, var(--surface-card-warm-faint) 0%, var(--surface-card-base) 100%);
+    background: linear-gradient(140deg, #2B2630 0%, var(--surface-card-base) 100%);
+    border-color: var(--accent-warm-border-soft);
+  }
+
+  .path-card.secondary {
+    background: linear-gradient(160deg, rgba(37, 43, 58, 0.96) 0%, var(--surface-card-base) 100%);
   }
 
   .path-card.secondary.cool {
-    background: linear-gradient(160deg, rgba(118, 186, 193, 0.08) 0%, var(--surface-card-base) 100%);
+    background: linear-gradient(160deg, rgba(31, 92, 99, 0.12) 0%, var(--surface-card-base) 100%);
+    border-color: var(--accent-cool-border-soft);
+  }
+
+  .path-card.light {
+    background: rgba(37, 43, 58, 0.92);
+  }
+
+  .path-kicker {
+    background: var(--accent-warm-bg);
+    color: #FFD8C5;
+  }
+
+  .path-card.secondary.cool .path-kicker {
+    background: var(--accent-cool-bg-soft);
+    color: #BFEAEC;
+  }
+
+  .path-arrow {
+    color: #FFB08D;
   }
 }

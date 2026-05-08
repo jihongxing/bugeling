@@ -6,7 +6,7 @@ const { getDb, COLLECTIONS } = require('./_shared/db')
 const { getCredit } = require('./_shared/credit')
 const { haversineDistance } = require('./_shared/distance')
 const { successResponse, errorResponse } = require('./_shared/response')
-const { matchesPublicProfile } = require('../../scripts/cloudfunction-shared-template/userProfile')
+const { matchesPublicProfile } = require('./_shared/userProfile')
 const activityStatus = require('./_shared/activityStatus')
 
 const TEMPLATE_TYPES = [

@@ -16,6 +16,7 @@ const COLLECTIONS = {
   ACTIVITIES: 'activities',
   PARTICIPATIONS: 'participations',
   CREDITS: 'credits',
+  USER_PROFILES: 'user_profiles',
   TRANSACTIONS: 'transactions',
   REPORTS: 'reports',
   ACTIVITY_REVIEWS: 'activity_reviews',
