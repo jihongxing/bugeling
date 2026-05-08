@@ -3,14 +3,14 @@
   <view class="hero-card">
     <view class="hero-orb hero-orb-a"></view>
     <view class="hero-orb hero-orb-b"></view>
-    <text class="hero-kicker">顺手发个小局</text>
-    <text class="hero-title">选一个大概方向，把时间地点补一下就行</text>
-    <text class="hero-desc">不用写太多，先发出去，看看有没有人也正好想去。</text>
+    <text class="hero-kicker">{{customMode ? '自由组局' : '顺手发个小局'}}</text>
+    <text class="hero-title">{{customMode ? '把你的想法直接发出去' : '选一个大概方向，把时间地点补一下就行'}}</text>
+    <text class="hero-desc">{{customMode ? '不先套模板，按自己的想法来。' : '不用写太多，先发出去，看看有没有人也正好想去。'}}</text>
     <view class="prefill-banner" wx:if="{{prefillHintText}}">
       <text class="prefill-text">{{prefillHintText}}</text>
     </view>
     <view class="hero-actions">
-      <button class="hero-link-btn" bindtap="goTemplateSelect">换个灵感</button>
+      <button class="hero-link-btn" bindtap="goTemplateSelect">{{customMode ? '看看灵感' : '换个灵感'}}</button>
       <button class="hero-link-btn secondary" bindtap="goRules">看几个小提醒</button>
     </view>
   </view>

@@ -21,16 +21,20 @@ function validateForm(data) {
       errors.push('活动主题需 2-50 个字符')
     }
 
-    if (!data.depositTier) {
+    if (!data.budgetType) {
+      errors.push('请选择预算类型')
+    }
+
+    if (!data.bondAmount) {
       errors.push('请选择鸽子费档位')
     }
 
-    if (!data.identityHint || data.identityHint.length < 2 || data.identityHint.length > 100) {
-      errors.push('接头特征需 2-100 个字符')
+    if (!data.minParticipants || data.minParticipants < 2) {
+      errors.push('最低成局人数至少为 2 人')
     }
 
-    if (!data.wechatId) {
-      errors.push('请输入微信号')
+    if (!data.maxParticipants || data.maxParticipants < 2) {
+      errors.push('组局人数至少为 2 人')
     }
 
     return errors

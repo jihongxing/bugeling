@@ -1,6 +1,11 @@
 var api = require('../../../utils/api')
 var templateUtil = require('../../../utils/activity-templates')
 
+function safeNavigate(url) {
+  if (!url) return
+  wx.navigateTo({ url: url })
+}
+
 function safeReportEvent(eventName, data) {
   if (!eventName || typeof wx === 'undefined' || !wx || typeof wx.reportEvent !== 'function') return
   try {
@@ -58,6 +63,16 @@ Page({
     safeReportEvent('publish_hub_click', {
       mode: mode
     })
+
+    if (mode === 'custom') {
+      safeNavigate('/pages/activity/create/create?mode=custom')
+      return
+    }
+
+    if (mode === 'inspiration') {
+      safeNavigate('/pages/activity/publish-list/publish-list?mode=inspiration')
+      return
+    }
 
     wx.navigateTo({
       url: '/pages/activity/publish-list/publish-list?mode=' + mode

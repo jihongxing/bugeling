@@ -8,6 +8,12 @@ var MODE_CONFIG = {
     title: '今天想约点什么',
     desc: '已经有想法了，直接选类型开写。'
   },
+  custom: {
+    navTitle: '自由组局',
+    kicker: '自己来',
+    title: '我知道要约什么',
+    desc: '不用先选模板，直接把自己的想法发出去。'
+  },
   examples: {
     navTitle: '照着示例发',
     kicker: '照着改一版',
@@ -25,6 +31,12 @@ var MODE_CONFIG = {
     kicker: '从最近继续',
     title: '猜你想发',
     desc: '优先看你最近最接近、最容易顺手发出去的。'
+  },
+  inspiration: {
+    navTitle: '看灵感',
+    kicker: '先看看',
+    title: '我不知道要约什么',
+    desc: '先看看别人怎么组局，感兴趣再直接发同款。'
   }
 }
 
@@ -131,6 +143,20 @@ function buildDefaultRecommendCardsFromOptions(optionList, limit) {
   return list
 }
 
+function buildInspirationCards(list, limit) {
+  return (Array.isArray(list) ? list : []).slice(0, limit || 4).map(function(item, index) {
+    return {
+      id: item.reportId || item.activityId || ('inspiration_' + index),
+      badge: '战报灵感',
+      title: item.title || item.templateLabel || '看看这个局',
+      summary: item.summary || item.quote || '先看看别人怎么组局',
+      reason: item.attendanceRate ? ('到场率 ' + item.attendanceRate + '%，适合直接参考。') : '这条灵感可直接发同款。',
+      templateType: item.templateType || 'other',
+      createUrl: item.createUrl || ('/pages/activity/report-detail/report-detail?activityId=' + encodeURIComponent(item.activityId || ''))
+    }
+  })
+}
+
 Page({
   data: {
     mode: 'types',
@@ -167,7 +193,7 @@ Page({
     this.rebuildPage()
     this.loadTemplates()
 
-    if (mode === 'recommend') {
+    if (mode === 'recommend' || mode === 'inspiration') {
       this.loadRecommendations()
     }
   },
@@ -218,19 +244,18 @@ Page({
       loadingRecommend: true
     })
 
-    api.callFunction('getMyActivities', {
+    api.callFunction('getInspirationFeed', {
       page: 1,
       pageSize: 8
     }).then(function(result) {
-      var historyList = result && result.data && Array.isArray(result.data.list)
+      var list = result && result.data && Array.isArray(result.data.list)
         ? result.data.list
         : []
-
       self.setData({
-        recommendCards: historyList.length
-          ? templateUtil.buildHistoryRecommendCards(historyList, 4)
+        recommendCards: list.length
+          ? buildInspirationCards(list, 4)
           : buildDefaultRecommendCardsFromOptions(self.data.templateOptions, 4),
-        recommendHasHistory: historyList.length > 0,
+        recommendHasHistory: list.length > 0,
         loadingRecommend: false
       })
     }).catch(function() {
@@ -245,6 +270,7 @@ Page({
   goCreate: function(e) {
     var url = e.currentTarget.dataset.url
     var type = e.currentTarget.dataset.type
+    var mode = this.data.mode
 
     if (!url && type) {
       url = '/pages/activity/create/create?templateType=' + encodeURIComponent(type)
@@ -252,7 +278,7 @@ Page({
     if (!url) return
 
     safeReportEvent('publish_path_item_click', {
-      mode: this.data.mode,
+      mode: mode,
       template_type: type || 'seed'
     })
 

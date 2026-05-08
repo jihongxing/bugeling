@@ -54,9 +54,10 @@ function normalizeLocationPayload(location, meetingPointText) {
 
 function buildCreateRequest(formData) {
   var normalizedLocation = normalizeLocationPayload(formData.location, formData.meetingPointText)
+  var customMode = formData.customMode === true
   return {
     sourceReportId: formData.sourceReportId || '',
-    templateType: formData.templateType,
+    templateType: customMode ? 'other' : formData.templateType,
     title: formData.title.trim(),
     summary: formData.summary.trim(),
     budgetType: formData.budgetType,
@@ -68,9 +69,9 @@ function buildCreateRequest(formData) {
     location: normalizedLocation,
     meetTime: formData.meetTime,
     signupDeadline: buildSignupDeadline(formData.meetTime),
-    identityHint: formData.identityHint.trim(),
+    identityHint: customMode ? '' : formData.identityHint.trim(),
     meetingPointText: formData.meetingPointText.trim(),
-    wechatId: formData.wechatId.trim(),
+    wechatId: customMode ? '' : formData.wechatId.trim(),
     realNameRequired: formData.realNameRequired,
     genderLimit: formData.genderLimit,
     allowAfterParty: formData.allowAfterParty,

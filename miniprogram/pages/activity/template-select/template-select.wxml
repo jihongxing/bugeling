@@ -14,20 +14,20 @@
   </view>
 
   <view class="secondary-grid">
-    <view class="path-card secondary" bindtap="goToPath" data-mode="examples">
+    <view class="path-card secondary" bindtap="goToPath" data-mode="custom">
       <view class="path-copy">
-        <text class="path-kicker">照着改</text>
-        <text class="path-title">照着示例发</text>
-        <text class="path-desc">不想从零开始，就照平台示例改一版。</text>
+        <text class="path-kicker">自由发起</text>
+        <text class="path-title">我知道要约什么</text>
+        <text class="path-desc">不用先选模板，直接把自己的想法发出去。</text>
       </view>
       <text class="path-arrow">›</text>
     </view>
 
-    <view class="path-card secondary cool" bindtap="goToPath" data-mode="templates">
+    <view class="path-card secondary cool" bindtap="goToPath" data-mode="inspiration">
       <view class="path-copy">
-        <text class="path-kicker">稳一点</text>
-        <text class="path-title">按模板发</text>
-        <text class="path-desc">按场景一步步填，最稳。</text>
+        <text class="path-kicker">先看看</text>
+        <text class="path-title">我不知道要约什么</text>
+        <text class="path-desc">先看别人怎么组局，感兴趣再直接发同款。</text>
       </view>
       <text class="path-arrow">›</text>
     </view>

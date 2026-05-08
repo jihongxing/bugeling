@@ -1,0 +1,9 @@
+{
+  "name": "getInspirationFeed",
+  "version": "1.0.0",
+  "description": "获取公开组局灵感流",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "~2.6.3"
+  }
+}

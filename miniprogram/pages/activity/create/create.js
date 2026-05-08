@@ -149,6 +149,10 @@ function buildMapConfigHint() {
   return '地图选点未正常加载，请确认微信公众平台已配置腾讯位置服务 Key 后重试。'
 }
 
+function isCustomMode(options) {
+  return options && options.mode === 'custom'
+}
+
 Page({
   data: {
     templateOptions: TEMPLATE_OPTIONS,
@@ -180,6 +184,7 @@ Page({
     prefillHintText: '',
     showMoreFields: false,
     submitting: false,
+    customMode: false,
     minDate: '',
     minTime: '',
     budgetPreviewText: '',
@@ -196,13 +201,34 @@ Page({
       minTime: this._formatTimeStr(d)
     })
 
-    this.applyTemplateFromOptions(options)
+    this.applyModeFromOptions(options)
     this.applySeedFromOptions(options)
     this.refreshPreviewText()
     safeReportEvent('create_page_entry', {
       template_type: this.data.templateType || 'other',
       from_seed: this.data.sourceReportId ? 1 : 0
     })
+  },
+
+  applyModeFromOptions: function(options) {
+    if (isCustomMode(options)) {
+      this.setData({
+        customMode: true,
+        selectedTemplateIndex: -1,
+        templateType: 'other',
+        title: '',
+        summary: '',
+        budgetType: 'aa',
+        serviceFee: 290,
+        bondAmount: 990,
+        minParticipants: 2,
+        maxParticipants: 4,
+        prefillHintText: '这里是自由组局，不先套模板，直接写你自己的想法。'
+      })
+      return
+    }
+
+    this.applyTemplateFromOptions(options)
   },
 
   applyTemplateFromOptions: function(options) {
@@ -279,6 +305,7 @@ Page({
 
     this.setData({
       selectedTemplateIndex: index,
+      customMode: false,
       templateType: option.type,
       title: templateUtil.buildDefaultTitle(option.type, locationName),
       titleTouched: false,
@@ -287,7 +314,8 @@ Page({
       maxParticipants: option.maxParticipants || 4,
       budgetType: option.budgetType,
       serviceFee: option.serviceFee,
-      bondAmount: option.bondAmount
+      bondAmount: option.bondAmount,
+      prefillHintText: ''
     })
   },
 
@@ -309,6 +337,13 @@ Page({
   },
 
   goTemplateSelect: function() {
+    if (this.data.customMode) {
+      wx.navigateTo({
+        url: '/pages/activity/publish-list/publish-list?mode=inspiration'
+      })
+      return
+    }
+
     wx.navigateTo({
       url: '/pages/activity/publish-list/publish-list?mode=types&selected=' + encodeURIComponent(this.data.templateType)
     })
@@ -583,7 +618,7 @@ Page({
         self.setData({ submitting: false })
         if (result.code === 0 && result.data) {
           safeReportEvent('create_publish_success', {
-            template_type: self.data.templateType || 'other',
+            template_type: self.data.customMode ? 'custom' : (self.data.templateType || 'other'),
             from_seed: self.data.sourceReportId ? 1 : 0
           })
           wx.redirectTo({
@@ -604,7 +639,7 @@ Page({
             data: result && result.data
           })
           safeReportEvent('create_publish_failed', {
-            template_type: self.data.templateType || 'other',
+            template_type: self.data.customMode ? 'custom' : (self.data.templateType || 'other'),
             error_code: String((result && result.code) || 'UNKNOWN')
           })
           wx.showToast({ title: result.message || '发布失败，请重试', icon: 'none' })
@@ -614,7 +649,7 @@ Page({
         self.setData({ submitting: false })
         console.log('[createActivity] request fail', err)
         safeReportEvent('create_publish_failed', {
-          template_type: self.data.templateType || 'other',
+          template_type: self.data.customMode ? 'custom' : (self.data.templateType || 'other'),
           error_code: String((err && err.code) || 'REQUEST_FAIL')
         })
         wx.showToast({

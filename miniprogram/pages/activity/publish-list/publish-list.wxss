@@ -140,6 +140,11 @@
   background: var(--surface-card-soft);
 }
 
+.path-card.warm-inline {
+  background: linear-gradient(140deg, #FFF9F2 0%, #FFFFFF 100%);
+  border-color: var(--accent-warm-border-soft);
+}
+
 .list-card.warm {
   background: linear-gradient(140deg, #FFF9F2 0%, #FFFFFF 100%);
   border-color: var(--accent-warm-border-soft);
