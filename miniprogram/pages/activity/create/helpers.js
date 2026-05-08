@@ -57,13 +57,14 @@ function buildCreateRequest(formData) {
   var customMode = formData.customMode === true
   return {
     sourceReportId: formData.sourceReportId || '',
+    customMode: customMode,
     templateType: customMode ? 'other' : formData.templateType,
     title: formData.title.trim(),
     summary: formData.summary.trim(),
     budgetType: formData.budgetType,
-    serviceFee: formData.serviceFee,
-    bondAmount: formData.bondAmount,
-    depositTier: formData.bondAmount,
+    serviceFee: customMode ? 0 : formData.serviceFee,
+    bondAmount: customMode ? 0 : formData.bondAmount,
+    depositTier: customMode ? 0 : formData.bondAmount,
     minParticipants: formData.minParticipants,
     maxParticipants: formData.maxParticipants,
     location: normalizedLocation,
@@ -72,9 +73,9 @@ function buildCreateRequest(formData) {
     identityHint: customMode ? '' : formData.identityHint.trim(),
     meetingPointText: formData.meetingPointText.trim(),
     wechatId: customMode ? '' : formData.wechatId.trim(),
-    realNameRequired: formData.realNameRequired,
+    realNameRequired: customMode ? false : formData.realNameRequired,
     genderLimit: formData.genderLimit,
-    allowAfterParty: formData.allowAfterParty,
+    allowAfterParty: customMode ? false : formData.allowAfterParty,
     safetyTags: buildSafetyTags(formData),
     atmosphereTags: Array.isArray(formData.seedAtmosphereTags)
       ? formData.seedAtmosphereTags.filter(function(tag) {

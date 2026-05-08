@@ -215,14 +215,16 @@ Page({
       this.setData({
         customMode: true,
         selectedTemplateIndex: -1,
-        templateType: 'other',
+        templateType: '',
         title: '',
         summary: '',
         budgetType: 'aa',
-        serviceFee: 290,
-        bondAmount: 990,
+        serviceFee: 0,
+        bondAmount: 0,
         minParticipants: 2,
         maxParticipants: 4,
+        realNameRequired: false,
+        allowAfterParty: false,
         prefillHintText: '这里是自由组局，不先套模板，直接写你自己的想法。'
       })
       return
@@ -320,6 +322,14 @@ Page({
   },
 
   refreshPreviewText: function() {
+    if (this.data.customMode) {
+      this.setData({
+        budgetPreviewText: '自由设定，不套模板',
+        feePreviewText: '不强制服务费 / 保证金'
+      })
+      return
+    }
+
     this.setData({
       budgetPreviewText: formatUtil.formatBudgetRange(
         this.data.budgetType,

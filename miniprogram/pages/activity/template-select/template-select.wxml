@@ -17,8 +17,8 @@
     <view class="path-card secondary" bindtap="goToPath" data-mode="custom">
       <view class="path-copy">
         <text class="path-kicker">自由发起</text>
-        <text class="path-title">我知道要约什么</text>
-        <text class="path-desc">不用先选模板，直接把自己的想法发出去。</text>
+        <text class="path-title">我想自己写一局</text>
+        <text class="path-desc">不套模板，直接按自己的想法把局发出去。</text>
       </view>
       <text class="path-arrow">›</text>
     </view>

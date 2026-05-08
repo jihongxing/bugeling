@@ -349,15 +349,16 @@ exports.main = async (event) => {
       return errorResponse(creditCheck.code, creditCheck.message)
     }
 
-    const normalizedTemplateType = normalizeTemplateType(event.templateType)
-    const legacyMode = !event.templateType
+    const customMode = event && event.customMode === true
+    const normalizedTemplateType = customMode ? 'other' : normalizeTemplateType(event.templateType)
+    const legacyMode = !event.templateType && !customMode
     const normalizedBudgetType = BUDGET_TYPES.includes(event.budgetType) ? event.budgetType : 'aa'
     const normalizedBondAmount = isValidInteger(event.bondAmount)
       ? event.bondAmount
-      : (isValidInteger(event.depositTier) ? event.depositTier : BOND_AMOUNTS[0])
+      : (customMode ? 0 : (isValidInteger(event.depositTier) ? event.depositTier : BOND_AMOUNTS[0]))
     const normalizedServiceFee = isValidInteger(event.serviceFee)
       ? event.serviceFee
-      : SERVICE_FEES[1]
+      : (customMode ? 0 : SERVICE_FEES[1])
     const normalizedMinParticipants = Number.isInteger(event.minParticipants)
       ? event.minParticipants
       : Math.min(3, event.maxParticipants || 3)
@@ -390,16 +391,16 @@ exports.main = async (event) => {
         normalizedTemplateType,
         normalizedBudgetType,
         normalizedSafetyTags,
-        Boolean(event.allowAfterParty)
+        customMode ? false : Boolean(event.allowAfterParty)
       )
     const meetTime = new Date(event.meetTime)
     const signupDeadline = normalizeSignupDeadline(event.signupDeadline, event.meetTime)
     const riskLevel = computeRiskLevel(
       normalizedTemplateType,
       normalizedSafetyTags,
-      event.realNameRequired !== false,
+      customMode ? false : event.realNameRequired !== false,
       event.genderLimit || 'none',
-      Boolean(event.allowAfterParty)
+      customMode ? false : Boolean(event.allowAfterParty)
     )
     const finalTitle = legacyMode
       ? event.title
@@ -407,6 +408,9 @@ exports.main = async (event) => {
     const finalIdentityHint = legacyMode
       ? (typeof event.identityHint === 'string' ? event.identityHint : '')
       : (typeof event.identityHint === 'string' ? event.identityHint.trim() : '')
+
+    const finalRealNameRequired = customMode ? false : event.realNameRequired !== false
+    const finalAllowAfterParty = customMode ? false : Boolean(event.allowAfterParty)
 
     const securityContents = event.templateType
       ? [
@@ -465,10 +469,10 @@ exports.main = async (event) => {
         ? event.meetingPointText.trim()
         : event.location.name,
       wechatId: typeof event.wechatId === 'string' ? event.wechatId : '',
-      realNameRequired: event.realNameRequired !== false,
+      realNameRequired: finalRealNameRequired,
       genderLimit: event.genderLimit || 'none',
       allowLateMinutes: Number.isInteger(event.allowLateMinutes) ? event.allowLateMinutes : 10,
-      allowAfterParty: Boolean(event.allowAfterParty),
+      allowAfterParty: finalAllowAfterParty,
       safetyTags: normalizedSafetyTags,
       atmosphereTags: normalizedAtmosphereTags,
       securityCheckSkipped,

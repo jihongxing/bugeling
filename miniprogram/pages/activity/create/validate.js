@@ -2,9 +2,10 @@
 
 function validateForm(data) {
   var errors = []
-  var isLegacyMode = !data.templateType
+  var isCustomMode = data && data.customMode === true
+  var isLegacyMode = !isCustomMode && !data.templateType
 
-  if (!isLegacyMode && !data.templateType) {
+  if (!isCustomMode && !isLegacyMode && !data.templateType) {
     errors.push('请先选择一个组局模板')
   }
 
@@ -14,6 +15,22 @@ function validateForm(data) {
 
   if (!data.meetTime) {
     errors.push('请选择见面时间')
+  }
+
+  if (isCustomMode) {
+    if (!data.title || data.title.length < 2 || data.title.length > 50) {
+      errors.push('活动主题需 2-50 个字符')
+    }
+
+    if (!data.minParticipants || data.minParticipants < 2) {
+      errors.push('最低成局人数至少为 2 人')
+    }
+
+    if (!data.maxParticipants || data.maxParticipants < 2) {
+      errors.push('组局人数至少为 2 人')
+    }
+
+    return errors
   }
 
   if (isLegacyMode) {
