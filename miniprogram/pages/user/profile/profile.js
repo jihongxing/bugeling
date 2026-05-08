@@ -3,8 +3,47 @@ const { callFunction } = require('../../../utils/api')
 const {
   buildProfileDisplaySections,
   buildDefaultUserProfile,
-  saveCachedUserProfile
+  saveCachedUserProfile,
+  GENDER_OPTIONS,
+  AGE_BANDS,
+  GENDER_RELATIONS,
+  AGE_RELATIONS
 } = require('../../../utils/user-profile')
+
+var PUBLIC_GENDER_VALUES = ['secret', 'female', 'male', 'other']
+var PUBLIC_AGE_BAND_VALUES = ['secret', '18_24', '25_29', '30_34', '35_plus']
+var FILTER_GENDER_RELATION_VALUES = ['any', 'same_gender', 'opposite_gender']
+var FILTER_AGE_RELATION_VALUES = ['any', 'same_band', 'near_band', 'younger', 'older']
+
+function buildActionLabels(map, values) {
+  return values.map(function(value) {
+    return map[value] || value
+  })
+}
+
+function showActionSheetAsync(itemList) {
+  return new Promise(function(resolve, reject) {
+    wx.showActionSheet({
+      itemList: itemList,
+      success: function(res) {
+        resolve(res.tapIndex)
+      },
+      fail: function(err) {
+        reject(err)
+      }
+    })
+  })
+}
+
+function createValueEvent(value) {
+  return {
+    currentTarget: {
+      dataset: {
+        value: value
+      }
+    }
+  }
+}
 
 Page({
   data: {
@@ -45,6 +84,34 @@ Page({
       this.setData({ loading: false })
       wx.showToast({ title: '加载失败', icon: 'none' })
     }
+  },
+
+  async pickPublicGender() {
+    try {
+      var index = await showActionSheetAsync(buildActionLabels(GENDER_OPTIONS, PUBLIC_GENDER_VALUES))
+      this.onPublicGenderChange(createValueEvent(PUBLIC_GENDER_VALUES[index]))
+    } catch (err) {}
+  },
+
+  async pickPublicAgeBand() {
+    try {
+      var index = await showActionSheetAsync(buildActionLabels(AGE_BANDS, PUBLIC_AGE_BAND_VALUES))
+      this.onPublicAgeBandChange(createValueEvent(PUBLIC_AGE_BAND_VALUES[index]))
+    } catch (err) {}
+  },
+
+  async pickGenderRelation() {
+    try {
+      var index = await showActionSheetAsync(buildActionLabels(GENDER_RELATIONS, FILTER_GENDER_RELATION_VALUES))
+      this.onGenderRelationChange(createValueEvent(FILTER_GENDER_RELATION_VALUES[index]))
+    } catch (err) {}
+  },
+
+  async pickAgeRelation() {
+    try {
+      var index = await showActionSheetAsync(buildActionLabels(AGE_RELATIONS, FILTER_AGE_RELATION_VALUES))
+      this.onAgeRelationChange(createValueEvent(FILTER_AGE_RELATION_VALUES[index]))
+    } catch (err) {}
   },
 
   onPublicGenderChange(e) {

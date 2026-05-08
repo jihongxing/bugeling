@@ -44,17 +44,19 @@
       <text class="section-summary-sub">点击展开编辑</text>
     </view>
     <view wx:if="{{expandedSection === 'public'}}" class="section-body">
-      <view class="segmented">
-        <view class="segment {{profile.publicProfile.gender === 'secret' ? 'active' : ''}}" bindtap="onPublicGenderChange" data-value="secret">不公开</view>
-        <view class="segment {{profile.publicProfile.gender === 'female' ? 'active' : ''}}" bindtap="onPublicGenderChange" data-value="female">女生</view>
-        <view class="segment {{profile.publicProfile.gender === 'male' ? 'active' : ''}}" bindtap="onPublicGenderChange" data-value="male">男生</view>
+      <view class="field-item" bindtap="pickPublicGender">
+        <text class="field-label">性别</text>
+        <view class="field-value-row">
+          <text class="field-value">{{profileView.publicSection.genderText}}</text>
+          <text class="field-arrow">›</text>
+        </view>
       </view>
-      <view class="segmented">
-        <view class="segment {{profile.publicProfile.ageBand === 'secret' ? 'active' : ''}}" bindtap="onPublicAgeBandChange" data-value="secret">不公开年龄</view>
-        <view class="segment {{profile.publicProfile.ageBand === '18_24' ? 'active' : ''}}" bindtap="onPublicAgeBandChange" data-value="18_24">18-24</view>
-        <view class="segment {{profile.publicProfile.ageBand === '25_29' ? 'active' : ''}}" bindtap="onPublicAgeBandChange" data-value="25_29">25-29</view>
-        <view class="segment {{profile.publicProfile.ageBand === '30_34' ? 'active' : ''}}" bindtap="onPublicAgeBandChange" data-value="30_34">30-34</view>
-        <view class="segment {{profile.publicProfile.ageBand === '35_plus' ? 'active' : ''}}" bindtap="onPublicAgeBandChange" data-value="35_plus">35+</view>
+      <view class="field-item" bindtap="pickPublicAgeBand">
+        <text class="field-label">年龄</text>
+        <view class="field-value-row">
+          <text class="field-value">{{profileView.publicSection.ageBandText}}</text>
+          <text class="field-arrow">›</text>
+        </view>
       </view>
     </view>
   </view>
@@ -74,22 +76,18 @@
       <text class="section-summary-sub">点击展开编辑</text>
     </view>
     <view wx:if="{{expandedSection === 'filter'}}" class="section-body">
-      <view class="form-group">
-        <text class="form-label">更想看谁</text>
-        <view class="segmented">
-          <view class="segment {{profile.filterPreferences.genderRelation === 'any' ? 'active' : ''}}" bindtap="onGenderRelationChange" data-value="any">都行</view>
-          <view class="segment {{profile.filterPreferences.genderRelation === 'same_gender' ? 'active' : ''}}" bindtap="onGenderRelationChange" data-value="same_gender">同类优先</view>
-          <view class="segment {{profile.filterPreferences.genderRelation === 'opposite_gender' ? 'active' : ''}}" bindtap="onGenderRelationChange" data-value="opposite_gender">异性优先</view>
+      <view class="field-item" bindtap="pickGenderRelation">
+        <text class="field-label">更想看谁</text>
+        <view class="field-value-row">
+          <text class="field-value">{{profileView.filterSection.genderRelationText}}</text>
+          <text class="field-arrow">›</text>
         </view>
       </view>
-      <view class="form-group">
-        <text class="form-label">年龄偏好</text>
-        <view class="segmented">
-          <view class="segment {{profile.filterPreferences.ageRelation === 'any' ? 'active' : ''}}" bindtap="onAgeRelationChange" data-value="any">不限</view>
-          <view class="segment {{profile.filterPreferences.ageRelation === 'same_band' ? 'active' : ''}}" bindtap="onAgeRelationChange" data-value="same_band">同龄</view>
-          <view class="segment {{profile.filterPreferences.ageRelation === 'near_band' ? 'active' : ''}}" bindtap="onAgeRelationChange" data-value="near_band">相近</view>
-          <view class="segment {{profile.filterPreferences.ageRelation === 'younger' ? 'active' : ''}}" bindtap="onAgeRelationChange" data-value="younger">偏年轻</view>
-          <view class="segment {{profile.filterPreferences.ageRelation === 'older' ? 'active' : ''}}" bindtap="onAgeRelationChange" data-value="older">偏年长</view>
+      <view class="field-item" bindtap="pickAgeRelation">
+        <text class="field-label">年龄偏好</text>
+        <view class="field-value-row">
+          <text class="field-value">{{profileView.filterSection.ageRelationText}}</text>
+          <text class="field-arrow">›</text>
         </view>
       </view>
       <view class="toggle-row">
