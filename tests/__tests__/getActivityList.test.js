@@ -17,6 +17,10 @@ jest.mock('../../scripts/cloudfunction-shared-template/credit', () => ({
   getCredit: jest.fn()
 }))
 
+jest.mock('../../scripts/cloudfunction-shared-template/userProfile', () => ({
+  matchesPublicProfile: jest.fn(() => true)
+}))
+
 jest.mock('../../scripts/cloudfunction-shared-template/response', () => ({
   successResponse: (data) => ({ code: 0, message: 'success', data }),
   errorResponse: (code, message) => ({ code, message, data: null })
@@ -24,6 +28,7 @@ jest.mock('../../scripts/cloudfunction-shared-template/response', () => ({
 
 const cloud = require('wx-server-sdk')
 const { getCredit } = require('../../scripts/cloudfunction-shared-template/credit')
+const { matchesPublicProfile } = require('../../scripts/cloudfunction-shared-template/userProfile')
 const {
   main,
   validateParams,
@@ -135,6 +140,25 @@ describe('getActivityList', () => {
       expect(result.parsed.pageSize).toBe(10)
     })
 
+    test('supports profile filter parameters', () => {
+      const result = validateParams({
+        latitude: 39.99,
+        longitude: 116.19,
+        userGender: 'female',
+        genderRelation: 'same_gender',
+        ageBand: '25_29',
+        ageRelation: 'near_band',
+        realNameRequired: true
+      })
+
+      expect(result.valid).toBe(true)
+      expect(result.parsed.userGender).toBe('female')
+      expect(result.parsed.genderRelation).toBe('same_gender')
+      expect(result.parsed.ageBand).toBe('25_29')
+      expect(result.parsed.ageRelation).toBe('near_band')
+      expect(result.parsed.realNameRequired).toBe(true)
+    })
+
     test('missing latitude returns error', () => {
       const result = validateParams({ longitude: 116.19 })
       expect(result.valid).toBe(false)
@@ -196,6 +220,10 @@ describe('getActivityList', () => {
         currentParticipants: 2,
         location: { name: '香山公园', latitude: 39.99, longitude: 116.19 },
         distance: 1500,
+        initiatorGender: 'secret',
+        initiatorAgeBand: 'secret',
+        initiatorProfileVisibility: 'secret',
+        initiatorProfileSummary: '不公开',
         meetTime: '2025-01-01T10:00:00Z',
         initiatorCredit: 90,
         status: 'pending'
@@ -289,6 +317,35 @@ describe('getActivityList', () => {
       expect(result.data.list[0].initiatorCredit).toBe(90)
       expect(result.data.list[1].activityId).toBe('act-002')
       expect(db.collection).toHaveBeenCalled()
+    })
+
+    test('passes profile-based filters through to shared matcher', async () => {
+      const activities = [sampleActivity()]
+      let callCount = 0
+      setupDbCollectionMock({
+        aggregateFactory: () => {
+          callCount++
+          const chain = createAggregateChain()
+          if (callCount === 1) {
+            chain.end.mockResolvedValue({ list: [{ total: 1 }] })
+          } else {
+            chain.end.mockResolvedValue({ list: activities })
+          }
+          return chain
+        }
+      })
+
+      await main({
+        latitude: 39.99,
+        longitude: 116.19,
+        userGender: 'female',
+        genderRelation: 'same_gender',
+        ageBand: '25_29',
+        ageRelation: 'same_band',
+        realNameRequired: true
+      }, {})
+
+      expect(matchesPublicProfile).toHaveBeenCalled()
     })
 
     test('lightweight mode skips credit lookup and total count', async () => {

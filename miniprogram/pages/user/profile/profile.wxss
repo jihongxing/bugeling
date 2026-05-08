@@ -58,6 +58,15 @@
   animation: cardRiseIn var(--motion-slow) var(--ease-standard);
 }
 
+.section-card {
+  background: var(--color-card);
+  border-radius: 26rpx;
+  padding: 30rpx 28rpx;
+  border: 1rpx solid var(--color-border-soft);
+  margin-bottom: 24rpx;
+  box-shadow: 0 12rpx 28rpx rgba(25, 28, 40, 0.06);
+}
+
 .card-head {
   margin-bottom: 18rpx;
 }
@@ -199,6 +208,13 @@
   color: #B9441D;
   font-size: 32rpx;
   font-weight: 700;
+}
+
+.section-note {
+  margin-top: 14rpx;
+  font-size: 22rpx;
+  line-height: 1.6;
+  color: var(--color-text-secondary);
 }
 
 @media (prefers-color-scheme: dark) {

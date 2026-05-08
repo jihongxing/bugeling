@@ -17,7 +17,12 @@ jest.mock('../../miniprogram/utils/location', function () {
     },
     hasMeaningfulLocationName: function () {
       return mockHasMeaningfulLocationName.apply(null, arguments)
-    }
+    },
+    calculateDistance: jest.fn(function (lat1, lng1, lat2, lng2) {
+      var dx = lat1 - lat2
+      var dy = lng1 - lng2
+      return Math.sqrt(dx * dx + dy * dy)
+    })
   }
 })
 
@@ -95,7 +100,7 @@ describe('index page startup behavior', function () {
     }
   })
 
-  test('onLoad seeds fallback location immediately and loads activities without requesting device location', function () {
+  test('onLoad seeds Guangzhou fallback recommendation immediately and loads activities without requesting device location', function () {
     mockGetCachedLocation.mockReturnValue(null)
 
     var page = createPageInstance()
@@ -103,11 +108,14 @@ describe('index page startup behavior', function () {
 
     page.onLoad.call(page)
 
-    expect(page.data.latitude).toBe(31.2304)
-    expect(page.data.longitude).toBe(121.4737)
-    expect(page.data.locationName).toBe('未定位（先看默认推荐）')
+    expect(page.data.latitude).toBe(23.1291)
+    expect(page.data.longitude).toBe(113.2644)
+    expect(page.data.locationName).toBe('未定位，先看广州推荐')
     expect(page.data.usingFallbackLocation).toBe(true)
-    expect(page.loadActivities).not.toHaveBeenCalled()
+    expect(page.loadActivities).toHaveBeenCalledWith({
+      silentOnTimeout: true,
+      lightweight: true
+    })
     expect(mockGetCurrentLocation).not.toHaveBeenCalled()
   })
 
@@ -133,7 +141,28 @@ describe('index page startup behavior', function () {
     })
   })
 
-  test('initLocation falls back silently on location timeout', async function () {
+  test('onLoad maps cached coordinates to nearest seed city when city name is unavailable', function () {
+    mockGetCachedLocation.mockReturnValue({
+      latitude: 39.9,
+      longitude: 116.4
+    })
+
+    var page = createPageInstance()
+    page.loadActivities = jest.fn()
+
+    page.onLoad.call(page)
+
+    expect(page.data.latitude).toBe(39.9)
+    expect(page.data.longitude).toBe(116.4)
+    expect(page.data.locationName).toBe('未定位，先看北京推荐')
+    expect(page.data.usingFallbackLocation).toBe(false)
+    expect(page.loadActivities).toHaveBeenCalledWith({
+      silentOnTimeout: true,
+      lightweight: true
+    })
+  })
+
+  test('initLocation falls back to Guangzhou recommendation silently on location timeout', async function () {
     mockGetCurrentLocation.mockRejectedValue({
       code: 'LOCATION_TIMEOUT',
       message: '定位超时，请重试'
@@ -145,13 +174,35 @@ describe('index page startup behavior', function () {
     page.initLocation.call(page)
     await flushPromises()
 
-    expect(page.data.latitude).toBe(31.2304)
-    expect(page.data.longitude).toBe(121.4737)
-    expect(page.data.locationName).toBe('未定位（先看默认推荐）')
+    expect(page.data.latitude).toBe(23.1291)
+    expect(page.data.longitude).toBe(113.2644)
+    expect(page.data.locationName).toBe('未定位，先看广州推荐')
     expect(page.data.usingFallbackLocation).toBe(true)
-    expect(page.loadActivities).not.toHaveBeenCalled()
+    expect(page.loadActivities).toHaveBeenCalledWith({
+      silentOnTimeout: true,
+      lightweight: true
+    })
     expect(global.wx.stopPullDownRefresh).toHaveBeenCalled()
     expect(global.wx.showToast).not.toHaveBeenCalled()
+  })
+
+  test('initLocation maps bare coordinates to nearest seed city before loading activities', async function () {
+    mockGetCurrentLocation.mockResolvedValue({
+      latitude: 30.67,
+      longitude: 104.06
+    })
+
+    var page = createPageInstance()
+    page.loadActivities = jest.fn()
+
+    page.initLocation.call(page)
+    await flushPromises()
+
+    expect(page.data.latitude).toBe(30.67)
+    expect(page.data.longitude).toBe(104.06)
+    expect(page.data.locationName).toBe('未定位，先看成都推荐')
+    expect(page.data.usingFallbackLocation).toBe(false)
+    expect(page.loadActivities).toHaveBeenCalled()
   })
 
   test('refreshLocation only refreshes activities when coordinates are already available', function () {

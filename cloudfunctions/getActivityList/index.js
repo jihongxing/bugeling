@@ -6,6 +6,7 @@ const { getDb, COLLECTIONS } = require('./_shared/db')
 const { getCredit } = require('./_shared/credit')
 const { haversineDistance } = require('./_shared/distance')
 const { successResponse, errorResponse } = require('./_shared/response')
+const { matchesPublicProfile } = require('../../scripts/cloudfunction-shared-template/userProfile')
 const activityStatus = require('./_shared/activityStatus')
 
 const TEMPLATE_TYPES = [
@@ -23,6 +24,8 @@ const TEMPLATE_TYPES = [
 ]
 const BUDGET_TYPES = ['free', 'under_20', 'under_50', 'aa']
 const GENDER_LIMITS = ['none', 'female_only']
+const AGE_BANDS = ['secret', '18_24', '25_29', '30_34', '35_plus']
+const AGE_RELATIONS = ['any', 'same_band', 'near_band', 'younger', 'older']
 const GEO_NEAR_COUNT_LIMIT = 1000
 const GEO_NEAR_OVERFLOW = 1
 const GEO_FALLBACK_BATCH_SIZE = 100
@@ -65,7 +68,7 @@ function isMissingGeoIndexError(err) {
 }
 
 function validateParams(params) {
-  const { latitude, longitude, radius, page, pageSize, budgetType, templateType, genderLimit, lightweight } = params || {}
+  const { latitude, longitude, radius, page, pageSize, budgetType, templateType, genderLimit, ageBand, ageRelation, userGender, genderRelation, lightweight } = params || {}
 
   if (typeof latitude !== 'number' || isNaN(latitude)) {
     return { valid: false, error: 'latitude 为必填数值参数' }
@@ -98,6 +101,18 @@ function validateParams(params) {
   if (genderLimit && !GENDER_LIMITS.includes(genderLimit)) {
     return { valid: false, error: 'genderLimit 不合法' }
   }
+  if (ageBand && !AGE_BANDS.includes(ageBand)) {
+    return { valid: false, error: 'ageBand 不合法' }
+  }
+  if (ageRelation && !AGE_RELATIONS.includes(ageRelation)) {
+    return { valid: false, error: 'ageRelation 不合法' }
+  }
+  if (userGender && !['secret', 'female', 'male', 'other'].includes(userGender)) {
+    return { valid: false, error: 'userGender 不合法' }
+  }
+  if (genderRelation && !['any', 'same_gender', 'opposite_gender'].includes(genderRelation)) {
+    return { valid: false, error: 'genderRelation 不合法' }
+  }
 
   return {
     valid: true,
@@ -108,7 +123,7 @@ function validateParams(params) {
       page: parsedPage,
       pageSize: parsedPageSize,
       lightweight: lightweight === true
-    }, budgetType ? { budgetType } : {}, templateType ? { templateType } : {}, genderLimit ? { genderLimit } : {}, params && params.realNameRequired === true ? { realNameRequired: true } : {}, Array.isArray(params && params.safetyTags) && params.safetyTags.length > 0 ? { safetyTags: params.safetyTags } : {})
+    }, budgetType ? { budgetType } : {}, templateType ? { templateType } : {}, genderLimit ? { genderLimit } : {}, ageBand ? { ageBand } : {}, ageRelation ? { ageRelation } : {}, userGender ? { userGender } : {}, genderRelation ? { genderRelation } : {}, params && params.realNameRequired === true ? { realNameRequired: true } : {}, Array.isArray(params && params.safetyTags) && params.safetyTags.length > 0 ? { safetyTags: params.safetyTags } : {})
   }
 }
 
@@ -174,7 +189,18 @@ function matchesFilters(activity, filters) {
   if (filters.genderLimit && (activity.genderLimit || 'none') !== filters.genderLimit) {
     return false
   }
-  if (filters.realNameRequired && activity.realNameRequired !== true) {
+  if (!matchesPublicProfile(activity, {
+    publicProfile: {
+      gender: filters.userGender || 'secret',
+      ageBand: filters.ageBand || 'secret'
+    },
+    filterPreferences: {
+      genderRelation: filters.genderRelation || 'any',
+      ageRelation: filters.ageRelation || 'any',
+      requireRealName: filters.realNameRequired === true
+    },
+    privateProfile: {}
+  })) {
     return false
   }
   if (filters.safetyTags && filters.safetyTags.length > 0) {
@@ -267,6 +293,10 @@ function formatActivity(activity, creditMap) {
     initiatorCredit: hasInitiatorCredit
       ? creditMap[activity.initiatorId]
       : null,
+    initiatorGender: activity.initiatorGender || 'secret',
+    initiatorAgeBand: activity.initiatorAgeBand || 'secret',
+    initiatorProfileVisibility: activity.initiatorProfileVisibility || 'secret',
+    initiatorProfileSummary: activity.initiatorProfileSummary || '不公开',
     status: activity.status
   }
 }
@@ -288,12 +318,14 @@ function enrichActivity(activity) {
     signupDeadline: activity.signupDeadline || null,
     realNameRequired: activity.realNameRequired === true,
     genderLimit: activity.genderLimit || 'none',
+    ageBand: activity.ageBand || 'secret',
     safetyTags: Array.isArray(activity.safetyTags) ? activity.safetyTags : [],
     atmosphereTags: Array.isArray(activity.atmosphereTags) ? activity.atmosphereTags : [],
     riskLevel: activity.riskLevel || 'low'
   }
   return Object.assign({}, activity, enriched, {
     status: activity.status,
+    ageBand: activity.ageBand || 'secret',
     displayStatus: activityStatus.getDisplayStatus(activity.status),
     sortScore: scoreActivity(Object.assign({}, activity, enriched))
   })

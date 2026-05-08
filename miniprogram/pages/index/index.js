@@ -2,14 +2,108 @@
 var api = require('../../utils/api')
 var location = require('../../utils/location')
 var activityFeedAdapter = require('../../components/activity-card/activity-feed-adapter')
-var templateUtil = require('../../utils/activity-templates')
+var userProfileUtil = require('../../utils/user-profile')
 
 var ACTIVITY_LIST_TIMEOUT_MS = 8000
 var REFRESH_THROTTLE_MS = 2000
-var DEFAULT_FALLBACK_LOCATION = {
-  latitude: 31.2304,
-  longitude: 121.4737,
-  name: '未定位（先看默认推荐）'
+var FALLBACK_COORDS = {
+  latitude: 23.1291,
+  longitude: 113.2644
+}
+var FALLBACK_DISPLAY_NAME = '未定位，先看广州推荐'
+var SEED_CITIES = [
+  { name: '广州', latitude: 23.1291, longitude: 113.2644 },
+  { name: '深圳', latitude: 22.5431, longitude: 114.0579 },
+  { name: '上海', latitude: 31.2304, longitude: 121.4737 },
+  { name: '北京', latitude: 39.9042, longitude: 116.4074 },
+  { name: '杭州', latitude: 30.2741, longitude: 120.1551 },
+  { name: '成都', latitude: 30.5728, longitude: 104.0668 },
+  { name: '武汉', latitude: 30.5928, longitude: 114.3055 },
+  { name: '南京', latitude: 32.0603, longitude: 118.7969 },
+  { name: '西安', latitude: 34.3416, longitude: 108.9398 },
+  { name: '重庆', latitude: 29.5630, longitude: 106.5516 },
+  { name: '长沙', latitude: 28.2282, longitude: 112.9388 },
+  { name: '郑州', latitude: 34.7473, longitude: 113.6249 },
+  { name: '苏州', latitude: 31.2989, longitude: 120.5853 }
+]
+
+function normalizeText(value) {
+  if (typeof value !== 'string') return ''
+  return value.replace(/\s+/g, ' ').trim()
+}
+
+function pickFirstNonEmpty() {
+  var i = 0
+  for (i = 0; i < arguments.length; i++) {
+    var text = normalizeText(arguments[i])
+    if (text) return text
+  }
+  return ''
+}
+
+function buildFixedFallbackLocation() {
+  return {
+    latitude: FALLBACK_COORDS.latitude,
+    longitude: FALLBACK_COORDS.longitude,
+    name: FALLBACK_DISPLAY_NAME,
+    isFallback: true
+  }
+}
+
+function buildSeedRecommendationName(cityName) {
+  var safeName = normalizeText(cityName)
+  if (!safeName) return FALLBACK_DISPLAY_NAME
+  return '未定位，先看' + safeName + '推荐'
+}
+
+function getNearestSeedCity(latitude, longitude) {
+  var nearestCity = null
+  var minDistance = Infinity
+
+  SEED_CITIES.forEach(function(city) {
+    var distance = location.calculateDistance(
+      latitude,
+      longitude,
+      city.latitude,
+      city.longitude
+    )
+
+    if (distance < minDistance) {
+      minDistance = distance
+      nearestCity = city
+    }
+  })
+
+  return nearestCity
+}
+
+function buildDisplayLocation(rawLocation) {
+  if (!rawLocation || !hasValidCoordinates(rawLocation.latitude, rawLocation.longitude)) {
+    return buildFixedFallbackLocation()
+  }
+
+  var resolvedName = ''
+  if (location.hasMeaningfulLocationName && location.hasMeaningfulLocationName(rawLocation)) {
+    resolvedName = normalizeText(rawLocation.name)
+  }
+
+  resolvedName = resolvedName || pickFirstNonEmpty(rawLocation.district, rawLocation.city)
+  if (resolvedName) {
+    return {
+      latitude: rawLocation.latitude,
+      longitude: rawLocation.longitude,
+      name: resolvedName,
+      isFallback: false
+    }
+  }
+
+  var nearestCity = getNearestSeedCity(rawLocation.latitude, rawLocation.longitude)
+  return {
+    latitude: rawLocation.latitude,
+    longitude: rawLocation.longitude,
+    name: buildSeedRecommendationName(nearestCity && nearestCity.name),
+    isFallback: false
+  }
 }
 
 function traceLog() {
@@ -61,13 +155,13 @@ function isTimeoutError(err) {
 }
 
 function buildHeroSubtitle(hasActivities) {
-  if (hasActivities) return '先看看附近的小局，也可以顺手发一个同类的'
-  return '选个模板，补下时间地点，3 步就能发出去'
+  if (hasActivities) return '先看看附近现在有人在约什么'
+  return '先看附近有没有新局，再决定要不要出门'
 }
 
 function buildFeedSubtitle(summary, loading) {
   if (loading && (!summary || !summary.total)) return '正在看看附近有没有新局'
-  if (!summary || !summary.total) return '附近暂时还没有人发，你可以做第一个'
+  if (!summary || !summary.total) return '附近暂时还没有新局'
 
   if (summary.almostReadyCount > 0 && summary.lowBudgetCount > 0) {
     return '有 ' + summary.almostReadyCount + ' 个快成了，' + summary.lowBudgetCount + ' 个花得不多'
@@ -88,58 +182,48 @@ function buildFeedSubtitle(summary, loading) {
   return '先按距离给你看看附近正在约的几个小局'
 }
 
-function buildTemplateCards(templateTypes) {
-  return templateUtil.mapTemplatesByTypes(templateTypes).map(function(item) {
-    return {
-      type: item.type,
-      label: item.label,
-      desc: item.desc
-    }
-  })
+function getCachedUserProfile() {
+  return userProfileUtil.loadCachedUserProfile()
 }
 
-function buildOfficialExamples() {
-  return templateUtil.OFFICIAL_EXAMPLE_SEEDS.map(function(item) {
-    return {
-      id: item.id,
-      badge: item.badge,
-      title: item.title,
-      summary: item.summary,
-      templateType: item.templateType,
-      createUrl: templateUtil.buildCreateUrlFromSeed(item.templateType, {
-        title: item.title,
-        summary: item.summary
-      })
-    }
+function getActivityFilterParams() {
+  var profile = getCachedUserProfile()
+  return {
+    ageBand: profile.publicProfile.ageBand || 'secret',
+    ageRelation: profile.filterPreferences.ageRelation || 'any',
+    realNameRequired: profile.filterPreferences.requireRealName === true,
+    userGender: profile.publicProfile.gender || 'secret',
+    genderRelation: profile.filterPreferences.genderRelation || 'any'
+  }
+}
+
+function matchesLocalProfilePreference(activity, params) {
+  return userProfileUtil.matchesPublicProfile({
+    initiatorGender: activity && activity.initiatorGender ? activity.initiatorGender : 'secret',
+    initiatorAgeBand: activity && activity.initiatorAgeBand ? activity.initiatorAgeBand : 'secret',
+    realNameRequired: activity && activity.realNameRequired === true
+  }, {
+    publicProfile: {
+      gender: params && params.userGender ? params.userGender : 'secret',
+      ageBand: params && params.ageBand ? params.ageBand : 'secret'
+    },
+    filterPreferences: {
+      genderRelation: params && params.genderRelation ? params.genderRelation : 'any',
+      ageRelation: params && params.ageRelation ? params.ageRelation : 'any',
+      requireRealName: params && params.realNameRequired === true
+    },
+    privateProfile: {}
   })
 }
 
 function getStartupLocation() {
-  var cached = location.getCachedLocation()
-  if (cached && hasValidCoordinates(cached.latitude, cached.longitude)) {
-    return {
-      latitude: cached.latitude,
-      longitude: cached.longitude,
-      name: cached.name || '当前位置',
-      isFallback: false
-    }
-  }
-
-  return Object.assign({ isFallback: true }, DEFAULT_FALLBACK_LOCATION)
+  return buildDisplayLocation(location.getCachedLocation())
 }
 
 function hasResolvedLocationName(name) {
   return typeof name === 'string' &&
     name.trim() !== '' &&
-    name !== '当前位置' &&
-    name !== DEFAULT_FALLBACK_LOCATION.name
-}
-
-function safeReportEvent(eventName, data) {
-  if (!eventName || typeof wx === 'undefined' || !wx || typeof wx.reportEvent !== 'function') return
-  try {
-    wx.reportEvent(eventName, data || {})
-  } catch (err) {}
+    name !== '当前位置'
 }
 
 Page({
@@ -148,7 +232,7 @@ Page({
     latitude: 0,
     longitude: 0,
     usingFallbackLocation: true,
-    heroTitle: '附近还没人先开口的话，你可以先发一个',
+    heroTitle: '先看看附近现在有没有局',
     heroSubtitle: buildHeroSubtitle(false),
     rawActivityList: [],
     activityList: [],
@@ -158,26 +242,18 @@ Page({
       almostReadyCount: 0,
       readyCount: 0
     },
-    feedTitle: '附近暂时还没有人发，你可以做第一个',
-    feedSubtitle: '先选方向，时间地点稍后再补',
-    primaryTemplateList: buildTemplateCards(templateUtil.HOME_PRIMARY_TEMPLATE_TYPES),
-    moreTemplateList: buildTemplateCards(templateUtil.HOME_MORE_TEMPLATE_TYPES),
-    officialExamples: buildOfficialExamples(),
+    feedTitle: '附近暂时还没有人发',
+    feedSubtitle: '刷新一下，看看附近有没有新局',
     page: 1,
     hasMore: true,
     loading: false,
     isEmpty: false,
-    showMoreTemplates: false,
     lastRefreshAt: 0
   },
 
   onLoad: function() {
     var self = this
     traceLog('[HOME_TRACE] onLoad start')
-    safeReportEvent('home_template_module_exposure', {
-      primary_count: this.data.primaryTemplateList.length,
-      example_count: this.data.officialExamples.length
-    })
     var startupLocation = getStartupLocation()
     traceLog('[HOME_TRACE] startup location chosen', startupLocation)
     this.setData({
@@ -186,12 +262,9 @@ Page({
       locationName: startupLocation.name,
       usingFallbackLocation: startupLocation.isFallback === true
     }, function() {
-      if (startupLocation.isFallback) {
-        traceLog('[HOME_TRACE] onLoad fallback location set, skip nearby query')
-        return
-      }
-
-      traceLog('[HOME_TRACE] onLoad after setData, calling loadActivities')
+      traceLog('[HOME_TRACE] onLoad after setData, calling loadActivities', {
+        usingFallbackLocation: startupLocation.isFallback === true
+      })
       self.loadActivities({ silentOnTimeout: true, lightweight: true })
     })
   },
@@ -204,7 +277,7 @@ Page({
       hasMore: true,
       feedSubtitle: '正在刷新附近组局信息',
       heroSubtitle: buildHeroSubtitle(this.data.activityList.length > 0),
-      feedTitle: this.data.activityList.length > 0 ? '附近已经有人在发' : '附近暂时还没有人发，你可以做第一个'
+      feedTitle: this.data.activityList.length > 0 ? '附近已经有人在发' : '附近暂时还没有人发'
     })
     this.refreshLocation()
   },
@@ -218,24 +291,27 @@ Page({
   initLocation: function() {
     var self = this
     location.getCurrentLocation().then(function(res) {
+      var displayLocation = buildDisplayLocation(res)
       self.setData({
-        latitude: res.latitude,
-        longitude: res.longitude,
-        locationName: res.name || '当前位置',
-        usingFallbackLocation: false
+        latitude: displayLocation.latitude,
+        longitude: displayLocation.longitude,
+        locationName: displayLocation.name,
+        usingFallbackLocation: displayLocation.isFallback === true
       })
       self.loadActivities()
     }).catch(function(err) {
+      var fallbackLocation = buildFixedFallbackLocation()
       self.setData({
-        latitude: DEFAULT_FALLBACK_LOCATION.latitude,
-        longitude: DEFAULT_FALLBACK_LOCATION.longitude,
-        locationName: DEFAULT_FALLBACK_LOCATION.name,
+        latitude: fallbackLocation.latitude,
+        longitude: fallbackLocation.longitude,
+        locationName: fallbackLocation.name,
         usingFallbackLocation: true
       })
+      self.loadActivities({ silentOnTimeout: true, lightweight: true })
       wx.stopPullDownRefresh()
 
       if (err && (String(err.code).toUpperCase() === 'AUTH_DENIED' || String(err.code).toUpperCase() === 'LOCATION_PERMISSION_DENIED')) {
-        wx.showToast({ title: '定位权限未开启，先按默认位置展示', icon: 'none' })
+        wx.showToast({ title: '未开启定位，先看广州推荐', icon: 'none' })
         return
       }
 
@@ -243,7 +319,7 @@ Page({
         return
       }
 
-      wx.showToast({ title: err.message || '定位失败，先按默认位置展示', icon: 'none' })
+      wx.showToast({ title: err.message || '定位失败，先看广州推荐', icon: 'none' })
     })
   },
 
@@ -266,7 +342,7 @@ Page({
       lastRefreshAt: now,
       feedSubtitle: '正在刷新附近组局信息',
       heroSubtitle: buildHeroSubtitle(this.data.activityList.length > 0),
-      feedTitle: this.data.activityList.length > 0 ? '附近已经有人在发' : '附近暂时还没有人发，你可以做第一个'
+      feedTitle: this.data.activityList.length > 0 ? '附近已经有人在发' : '附近暂时还没有人发'
     })
 
     if (this.data.usingFallbackLocation || !hasValidCoordinates(this.data.latitude, this.data.longitude)) {
@@ -297,6 +373,7 @@ Page({
     var preserveOnFailure = options.preserveOnFailure !== false
     var silentOnTimeout = options.silentOnTimeout === true
     var lightweight = options.lightweight === true
+    var profileFilter = getActivityFilterParams()
     if (self.data.loading) return
     traceLog('[HOME_TRACE] loadActivities start', {
       page: self.data.page,
@@ -313,7 +390,12 @@ Page({
       longitude: self.data.longitude,
       page: self.data.page,
       pageSize: 20,
-      lightweight: lightweight
+      lightweight: lightweight,
+      ageBand: profileFilter.ageBand,
+      ageRelation: profileFilter.ageRelation,
+      realNameRequired: profileFilter.realNameRequired,
+      userGender: profileFilter.userGender,
+      genderRelation: profileFilter.genderRelation
     }), ACTIVITY_LIST_TIMEOUT_MS).then(function(result) {
       traceLog('[HOME_TRACE] loadActivities success', {
         code: result && result.code,
@@ -326,7 +408,9 @@ Page({
         var rawList = self.data.page === 1
           ? incomingList
           : self.data.rawActivityList.concat(incomingList)
-        var list = activityFeedAdapter.normalizeActivityList(rawList)
+        var list = activityFeedAdapter.normalizeActivityList(rawList).filter(function(activity) {
+          return matchesLocalProfilePreference(activity, profileFilter)
+        })
         var feedSummary = activityFeedAdapter.summarizeActivities(list)
         var hasActivities = list.length > 0
 
@@ -335,7 +419,7 @@ Page({
           activityList: list,
           feedSummary: feedSummary,
           heroSubtitle: buildHeroSubtitle(hasActivities),
-          feedTitle: hasActivities ? '附近已经有人在发' : '附近暂时还没有人发，你可以做第一个',
+          feedTitle: hasActivities ? '附近已经有人在发' : '附近暂时还没有人发',
           feedSubtitle: buildFeedSubtitle(feedSummary, false),
           hasMore: Boolean(result.data.hasMore) && incomingList.length > 0,
           isEmpty: !hasActivities,
@@ -350,7 +434,7 @@ Page({
           heroSubtitle: buildHeroSubtitle(self.data.activityList.length > 0),
           feedTitle: self.data.activityList.length > 0
             ? '附近已经有人在发'
-            : '附近暂时还没有人发，你可以做第一个',
+            : '附近暂时还没有人发',
           feedSubtitle: buildFeedSubtitle(self.data.feedSummary, false)
         })
         wx.showToast({ title: '加载失败，请重试', icon: 'none' })
@@ -372,7 +456,7 @@ Page({
         heroSubtitle: buildHeroSubtitle(self.data.activityList.length > 0),
         feedTitle: self.data.activityList.length > 0
           ? '附近已经有人在发'
-          : '附近暂时还没有人发，你可以做第一个',
+          : '附近暂时还没有人发',
         feedSubtitle: keepExistingList
           ? '网络有点慢，先展示上次结果'
           : (isTimeout ? '网络有点慢，刷新一下再试' : buildFeedSubtitle(self.data.feedSummary, false))
@@ -385,37 +469,6 @@ Page({
         title: isTimeout ? '刷新超时，请重试' : '加载失败，请重试',
         icon: 'none'
       })
-    })
-  },
-
-  createByTemplate: function(e) {
-    var templateType = e.currentTarget.dataset.type
-    if (!templateType) return
-
-    safeReportEvent('home_template_click', {
-      template_type: templateType
-    })
-
-    wx.navigateTo({
-      url: '/pages/activity/create/create?templateType=' + encodeURIComponent(templateType)
-    })
-  },
-
-  createByExample: function(e) {
-    var url = e.currentTarget.dataset.url
-    var templateType = e.currentTarget.dataset.type
-    if (!url) return
-
-    safeReportEvent('home_example_click', {
-      template_type: templateType || 'unknown'
-    })
-
-    wx.navigateTo({ url: url })
-  },
-
-  toggleMoreTemplates: function() {
-    this.setData({
-      showMoreTemplates: !this.data.showMoreTemplates
     })
   },
 

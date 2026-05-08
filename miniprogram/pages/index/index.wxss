@@ -137,7 +137,6 @@
   font-weight: 600;
 }
 
-.template-section,
 .feed-section {
   background: var(--color-card);
   border-radius: 26rpx;
@@ -146,23 +145,6 @@
   box-shadow: 0 12rpx 28rpx rgba(25, 28, 40, 0.06);
   margin-bottom: 24rpx;
   animation: cardRiseIn var(--motion-slow) var(--ease-standard);
-}
-
-.section-head {
-  display: flex;
-  flex-direction: column;
-  gap: 8rpx;
-  margin-bottom: 20rpx;
-}
-
-.section-title {
-  font-size: 36rpx;
-  color: var(--color-secondary);
-  font-weight: 700;
-}
-
-.section-title.small {
-  font-size: 30rpx;
 }
 
 .section-mark {
@@ -174,158 +156,6 @@
   border-radius: 999rpx;
   border: 1rpx solid var(--accent-cool-border-soft);
   background: var(--accent-cool-bg-soft);
-}
-
-.section-desc {
-  font-size: var(--font-size-sm);
-  color: var(--color-text-secondary);
-}
-
-.template-grid {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-}
-
-.template-card {
-  width: 48.8%;
-  background: var(--color-bg-elevated);
-  border-radius: 22rpx;
-  padding: 20rpx;
-  border: 1rpx solid var(--color-border-soft);
-  box-sizing: border-box;
-  margin-bottom: 14rpx;
-  transition: transform var(--motion-fast) var(--ease-standard), border-color var(--motion-fast) var(--ease-standard), box-shadow var(--motion-fast) var(--ease-standard);
-}
-
-.template-card:active {
-  border-color: var(--accent-warm-border-strong);
-  transform: translateY(1rpx);
-}
-
-.template-card:nth-child(1),
-.template-card:nth-child(2) {
-  animation: fadeInSoft 280ms var(--ease-standard);
-}
-
-.template-card:nth-child(3),
-.template-card:nth-child(4) {
-  animation: fadeInSoft 360ms var(--ease-standard);
-}
-
-.template-card:nth-child(5),
-.template-card:nth-child(6) {
-  animation: fadeInSoft 440ms var(--ease-standard);
-}
-
-.template-card.secondary {
-  background: var(--color-bg-elevated);
-}
-
-.template-label {
-  display: block;
-  font-size: 28rpx;
-  color: var(--color-secondary);
-  font-weight: 700;
-  margin-bottom: 8rpx;
-}
-
-.template-desc {
-  display: block;
-  font-size: 24rpx;
-  line-height: 1.45;
-  color: var(--color-text-secondary);
-  min-height: 70rpx;
-}
-
-.template-action {
-  display: inline-flex;
-  margin-top: 14rpx;
-  padding: 8rpx 14rpx;
-  font-size: 21rpx;
-  color: var(--text-accent-soft);
-  background: var(--accent-warm-bg-soft);
-  border-radius: 999rpx;
-}
-
-.more-templates-toggle {
-  margin-top: 16rpx;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  border-radius: 18rpx;
-  background: var(--accent-warm-bg-soft);
-  padding: 18rpx;
-}
-
-.more-templates-text,
-.more-templates-arrow {
-  font-size: 24rpx;
-  color: var(--text-accent-soft);
-  font-weight: 600;
-}
-
-.template-grid.more {
-  margin-top: 12rpx;
-  margin-bottom: -14rpx;
-}
-
-.examples-wrap {
-  margin-top: 18rpx;
-}
-
-.example-list {
-  display: flex;
-  flex-direction: column;
-  gap: 14rpx;
-}
-
-.example-card {
-  border-radius: 22rpx;
-  background: var(--surface-card-soft);
-  padding: 20rpx;
-  border: 1rpx solid var(--accent-warm-border-soft);
-  transition: transform var(--motion-fast) var(--ease-standard), border-color var(--motion-fast) var(--ease-standard);
-}
-
-.example-card:active {
-  transform: translateY(1rpx);
-}
-
-.example-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 12rpx;
-}
-
-.example-badge {
-  font-size: 22rpx;
-  color: var(--color-primary-deep);
-  background: var(--accent-warm-bg-strong);
-  border-radius: 999rpx;
-  padding: 6rpx 14rpx;
-}
-
-.example-cta {
-  font-size: 24rpx;
-  color: var(--color-primary-deep);
-  font-weight: 600;
-}
-
-.example-title {
-  display: block;
-  font-size: 30rpx;
-  color: var(--color-secondary);
-  font-weight: 700;
-  margin-bottom: 8rpx;
-}
-
-.example-summary {
-  display: block;
-  font-size: 24rpx;
-  line-height: 1.55;
-  color: var(--color-text-secondary);
 }
 
 .feed-head {
@@ -437,44 +267,12 @@
     border-color: var(--accent-warm-border-soft);
   }
 
-  .template-card,
-  .example-card,
   .feed-empty-card {
     border-color: var(--color-border-soft);
   }
 
-  .template-section,
   .feed-section {
     box-shadow: 0 12rpx 28rpx rgba(0, 0, 0, 0.28);
-  }
-
-  .template-card {
-    background: var(--surface-card-strong);
-  }
-
-  .template-card:active {
-    border-color: var(--accent-warm-border-strong);
-  }
-
-  .template-action {
-    background: var(--accent-warm-bg);
-  }
-
-  .more-templates-toggle {
-    background: var(--accent-warm-bg-soft);
-  }
-
-  .example-card {
-    background: var(--surface-card-soft);
-    border-color: var(--accent-warm-border-soft);
-  }
-
-  .example-badge {
-    background: var(--accent-warm-bg-strong);
-  }
-
-  .example-cta {
-    color: var(--text-accent-soft-strong);
   }
 
   .feed-count {

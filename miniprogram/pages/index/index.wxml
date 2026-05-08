@@ -22,76 +22,10 @@
     </view>
   </view>
 
-  <view class="template-section">
-    <view class="section-head">
-      <text class="section-mark">01</text>
-      <text class="section-title">今天想约点什么</text>
-      <text class="section-desc">先选方向，时间地点稍后再补</text>
-    </view>
-
-    <view class="template-grid">
-      <view
-        wx:for="{{primaryTemplateList}}"
-        wx:key="type"
-        class="template-card"
-        bindtap="createByTemplate"
-        data-type="{{item.type}}"
-      >
-        <text class="template-label">{{item.label}}</text>
-        <text class="template-desc">{{item.desc}}</text>
-        <text class="template-action">立刻发起</text>
-      </view>
-    </view>
-
-    <view class="more-templates-toggle" bindtap="toggleMoreTemplates">
-      <text class="more-templates-text">{{showMoreTemplates ? '收起更多灵感' : '更多灵感'}}</text>
-      <text class="more-templates-arrow">{{showMoreTemplates ? '︿' : '﹀'}}</text>
-    </view>
-
-    <view class="template-grid more" wx:if="{{showMoreTemplates}}">
-      <view
-        wx:for="{{moreTemplateList}}"
-        wx:key="type"
-        class="template-card secondary"
-        bindtap="createByTemplate"
-        data-type="{{item.type}}"
-      >
-        <text class="template-label">{{item.label}}</text>
-        <text class="template-desc">{{item.desc}}</text>
-        <text class="template-action">立刻发起</text>
-      </view>
-    </view>
-
-    <view class="examples-wrap">
-      <view class="section-head">
-        <text class="section-mark">02</text>
-        <text class="section-title small">照着发一个</text>
-        <text class="section-desc">平台示例只做参考，不是用户真实活动</text>
-      </view>
-      <view class="example-list">
-        <view
-          wx:for="{{officialExamples}}"
-          wx:key="id"
-          class="example-card"
-          bindtap="createByExample"
-          data-url="{{item.createUrl}}"
-          data-type="{{item.templateType}}"
-        >
-          <view class="example-head">
-            <text class="example-badge">{{item.badge}}</text>
-            <text class="example-cta">照着发一个 ›</text>
-          </view>
-          <text class="example-title">{{item.title}}</text>
-          <text class="example-summary">{{item.summary}}</text>
-        </view>
-      </view>
-    </view>
-  </view>
-
   <view class="feed-section">
     <view class="feed-head">
       <view class="feed-head-copy">
-        <text class="section-mark">03</text>
+        <text class="section-mark">01</text>
         <text class="feed-title">{{feedTitle}}</text>
         <text class="feed-desc">{{feedSubtitle}}</text>
       </view>
@@ -115,8 +49,8 @@
     </view>
 
     <view class="feed-empty-card" wx:if="{{activityList.length === 0 && !loading}}">
-      <text class="feed-empty-title">附近暂时还没有人发，你可以做第一个</text>
-      <text class="feed-empty-desc">先从上面选一个模板，补下时间地点，马上就能发出去。</text>
+      <text class="feed-empty-title">附近暂时还没有人发</text>
+      <text class="feed-empty-desc">先刷新一下位置和附近列表，看看有没有新局冒出来。</text>
     </view>
   </view>
 

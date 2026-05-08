@@ -64,20 +64,20 @@ function callFunction(name, data = {}, options = {}) {
   const { showLoading = false } = options
   traceLog('[API_TRACE] callFunction enter', name, data)
 
+  const hasWx = typeof wx !== 'undefined' && wx
+  const hasCloudApi = hasWx && wx.cloud && typeof wx.cloud.callFunction === 'function'
+
+  if (!hasCloudApi) {
+    return Promise.reject({
+      code: 'CLOUD_UNAVAILABLE',
+      message: '当前环境未启用云开发，请在微信开发者工具中开启云能力'
+    })
+  }
+
   if (showLoading) {
     wx.showLoading({
       title: '加载中...',
       mask: true
-    })
-  }
-
-  if (!wx || !wx.cloud || typeof wx.cloud.callFunction !== 'function') {
-    if (showLoading) {
-      wx.hideLoading()
-    }
-    return Promise.reject({
-      code: 'CLOUD_UNAVAILABLE',
-      message: '当前环境未启用云开发，请在微信开发者工具中开启云能力'
     })
   }
 

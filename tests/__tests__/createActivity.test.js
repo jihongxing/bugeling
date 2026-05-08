@@ -172,7 +172,11 @@ describe('createActivity', () => {
           identityHint: event.identityHint,
           wechatId: event.wechatId,
           locationName: event.location.name,
-          locationAddress: event.location.address
+          locationAddress: event.location.address,
+          initiatorGender: 'secret',
+          initiatorAgeBand: 'secret',
+          initiatorProfileVisibility: 'secret',
+          initiatorProfileSummary: '不公开'
         })
       })
     })

@@ -41,34 +41,44 @@ function toNumber(value) {
   return isNaN(num) ? null : num
 }
 
-function formatBudget(activity) {
-  var budgetType = normalizeText(pickFirst(activity, ['budgetType']))
-  if (budgetType === 'free') return { text: '0 元', value: 0 }
-  if (budgetType === 'under_20') return { text: '20 元以内/人', value: 20 }
-  if (budgetType === 'under_50') return { text: '50 元以内/人', value: 50 }
-  if (budgetType === 'aa') return { text: '现场 AA', value: 0 }
+function clamp(num, min, max) {
+  if (num < min) return min
+  if (num > max) return max
+  return num
+}
 
+function formatBudgetLine(activity) {
+  var budgetType = normalizeText(pickFirst(activity, ['budgetType']))
   var budgetMin = toNumber(pickFirst(activity, ['budgetMin']))
   var budgetMax = toNumber(pickFirst(activity, ['budgetMax']))
+
+  if (budgetType === 'free') return '免费'
+  if (budgetType === 'under_20') return '20 元内能搞定'
+  if (budgetType === 'under_50') return '50 元内能搞定'
+  if (budgetType === 'aa') return '现场 AA'
+
   if (budgetMin !== null || budgetMax !== null) {
     if (budgetMin !== null && budgetMax !== null) {
-      return {
-        text: formatUtil.formatDeposit(budgetMin) + '-' + formatUtil.formatDeposit(budgetMax) + '/人',
-        value: budgetMax / 100
-      }
+      return formatUtil.formatDeposit(budgetMin) + '-' + formatUtil.formatDeposit(budgetMax) + ' / 人'
     }
     if (budgetMax !== null) {
-      return { text: formatUtil.formatDeposit(budgetMax) + ' 以内/人', value: budgetMax / 100 }
+      return formatUtil.formatDeposit(budgetMax) + ' 以内 / 人'
     }
   }
 
-  return { text: '预算待定', value: null }
+  return '费用待确认'
 }
 
-function formatFee(activity) {
+function formatFeeLine(activity) {
   var serviceFee = toNumber(pickFirst(activity, ['serviceFee', 'serviceFeeAmount'])) || 0
   var bondAmount = toNumber(pickFirst(activity, ['bondAmount', 'depositTier', 'depositAmount'])) || 0
-  return formatUtil.formatFeeBreakdown(serviceFee, bondAmount)
+
+  if (serviceFee <= 0 && bondAmount <= 0) return '报名免费，现场按规则来'
+  if (serviceFee > 0 && bondAmount > 0) {
+    return formatUtil.formatDeposit(serviceFee) + ' 报名费，结束后退 ' + formatUtil.formatDeposit(bondAmount) + ' 约束金'
+  }
+  if (serviceFee > 0) return formatUtil.formatDeposit(serviceFee) + ' 报名费'
+  return '结束后退 ' + formatUtil.formatDeposit(bondAmount) + ' 约束金'
 }
 
 function formatTemplate(activity) {
@@ -83,25 +93,40 @@ function formatTemplate(activity) {
 
   var templateType = normalizeText(pickFirst(activity, ['templateType']))
   var map = {
-    walk: '散步瞎逛局',
+    walk: '散步局',
     convenience_store: '便利店坐坐局',
-    cheap_meal: '低价吃饭局',
+    cheap_meal: '便宜吃饭局',
     free_exhibition: '免费展览局',
-    park_chill: '公园发呆局',
+    park_chill: '公园坐坐局',
     study_buddy: '自习搭子局',
     photo_walk: '拍照打卡局',
     night_market: '夜市吃东西局',
     sports: '运动搭子局',
     boardgame: '桌游拼局',
-    other: '低成本组局'
+    other: '同城组局'
   }
 
   return map[templateType] || '同城组局'
 }
 
+function formatTitle(activity) {
+  var template = formatTemplate(activity)
+  var timeText = formatUtil.formatMeetTime(safeMeetTime(activity))
+  var locationText = normalizeText(pickFirst(activity, ['location.name', 'locationName'])) || '附近'
+  var shortLocation = locationText.replace(/^(广州|深圳|上海|北京|杭州|成都|武汉|南京|重庆|苏州|西安|天津|长沙|厦门|青岛|沈阳|宁波|郑州|无锡)/, '')
+  var titleLocation = normalizeText(shortLocation) || locationText
+
+  if (!timeText) return titleLocation + ' ' + template
+  return timeText + '，' + titleLocation + template
+}
+
+function safeMeetTime(activity) {
+  return activity && activity.meetTime ? activity.meetTime : ''
+}
+
 function translateSafetyTag(tag) {
   var map = {
-    public_space: '公共场所',
+    public_space: '公共场所见',
     low_budget: '低消费',
     no_after_party: '不转场',
     women_friendly: '女生友好',
@@ -128,18 +153,12 @@ function buildSafetyTags(activity, creditScore) {
   }
 
   if (activity.realNameRequired === true) addUnique(tags, '实名可见')
-  if ((activity.genderLimit || 'none') === 'female_only') addUnique(tags, '仅限女生')
-  if (creditScore !== null && creditScore >= 100) addUnique(tags, '高信用发起')
+  if ((activity.genderLimit || 'none') === 'female_only') addUnique(tags, '女生友好')
+  if (creditScore !== null && creditScore >= 100) addUnique(tags, '发起人靠谱')
 
   if (!tags.length) addUnique(tags, '平台留痕')
 
-  return tags.slice(0, 4)
-}
-
-function clamp(num, min, max) {
-  if (num < min) return min
-  if (num > max) return max
-  return num
+  return tags.slice(0, 2)
 }
 
 function formatProgress(activity) {
@@ -149,24 +168,25 @@ function formatProgress(activity) {
   var remaining = Math.max(required - current, 0)
   var percent = clamp(required > 0 ? Math.round((current / required) * 100) : 0, 0, 100)
   var statusText = ''
-  var hintText = ''
+  var detailText = ''
   var state = 'forming'
 
   if (current >= max) {
-    statusText = '已满员'
-    hintText = '当前 ' + current + '/' + max + ' 人'
+    statusText = '人已经够了，你现在报名还来得及'
+    detailText = '当前 ' + current + '/' + max + ' 人，已经满员'
     state = 'full'
   } else if (remaining === 0) {
-    statusText = '达到成局线'
-    hintText = required === max ? '当前 ' + current + '/' + max + ' 人' : '已达 ' + required + ' 人成局线'
+    statusText = '人已经够了，你现在报名还来得及'
+    detailText = '当前 ' + current + '/' + max + ' 人，已到成局线'
     state = 'ready'
   } else if (remaining === 1) {
-    statusText = '差 1 人成局'
-    hintText = '再来 1 人就能成局'
+    statusText = '再来 1 个人，今晚就能走'
+    detailText = '已经有 ' + current + ' 个人在等'
     state = 'almost'
   } else {
-    statusText = '差 ' + remaining + ' 人成局'
-    hintText = '当前 ' + current + '/' + max + ' 人'
+    statusText = '已经有 ' + current + ' 个人在等你'
+    detailText = '还差 ' + remaining + ' 个人成局'
+    state = 'forming'
   }
 
   return {
@@ -176,34 +196,71 @@ function formatProgress(activity) {
     remaining: remaining,
     percent: percent,
     statusText: statusText,
-    detailText: current + '/' + max + ' 人',
-    hintText: hintText,
+    detailText: detailText,
     state: state
   }
 }
 
+function formatDistanceLine(activity) {
+  var distance = toNumber(pickFirst(activity, ['distance'])) || 0
+  var distanceText = formatUtil.formatDistance(distance)
+  if (!distance || distance <= 0) return '离你不远'
+  return '离你 ' + distanceText
+}
+
+function formatLocationLine(activity, creditScore) {
+  var locationText = normalizeText(pickFirst(activity, ['location.name', 'locationName'])) || '地点待补充'
+  var parts = [locationText]
+
+  if (creditScore !== null) {
+    parts.push(creditScore >= 100 ? '发起人信用不错' : '平台留痕')
+  } else {
+    parts.push('平台留痕')
+  }
+
+  return parts.join(' · ')
+}
+
+function buildChipText(activity, progress, budgetLine) {
+  var chips = []
+
+  if (progress.state === 'almost') addUnique(chips, '差1人成局')
+  if (progress.state === 'ready') addUnique(chips, '今晚可去')
+  if (progress.state === 'full') addUnique(chips, '已满员')
+  if (!chips.length && progress.remaining > 0) addUnique(chips, '差' + progress.remaining + '人成局')
+  if (budgetLine && budgetLine !== '费用待确认') addUnique(chips, budgetLine.replace(' / 人', '').replace(' /人', ''))
+
+  return chips.slice(0, 2)
+}
+
 function normalizeActivity(activity) {
   var safeActivity = activity || {}
-  var budget = formatBudget(safeActivity)
   var progress = formatProgress(safeActivity)
+  var budgetLine = formatBudgetLine(safeActivity)
+  var feeLine = formatFeeLine(safeActivity)
   var creditScore = toNumber(pickFirst(safeActivity, ['initiatorCredit', 'hostCredit', 'creditScore']))
+  var meetTimeText = formatUtil.formatMeetTime(safeMeetTime(safeActivity))
+  var locationText = normalizeText(pickFirst(safeActivity, ['location.name', 'locationName'])) || '地点待补充'
 
   return Object.assign({}, safeActivity, {
     feedCard: {
-      title: normalizeText(safeActivity.title) || '未命名组局',
+      title: formatTitle(safeActivity),
+      hookText: progress.statusText,
+      subtitleText: '已经有 ' + progress.current + ' 个人在等，再来 ' + progress.remaining + ' 个就能走',
+      detailLine: meetTimeText ? meetTimeText + ' · ' + formatDistanceLine(safeActivity) + ' · ' + budgetLine : formatDistanceLine(safeActivity) + ' · ' + budgetLine,
+      footerText: formatLocationLine(safeActivity, creditScore),
       templateLabel: formatTemplate(safeActivity),
-      budgetText: budget.text,
-      budgetValue: budget.value,
-      feeText: formatFee(safeActivity),
-      distanceText: formatUtil.formatDistance(toNumber(safeActivity.distance) || 0),
-      meetTimeText: formatUtil.formatMeetTime(safeActivity.meetTime || ''),
-      locationText: normalizeText(pickFirst(safeActivity, ['location.name', 'locationName'])) || '地点待补充',
+      chips: buildChipText(safeActivity, progress, budgetLine),
       progressText: progress.statusText,
       progressDetail: progress.detailText,
-      progressHint: progress.hintText,
       progressPercent: progress.percent,
       progressState: progress.state,
       progressRemaining: progress.remaining,
+      budgetText: budgetLine,
+      feeText: feeLine,
+      meetTimeText: meetTimeText,
+      distanceText: formatDistanceLine(safeActivity),
+      locationText: locationText,
       safetyTags: buildSafetyTags(safeActivity, creditScore),
       creditText: creditScore !== null ? creditScore + ' 分' : '待补充',
       statusText: normalizeText(safeActivity.displayStatus || safeActivity.status) || 'pending'
@@ -228,7 +285,11 @@ function summarizeActivities(list) {
     var card = normalized.feedCard
 
     summary.total += 1
-    if (card.budgetValue !== null && card.budgetValue <= 50) summary.lowBudgetCount += 1
+    if (normalizeText(pickFirst(normalized, ['budgetType'])) === 'free' ||
+      normalizeText(pickFirst(normalized, ['budgetType'])) === 'under_20' ||
+      normalizeText(pickFirst(normalized, ['budgetType'])) === 'under_50') {
+      summary.lowBudgetCount += 1
+    }
     if (card.progressState === 'ready' || card.progressState === 'full') summary.readyCount += 1
     if (card.progressRemaining === 1) summary.almostReadyCount += 1
   })

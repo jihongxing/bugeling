@@ -17,6 +17,7 @@ function requireShared(moduleName) {
 const { getDb, COLLECTIONS } = requireShared('db')
 const { getCredit } = requireShared('credit')
 const { successResponse, errorResponse } = requireShared('response')
+const { buildActivitySnapshot, normalizeUserProfile } = require('../../scripts/cloudfunction-shared-template/userProfile')
 const {
   validateString,
   validateEnum,
@@ -352,6 +353,16 @@ exports.main = async (event) => {
       event.budgetMin,
       event.budgetMax
     )
+    let creatorProfile = null
+    try {
+      const profileRes = await db.collection(COLLECTIONS.USER_PROFILES)
+        .doc(openId)
+        .get()
+      creatorProfile = profileRes && profileRes.data ? normalizeUserProfile(profileRes.data) : null
+    } catch (profileErr) {
+      creatorProfile = null
+    }
+    const creatorSnapshot = buildActivitySnapshot(creatorProfile)
     const description = typeof event.description === 'string' && event.description.trim()
       ? event.description.trim()
       : buildDefaultDescription(
@@ -445,6 +456,10 @@ exports.main = async (event) => {
       reviewStatus: riskLevel === 'high' ? 'pending_review' : 'approved',
       status: riskLevel === 'high' ? 'pending_review' : 'pending',
       sourceReportId: typeof event.sourceReportId === 'string' ? event.sourceReportId : '',
+      initiatorGender: creatorSnapshot.initiatorGender,
+      initiatorAgeBand: creatorSnapshot.initiatorAgeBand,
+      initiatorProfileVisibility: creatorSnapshot.initiatorProfileVisibility,
+      initiatorProfileSummary: creatorSnapshot.initiatorProfileSummary,
       createdAt: db.serverDate()
     }
 
