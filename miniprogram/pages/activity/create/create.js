@@ -212,20 +212,23 @@ Page({
 
   applyModeFromOptions: function(options) {
     if (isCustomMode(options)) {
+      var customBudgetType = 'under_20'
+      var customServiceFee = 190
+      var customBondAmount = 990
       this.setData({
         customMode: true,
         selectedTemplateIndex: -1,
         templateType: '',
         title: '',
         summary: '',
-        budgetType: 'under_20',
-        serviceFee: 290,
-        bondAmount: 1990,
+        budgetType: customBudgetType,
+        serviceFee: customServiceFee,
+        bondAmount: customBondAmount,
         minParticipants: 2,
         maxParticipants: 4,
         realNameRequired: false,
         allowAfterParty: false,
-        prefillHintText: '这里是自由组局，不先套模板，直接写你自己的想法。'
+        prefillHintText: '这里是自由组局，先写自己的想法，再选预算和约束。'
       })
       return
     }
@@ -323,9 +326,16 @@ Page({
 
   refreshPreviewText: function() {
     if (this.data.customMode) {
+      var budgetPreview = formatUtil.formatBudgetRange(
+        this.data.budgetType,
+        0,
+        this.data.budgetType === 'under_20' ? 2000 : (this.data.budgetType === 'under_50' ? 5000 : 0)
+      )
+      var serviceText = formatUtil.formatDeposit(this.data.serviceFee)
+      var bondText = formatUtil.formatDeposit(this.data.bondAmount)
       this.setData({
-        budgetPreviewText: '自由设定，不套模板',
-        feePreviewText: '20 元以内 / 小约束 19.9 元'
+        budgetPreviewText: budgetPreview,
+        feePreviewText: serviceText + ' 服务费 + ' + bondText + ' 小约束'
       })
       return
     }
