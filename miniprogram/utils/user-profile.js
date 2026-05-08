@@ -167,22 +167,81 @@ function getPublicSummary(profile) {
   return parts.length ? parts.join(' · ') : '不公开'
 }
 
+function buildPublicSummaryChips(profile) {
+  var safeProfile = normalizeUserProfile(profile)
+  var chips = []
+
+  if (safeProfile.publicProfile.gender !== 'secret') {
+    chips.push(GENDER_OPTIONS[safeProfile.publicProfile.gender] || safeProfile.publicProfile.gender)
+  }
+  if (safeProfile.publicProfile.ageBand !== 'secret') {
+    chips.push(AGE_BANDS[safeProfile.publicProfile.ageBand] || safeProfile.publicProfile.ageBand)
+  }
+
+  return chips.length ? chips : ['都未公开']
+}
+
+function buildFilterSummaryChips(profile) {
+  var safeProfile = normalizeUserProfile(profile)
+  var chips = []
+
+  if (safeProfile.filterPreferences.genderRelation !== 'any') {
+    chips.push(GENDER_RELATIONS[safeProfile.filterPreferences.genderRelation] || safeProfile.filterPreferences.genderRelation)
+  }
+  if (safeProfile.filterPreferences.ageRelation !== 'any') {
+    chips.push(AGE_RELATIONS[safeProfile.filterPreferences.ageRelation] || safeProfile.filterPreferences.ageRelation)
+  }
+  if (safeProfile.filterPreferences.requireRealName === true) {
+    chips.push('只看实名')
+  }
+
+  return chips.length ? chips : ['都不筛']
+}
+
+function buildPrivateSummaryChips(profile) {
+  var safeProfile = normalizeUserProfile(profile)
+  var chips = []
+
+  if (safeProfile.privateProfile.birthday) {
+    chips.push('生日')
+  }
+  if (safeProfile.privateProfile.exactAge !== null) {
+    chips.push('年龄')
+  }
+  if (safeProfile.privateProfile.contactHint) {
+    chips.push('联系提醒')
+  }
+
+  return chips.length ? chips : ['未填写']
+}
+
 function buildProfileDisplaySections(profile) {
   var safeProfile = normalizeUserProfile(profile)
+  var publicSummaryChips = buildPublicSummaryChips(safeProfile)
+  var filterSummaryChips = buildFilterSummaryChips(safeProfile)
+  var privateSummaryChips = buildPrivateSummaryChips(safeProfile)
   return {
     publicSection: {
       genderText: GENDER_OPTIONS[safeProfile.publicProfile.gender] || '不公开',
-      ageBandText: AGE_BANDS[safeProfile.publicProfile.ageBand] || '不公开'
+      ageBandText: AGE_BANDS[safeProfile.publicProfile.ageBand] || '不公开',
+      summaryChips: publicSummaryChips,
+      summaryText: publicSummaryChips.join(' · ')
     },
     filterSection: {
       genderRelationText: GENDER_RELATIONS[safeProfile.filterPreferences.genderRelation] || '都行',
       ageRelationText: AGE_RELATIONS[safeProfile.filterPreferences.ageRelation] || '不限',
-      requireRealNameText: safeProfile.filterPreferences.requireRealName === true ? '只看已实名' : '实名不限'
+      requireRealNameText: safeProfile.filterPreferences.requireRealName === true ? '只看已实名' : '实名不限',
+      summaryChips: filterSummaryChips,
+      summaryText: filterSummaryChips.join(' · ')
     },
     privateSection: {
       birthdayText: safeProfile.privateProfile.birthday || '未填写',
       exactAgeText: safeProfile.privateProfile.exactAge !== null ? String(safeProfile.privateProfile.exactAge) : '未填写',
-      contactHintText: safeProfile.privateProfile.contactHint || '未填写'
+      contactHintText: safeProfile.privateProfile.contactHint || '未填写',
+      summaryChips: privateSummaryChips,
+      summaryText: safeProfile.privateProfile.birthday || safeProfile.privateProfile.exactAge !== null || safeProfile.privateProfile.contactHint
+        ? ('已填 ' + privateSummaryChips.length + ' 项')
+        : '未填写'
     }
   }
 }

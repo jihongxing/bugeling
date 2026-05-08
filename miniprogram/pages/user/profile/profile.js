@@ -13,8 +13,9 @@ Page({
     profileView: buildProfileDisplaySections(buildDefaultUserProfile()),
     loading: true,
     savingProfile: false,
-    summaryTitle: '最近的小局',
-    summaryText: '看看最近约过什么，顺手再来一次。'
+    expandedSection: '',
+    summaryTitle: '我的信息',
+    summaryText: '默认只看摘要，展开后再改细项。'
   },
 
   onShow() {
@@ -35,8 +36,9 @@ Page({
         profile,
         profileView: buildProfileDisplaySections(profile),
         loading: false,
-        summaryTitle: '最近的小局',
-        summaryText: '公开展示、可筛选和仅本人可见，已经分开写好了。'
+        expandedSection: '',
+        summaryTitle: '我的信息',
+        summaryText: '默认只看摘要，展开后再改细项。'
       })
       saveCachedUserProfile(profile)
     } catch (err) {
@@ -162,6 +164,13 @@ Page({
           contactHint: e.detail.value
         })
       }))
+    })
+  },
+
+  toggleProfileSection(e) {
+    var section = e.currentTarget.dataset.section || ''
+    this.setData({
+      expandedSection: this.data.expandedSection === section ? '' : section
     })
   },
 
