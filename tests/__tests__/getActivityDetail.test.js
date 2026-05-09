@@ -54,6 +54,7 @@ function mockParticipation(overrides = {}) {
     status: 'approved',
     depositAmount: 1990,
     createdAt: new Date().toISOString(),
+    pendingPaymentExpiresAt: null,
     ...overrides
   }
 }
@@ -276,6 +277,22 @@ describe('getActivityDetail', () => {
       // Should NOT include extra fields
       expect(result.data.myParticipation.depositAmount).toBeUndefined()
       expect(result.data.myParticipation.paymentId).toBeUndefined()
+    })
+
+    test('returns pendingPaymentExpiresAt in myParticipationMeta for pending_payment participation', async () => {
+      const activity = mockActivity()
+      const pendingPaymentExpiresAt = new Date(Date.now() + 15 * 60 * 1000).toISOString()
+      const participation = mockParticipation({
+        status: 'pending_payment',
+        pendingPaymentExpiresAt
+      })
+      dbMocks.get
+        .mockResolvedValueOnce({ data: [activity] })
+        .mockResolvedValueOnce({ data: [participation] })
+
+      const result = await main({ activityId: 'activity-001' }, {})
+      expect(result.code).toBe(0)
+      expect(result.data.myParticipationMeta.pendingPaymentExpiresAt).toBe(pendingPaymentExpiresAt)
     })
   })
 

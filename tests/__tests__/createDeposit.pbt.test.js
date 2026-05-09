@@ -356,6 +356,20 @@ describe('Feature: payment-settlement, Property 5: createDeposit 重复参与防
     const result = await main({ activityId: 'act-001' })
     expect(result.code).toBe(0)
   })
+
+  it('should allow retry when existing participation is still pending_payment', async () => {
+    setupMocks({
+      openId: 'participant-001',
+      creditScore: 100,
+      activity: makeActivity(),
+      existingParticipations: [
+        { _id: 'part-pending', activityId: 'act-001', participantId: 'participant-001', status: 'pending_payment' }
+      ]
+    })
+
+    const result = await main({ activityId: 'act-001' })
+    expect(result.code).toBe(0)
+  })
 })
 
 // ============================================================
@@ -432,7 +446,7 @@ describe('createDeposit unit tests', () => {
   })
 
   it('should return success with participationId and paymentParams on happy path', async () => {
-    setupMocks({
+    const { addLog } = setupMocks({
       openId: 'participant-001',
       creditScore: 100,
       activity: makeActivity()
@@ -445,6 +459,11 @@ describe('createDeposit unit tests', () => {
     expect(result.data.paymentParams).toHaveProperty('timeStamp')
     expect(result.data.paymentParams).toHaveProperty('nonceStr')
     expect(result.data.paymentParams).toHaveProperty('paySign')
+
+    const participationAdd = addLog.find(item => item.data && item.data.status === 'pending_payment')
+    expect(participationAdd).toBeTruthy()
+    expect(participationAdd.data.pendingPaymentExpiresAt).toBeTruthy()
+    expect(new Date(participationAdd.data.pendingPaymentExpiresAt).getTime()).not.toBeNaN()
   })
 })
 

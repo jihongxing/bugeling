@@ -39,6 +39,12 @@ function toNumber(value) {
   return isNaN(num) ? null : num
 }
 
+function toTimestamp(value) {
+  if (!isPresent(value)) return null
+  var timestamp = new Date(value).getTime()
+  return isNaN(timestamp) ? null : timestamp
+}
+
 function addUnique(list, value) {
   if (!value) return
   if (list.indexOf(value) !== -1) return
@@ -391,7 +397,11 @@ function buildDecisionSnapshot(activity, myParticipation, progress, fee, meeting
   var distanceLine = ''
   var reasonTags = []
 
-  if (isReady) {
+  if (myParticipation && myParticipation.status === 'pending_payment' && myParticipation.pendingPaymentExpired) {
+    decisionText = '上次支付已过期，重新报名就能继续'
+  } else if (myParticipation && myParticipation.status === 'pending_payment') {
+    decisionText = '先把这单付上，位置就留给你'
+  } else if (isReady) {
     decisionText = '这局已经能走了'
   } else if (toNumber(remaining) === 1) {
     decisionText = '再来 1 个人就能走'
@@ -400,7 +410,13 @@ function buildDecisionSnapshot(activity, myParticipation, progress, fee, meeting
   }
 
   if (myParticipation) {
-    decisionText = '你已经在这局里了'
+    if (myParticipation.status === 'pending_payment' && !myParticipation.pendingPaymentExpired) {
+      decisionText = '先把这单付上，位置就留给你'
+    } else if (myParticipation.status === 'pending_payment' && myParticipation.pendingPaymentExpired) {
+      decisionText = '上次支付已过期，重新报名就能继续'
+    } else {
+      decisionText = '你已经在这局里了'
+    }
   }
 
   timingText = meetText
@@ -411,6 +427,8 @@ function buildDecisionSnapshot(activity, myParticipation, progress, fee, meeting
 
   if (progress.state === 'almost') reasonTags.push('差1人成局')
   if (progress.state === 'ready') reasonTags.push('今晚可去')
+  if (myParticipation && myParticipation.status === 'pending_payment' && !myParticipation.pendingPaymentExpired) reasonTags.push('待支付')
+  if (myParticipation && myParticipation.status === 'pending_payment' && myParticipation.pendingPaymentExpired) reasonTags.push('支付已过期')
   if (budgetText) reasonTags.push(budgetText)
   if (safety.realNameText === '需要实名') reasonTags.push('已实名可见')
 
@@ -457,9 +475,13 @@ function buildDetailView(activity, myParticipation) {
     credit: credit,
     contractText: buildContractText(safeActivity, fee),
     decisionReasonText: decisionSnapshot.reasonTags.join(' · '),
-    participationNote: myParticipation && ['paid', 'approved', 'confirmed', 'checked_in', 'completed'].indexOf(myParticipation.status) !== -1
-      ? '你已经占上位置了，临近见面时间会解锁对方的微信'
-      : ''
+    participationNote: myParticipation && myParticipation.status === 'pending_payment'
+      ? (myParticipation.pendingPaymentExpired
+          ? '上次支付已过期，可以直接重新报名'
+          : '这单还在待支付，付完就能占上位置')
+      : myParticipation && ['paid', 'approved', 'confirmed', 'checked_in', 'completed'].indexOf(myParticipation.status) !== -1
+        ? '你已经占上位置了，临近见面时间会解锁对方的微信'
+        : ''
   }
 }
 
@@ -508,12 +530,50 @@ function getActionState(activityOrIsInitiator, isInitiatorOrParticipation, maybe
   var myParticipation = maybeParticipation
 
   if (isInitiator) return 'manage'
-  if (myParticipation) return 'status'
+  if (myParticipation) {
+    if (myParticipation.status === 'pending_payment') {
+      if (myParticipation.pendingPaymentExpired) {
+        if (!activity) return 'closed'
+        if (['cancelled', 'removed', 'finished', 'locked', 'pending_review'].indexOf(activity.status) !== -1) {
+          return 'closed'
+        }
+        return 'join'
+      }
+      return 'pending_payment'
+    }
+    return 'status'
+  }
   if (!activity) return 'closed'
   if (['cancelled', 'removed', 'finished', 'locked', 'pending_review'].indexOf(activity.status) !== -1) {
     return 'closed'
   }
   return 'join'
+}
+
+function getPendingPaymentDeadline(myParticipation) {
+  if (!myParticipation || myParticipation.status !== 'pending_payment') return null
+
+  var explicitDeadline = toTimestamp(myParticipation.pendingPaymentExpiresAt || myParticipation.paymentExpiresAt || myParticipation.expiresAt)
+  if (explicitDeadline !== null) return explicitDeadline
+
+  var createdAt = toTimestamp(myParticipation.createdAt)
+  if (createdAt !== null) return createdAt + 15 * 60 * 1000
+
+  return null
+}
+
+function isPendingPaymentExpired(myParticipation, now) {
+  var deadline = getPendingPaymentDeadline(myParticipation)
+  if (deadline === null) return false
+  var currentTime = now instanceof Date ? now.getTime() : (toTimestamp(now) || Date.now())
+  return deadline <= currentTime
+}
+
+function getPendingPaymentCountdownText(myParticipation, now) {
+  var deadline = getPendingPaymentDeadline(myParticipation)
+  if (deadline === null) return ''
+  var currentTime = now instanceof Date ? now.getTime() : (toTimestamp(now) || Date.now())
+  return formatCountdown(deadline - currentTime)
 }
 
 function getParticipationStatusConfig(status) {
@@ -565,5 +625,8 @@ module.exports = {
   formatAmount: formatAmount,
   shouldShowPayButton: shouldShowPayButton,
   shouldShowCheckinAction: shouldShowCheckinAction,
-  formatCountdown: formatCountdown
+  formatCountdown: formatCountdown,
+  getPendingPaymentDeadline: getPendingPaymentDeadline,
+  isPendingPaymentExpired: isPendingPaymentExpired,
+  getPendingPaymentCountdownText: getPendingPaymentCountdownText
 }

@@ -49,6 +49,7 @@ Page({
     loading: true,
     paying: false,
     unlockCountdownText: '',
+    pendingPaymentCountdownText: '',
     wechatUnlocked: false,
     showCheckinAction: false,
     showMoreInfo: false,
@@ -86,10 +87,31 @@ Page({
       || socialUtil.shouldUnlockWechatId(status, activity.meetTime, now)
     var countdownMs = socialUtil.getUnlockCountdown(activity.meetTime, now)
     var countdownText = detailHelpers.formatCountdown(countdownMs)
+    var pendingPaymentCountdownText = ''
+    var normalizedParticipation = myParticipation
+
+    if (myParticipation && myParticipation.status === 'pending_payment') {
+      var pendingPaymentExpired = detailHelpers.isPendingPaymentExpired(myParticipation, now)
+      normalizedParticipation = Object.assign({}, myParticipation, {
+        pendingPaymentExpired: pendingPaymentExpired
+      })
+      pendingPaymentCountdownText = pendingPaymentExpired
+        ? ''
+        : detailHelpers.getPendingPaymentCountdownText(myParticipation, now)
+    }
+
+    var detailView = detailHelpers.buildDetailView(activity, normalizedParticipation)
+    var actionState = detailHelpers.getActionState(activity, this.data.isInitiator, normalizedParticipation)
+    var showCheckinAction = detailHelpers.shouldShowCheckinAction(activity, this.data.isInitiator, normalizedParticipation)
 
     this.setData({
       wechatUnlocked: unlocked,
       unlockCountdownText: countdownText,
+      pendingPaymentCountdownText: pendingPaymentCountdownText,
+      myParticipation: normalizedParticipation,
+      detailView: detailView,
+      actionState: actionState,
+      showCheckinAction: showCheckinAction,
       showWechatCopy: unlocked && activity.wechatId != null
     })
   },
@@ -124,6 +146,11 @@ Page({
         }
         if (data.myParticipationMeta && data.myParticipation) {
           data.myParticipation = Object.assign({}, data.myParticipation, data.myParticipationMeta)
+        }
+        if (data.myParticipation && data.myParticipation.status === 'pending_payment') {
+          data.myParticipation = Object.assign({}, data.myParticipation, {
+            pendingPaymentExpired: detailHelpers.isPendingPaymentExpired(data.myParticipation, new Date())
+          })
         }
         var distanceText = buildDistanceText(data)
         if (distanceText) {
@@ -310,6 +337,7 @@ Page({
           },
           fail: function(err) {
             self.setData({ paying: false })
+            console.error('[PAY_TRACE] requestPayment failed', err)
             var msg = (err && err.errMsg && err.errMsg.indexOf('cancel') !== -1)
               ? '已取消支付'
               : '支付失败，请重试'

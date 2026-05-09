@@ -123,6 +123,22 @@
   </view>
 
   <view class="action-area">
+    <button class="btn-primary action-btn" wx:if="{{actionState === 'pending_payment'}}" bindtap="goJoin" disabled="{{paying}}">
+      {{paying ? '先等等...' : '继续支付'}}
+    </button>
+
+    <view class="status-tip" wx:if="{{actionState === 'pending_payment' && statusConfig}}">
+      <text class="status-tip-text">你当前状态：{{statusConfig.label}}</text>
+    </view>
+
+    <view class="countdown-tip" wx:if="{{myParticipation && myParticipation.status === 'pending_payment' && !myParticipation.pendingPaymentExpired && pendingPaymentCountdownText}}">
+      <text>待支付订单还剩 {{pendingPaymentCountdownText}}</text>
+    </view>
+
+    <view class="countdown-tip" wx:if="{{myParticipation && myParticipation.status === 'pending_payment' && myParticipation.pendingPaymentExpired}}">
+      <text>待支付订单已过期，点继续支付会帮你新建一单</text>
+    </view>
+
     <button class="btn-primary action-btn" wx:if="{{actionState === 'join'}}" bindtap="goJoin" disabled="{{paying}}">
       {{paying ? '先等等...' : '花 ' + totalFeeText + ' 先占个位置'}}
     </button>

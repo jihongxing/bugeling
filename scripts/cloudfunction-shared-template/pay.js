@@ -14,6 +14,38 @@ function generateNonceStr(length) {
   return crypto.randomBytes(Math.ceil(length / 2)).toString('hex').slice(0, length)
 }
 
+function pad2(value) {
+  return String(value).padStart(2, '0')
+}
+
+function formatTimeExpire(value) {
+  var date = value instanceof Date ? value : new Date(value)
+  if (isNaN(date.getTime())) return ''
+  var formatter = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Shanghai',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false
+  })
+  var parts = formatter.formatToParts(date)
+  var map = {}
+  parts.forEach(function(part) {
+    map[part.type] = part.value
+  })
+  return [
+    map.year,
+    map.month,
+    map.day,
+    map.hour,
+    map.minute,
+    map.second
+  ].join('')
+}
+
 /**
  * 生成微信支付签名（MD5）
  * @param {object} params - 待签名参数
@@ -122,6 +154,7 @@ async function createOrder(params) {
   var totalFee = params.totalFee
   var description = params.description
   var notifyUrl = params.notifyUrl
+  var timeExpire = params.timeExpire
 
   var appId = config.getEnv(config.ENV_KEYS.APPID)
   var mchId = config.getEnv(config.ENV_KEYS.MCH_ID)
@@ -139,6 +172,9 @@ async function createOrder(params) {
     notify_url: notifyUrl,
     trade_type: 'JSAPI',
     openid: openId
+  }
+  if (timeExpire) {
+    orderParams.time_expire = formatTimeExpire(timeExpire)
   }
   orderParams.sign = generateSign(orderParams, apiKey)
 

@@ -295,6 +295,62 @@ describe('Feature: payment-settlement, Property 9: payCallback 状态同步更�
   })
 })
 
+describe('Feature: payment-settlement, payCallback HTTP callback adapter', function() {
+  it('should accept XML HTTP callback payload and return SUCCESS XML for valid callbacks', async function() {
+    var transaction = makeTransaction({
+      outTradeNo: 'BGL-http-001',
+      participationId: 'part-http-001'
+    })
+    var participation = makeParticipation({
+      _id: 'part-http-001',
+      status: 'pending'
+    })
+
+    setupMocks({
+      signValid: true,
+      transaction: transaction,
+      participation: participation
+    })
+
+    var event = {
+      httpMethod: 'POST',
+      headers: { 'content-type': 'text/xml' },
+      body: [
+        '<xml>',
+        '<out_trade_no><![CDATA[BGL-http-001]]></out_trade_no>',
+        '<result_code><![CDATA[SUCCESS]]></result_code>',
+        '<transaction_id><![CDATA[4200001234202301010000000003]]></transaction_id>',
+        '<sign><![CDATA[VALID_SIGN]]></sign>',
+        '</xml>'
+      ].join('')
+    }
+
+    var result = await main(event)
+
+    expect(result).toEqual({
+      statusCode: 200,
+      headers: {
+        'Content-Type': 'text/xml; charset=utf-8',
+        'Cache-Control': 'no-store'
+      },
+      body: '<xml><return_code><![CDATA[SUCCESS]]></return_code><return_msg><![CDATA[OK]]></return_msg></xml>'
+    })
+  })
+
+  it('should return FAIL XML when HTTP callback signature is invalid', async function() {
+    setupMocks({ signValid: false })
+
+    var result = await main({
+      httpMethod: 'POST',
+      headers: { 'content-type': 'text/xml' },
+      body: '<xml><out_trade_no><![CDATA[BGL-http-002]]></out_trade_no><sign><![CDATA[BAD]]></sign></xml>'
+    })
+
+    expect(result.statusCode).toBe(200)
+    expect(result.body).toContain('<return_code><![CDATA[FAIL]]></return_code>')
+  })
+})
+
 // ============================================================
 // Unit Tests
 // ============================================================

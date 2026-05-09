@@ -255,7 +255,8 @@ exports.main = async (event) => {
             refundStatus: participation.refundStatus || 'none',
             checkinAt: participation.checkinAt || null,
             arrivedAt: participation.arrivedAt || null,
-            arrivedLocation: participation.arrivedLocation || null
+            arrivedLocation: participation.arrivedLocation || null,
+            pendingPaymentExpiresAt: participation.pendingPaymentExpiresAt || null
           }
         : null
     })
