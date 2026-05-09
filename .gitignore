@@ -44,3 +44,7 @@ tests/package-lock.json
 # 敏感信息
 project.private.config.json
 miniprogram/config/local.private.js
+
+# 微信支付证书文件
+cloudfunctions/**/apiclient_cert.pem
+cloudfunctions/**/apiclient_key.pem
