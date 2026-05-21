@@ -1,6 +1,15 @@
 const adapter = require('../../miniprogram/components/activity-card/activity-feed-adapter')
 
 describe('activity feed adapter', () => {
+  beforeEach(() => {
+    jest.useFakeTimers()
+    jest.setSystemTime(new Date('2026-05-08T10:00:00+08:00'))
+  })
+
+  afterEach(() => {
+    jest.useRealTimers()
+  })
+
   test('normalizes activity into a conversational feed card', () => {
     const card = adapter.normalizeActivity({
       title: '天河城附近散步局',

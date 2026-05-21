@@ -98,13 +98,13 @@
 | 5 | `JWT_SECRET` | 自行生成 32 位随机字符串 | generateQrToken → JWT 签发；verifyQrToken → JWT 验证 | ✅ 通过 getEnv 注入 |
 | 6 | `WX_APPID` | 微信公众平台 → 小程序 AppID | pay.js → 统一下单/退款/分账的 appid 字段 | ✅ 通过 getEnv 注入 |
 
-### 前端占位符（3 个）
+### 前端生产配置（3 个）
 
-| # | 文件 | 占位符 | 替换为 |
+| # | 文件 | 配置项 | 当前状态 |
 |---|------|--------|--------|
-| 1 | `miniprogram/app.js:10` | `'YOUR_CLOUD_ENV_ID'` | 实际云开发环境 ID |
-| 2 | `project.config.json:4` | `'<YOUR_APPID>'` | 实际小程序 AppID |
-| 3 | `miniprogram/libs/README.md:21` | `'YOUR_TENCENT_MAP_KEY'` | 实际腾讯地图 Key（仅文档说明，非运行时引用） |
+| 1 | `miniprogram/app.js` | 云开发环境 ID | 已配置为生产云环境 |
+| 2 | `project.config.json` | 小程序 AppID | 已配置为生产 AppID |
+| 3 | `miniprogram/config/local.private.js` | 腾讯地图 Key | 本地私有配置注入，仓库仅保留 `local.example.js` |
 
 ### 商户证书文件（2 个）
 

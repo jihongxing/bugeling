@@ -7,19 +7,36 @@ const { validateForm } = require('../../miniprogram/pages/activity/create/valida
 
 const PBT_NUM_RUNS = 100
 
-// 生成合法表单数据
+function normalizedText(value) {
+  return String(value || '').replace(/\s+/g, ' ').trim()
+}
+
+const nonBlankString = (minLength, maxLength) => fc
+  .string({ minLength, maxLength })
+  .filter(s => {
+    const text = normalizedText(s)
+    return text.length >= minLength && text.length <= maxLength
+  })
+
+// 生成当前模板模式的合法表单数据
 const validFormArb = fc.record({
-  title: fc.string({ minLength: 2, maxLength: 50 }).filter(s => s.length >= 2),
+  customMode: fc.constant(false),
+  templateType: fc.constantFrom('walk', 'cheap_meal', 'park_chill', 'study_buddy'),
+  title: nonBlankString(2, 50),
+  summary: fc.string({ maxLength: 120 }),
   location: fc.record({
-    name: fc.string({ minLength: 1 }),
-    address: fc.string({ minLength: 1 }),
+    name: nonBlankString(1, 30),
+    address: nonBlankString(1, 80),
     latitude: fc.double({ min: -90, max: 90, noNaN: true }),
     longitude: fc.double({ min: -180, max: 180, noNaN: true })
   }),
   meetTime: fc.date().map(d => d.toISOString()),
-  depositTier: fc.constantFrom(990, 1990, 2990, 3990, 4990),
-  identityHint: fc.string({ minLength: 2, maxLength: 100 }).filter(s => s.length >= 2),
-  wechatId: fc.string({ minLength: 1 }).filter(s => s.length >= 1)
+  budgetType: fc.constantFrom('free', 'under_20', 'under_50', 'aa'),
+  bondAmount: fc.constantFrom(990, 1990, 2990, 3990, 4990),
+  minParticipants: fc.integer({ min: 2, max: 10 }),
+  maxParticipants: fc.integer({ min: 10, max: 20 }),
+  identityHint: fc.option(nonBlankString(2, 100), { nil: '' }),
+  wechatId: fc.string({ maxLength: 50 })
 })
 
 describe('Feature: activity-pages, Property 2: 表单校验完整性', () => {
@@ -66,6 +83,24 @@ describe('Feature: activity-pages, Property 2: 表单校验完整性', () => {
     )
   })
 
+  it('blank location name and address should produce location error', () => {
+    fc.assert(
+      fc.property(validFormArb, (formData) => {
+        const invalid = Object.assign({}, formData, {
+          location: {
+            name: ' ',
+            address: ' ',
+            latitude: formData.location.latitude,
+            longitude: formData.location.longitude
+          }
+        })
+        const errors = validateForm(invalid)
+        expect(errors).toContain('请选择活动地点')
+      }),
+      { numRuns: PBT_NUM_RUNS }
+    )
+  })
+
   it('empty meetTime should produce meetTime error', () => {
     fc.assert(
       fc.property(validFormArb, (formData) => {
@@ -77,12 +112,23 @@ describe('Feature: activity-pages, Property 2: 表单校验完整性', () => {
     )
   })
 
-  it('zero depositTier should produce deposit error', () => {
+  it('zero bondAmount should produce bond amount error', () => {
     fc.assert(
       fc.property(validFormArb, (formData) => {
-        const invalid = Object.assign({}, formData, { depositTier: 0 })
+        const invalid = Object.assign({}, formData, { bondAmount: 0 })
         const errors = validateForm(invalid)
-        expect(errors).toContain('请选择鸽子费档位')
+        expect(errors).toContain('请选择一个小约束金额')
+      }),
+      { numRuns: PBT_NUM_RUNS }
+    )
+  })
+
+  it('minParticipants greater than maxParticipants should produce participant range error', () => {
+    fc.assert(
+      fc.property(validFormArb, (formData) => {
+        const invalid = Object.assign({}, formData, { minParticipants: 5, maxParticipants: 4 })
+        const errors = validateForm(invalid)
+        expect(errors).toContain('最低成局人数不能超过组局人数上限')
       }),
       { numRuns: PBT_NUM_RUNS }
     )
@@ -93,18 +139,18 @@ describe('Feature: activity-pages, Property 2: 表单校验完整性', () => {
       fc.property(validFormArb, (formData) => {
         const invalid = Object.assign({}, formData, { identityHint: 'A' })
         const errors = validateForm(invalid)
-        expect(errors).toContain('接头特征需 2-100 个字符')
+        expect(errors).toContain('集合说明需 2-100 个字符')
       }),
       { numRuns: PBT_NUM_RUNS }
     )
   })
 
-  it('empty wechatId should produce wechatId error', () => {
+  it('empty identityHint and wechatId are allowed because they are optional fields', () => {
     fc.assert(
       fc.property(validFormArb, (formData) => {
-        const invalid = Object.assign({}, formData, { wechatId: '' })
+        const invalid = Object.assign({}, formData, { identityHint: '', wechatId: '' })
         const errors = validateForm(invalid)
-        expect(errors).toContain('请输入微信号')
+        expect(errors).toEqual([])
       }),
       { numRuns: PBT_NUM_RUNS }
     )
@@ -112,13 +158,37 @@ describe('Feature: activity-pages, Property 2: 表单校验完整性', () => {
 
   it('multiple invalid fields should produce multiple errors', () => {
     const errors = validateForm({
+      customMode: false,
+      templateType: 'walk',
       title: '',
       location: null,
       meetTime: '',
-      depositTier: 0,
-      identityHint: '',
+      budgetType: '',
+      bondAmount: 0,
+      minParticipants: 0,
+      maxParticipants: 0,
       wechatId: ''
     })
-    expect(errors.length).toBe(6)
+    expect(errors.length).toBe(7)
+  })
+
+  it('custom mode does not require template pricing fields', () => {
+    const errors = validateForm({
+      customMode: true,
+      templateType: '',
+      title: '自由散步局',
+      location: {
+        name: '天河公园',
+        address: '广州市天河区',
+        latitude: 23.13,
+        longitude: 113.36
+      },
+      meetTime: '2026-05-09T20:00:00+08:00',
+      minParticipants: 2,
+      maxParticipants: 4,
+      budgetType: '',
+      bondAmount: 0
+    })
+    expect(errors).toEqual([])
   })
 })
