@@ -1,17 +1,10 @@
 // app.js - 不鸽令小程序入口文件
 var localConfig = {}
-var QQMapWX = null
 
 try {
   localConfig = require('./config/local.private')
 } catch (err) {
   localConfig = {}
-}
-
-try {
-  QQMapWX = require('./libs/qqmap-wx-jssdk.min.js')
-} catch (err) {
-  QQMapWX = null
 }
 
 App({
@@ -85,12 +78,6 @@ App({
       this.safeLog('云开发初始化失败:', err)
     }
 
-    this.markStartupStage('tencent-map:init:start')
-    this.initTencentMapSdk()
-    this.markStartupStage('tencent-map:init:done', {
-      ready: this.globalData.tencentMapReady,
-      initError: this.globalData.tencentMapInitError
-    })
     this.safeLog('不鸽令小程序启动')
     this.markStartupStage('onLaunch:done')
   },
@@ -125,38 +112,6 @@ App({
     }
   },
 
-  initTencentMapSdk() {
-    var key = this.globalData.tencentMapKey
-
-    if (!key) {
-      this.globalData.tencentMapReady = false
-      this.globalData.tencentMapInitError = 'MISSING_KEY'
-      this.safeLog('腾讯地图 SDK 未初始化：缺少 key')
-      return
-    }
-
-    if (!QQMapWX) {
-      this.globalData.tencentMapReady = false
-      this.globalData.tencentMapInitError = 'MISSING_SDK_FILE'
-      this.safeLog('腾讯地图 SDK 未初始化：缺少 libs/qqmap-wx-jssdk.min.js')
-      return
-    }
-
-    try {
-      this.globalData.tencentMap = new QQMapWX({
-        key: key
-      })
-      this.globalData.tencentMapReady = true
-      this.globalData.tencentMapInitError = ''
-      this.safeLog('腾讯地图 SDK 初始化成功')
-    } catch (err) {
-      this.globalData.tencentMap = null
-      this.globalData.tencentMapReady = false
-      this.globalData.tencentMapInitError = 'INIT_FAILED'
-      this.safeLog('腾讯地图 SDK 初始化失败:', err)
-    }
-  },
-
   onShow() {
     // 小程序显示时触发
   },
@@ -175,8 +130,5 @@ App({
     openId: null,
     startupTrace: [],
     tencentMapKey: localConfig.tencentMapKey || '',
-    tencentMap: null,
-    tencentMapReady: false,
-    tencentMapInitError: ''
   }
 })

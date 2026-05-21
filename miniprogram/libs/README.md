@@ -1,27 +1,15 @@
-# 第三方 SDK 说明
+# 第三方库说明
 
-本目录用于存放第三方 SDK 文件。
+当前小程序不依赖腾讯地图 JS SDK 文件。
 
-## 腾讯地图 SDK
+地图选点使用微信原生 `wx.chooseLocation`，当前位置补全使用
+`miniprogram/utils/location.js` 里的腾讯位置服务 WebService 逆地理接口。
 
-请从腾讯位置服务官网下载微信小程序 JavaScript SDK：
-https://lbs.qq.com/miniProgram/jsSdk/jsSdkGuide/jsSdkOverview
+## 腾讯地图配置
 
-下载后将 `qqmap-wx-jssdk.min.js` 文件放置在本目录下。
+1. 在腾讯位置服务控制台申请 Key。
+2. 在 Key 管理中启用 WebServiceAPI 和微信小程序能力。
+3. 将 Key 写入本地私有配置 `miniprogram/config/local.private.js`。
+4. 在微信小程序后台 request 合法域名中配置 `https://apis.map.qq.com`。
 
-## 使用方式
-
-在需要使用地图服务的页面中引入：
-
-```javascript
-const QQMapWX = require('../../libs/qqmap-wx-jssdk.min.js')
-
-const qqmapsdk = new QQMapWX({
-  key: 'YOUR_TENCENT_MAP_KEY'
-})
-```
-
-## 注意事项
-
-- 需要在腾讯位置服务控制台申请开发者密钥（key）
-- 在小程序管理后台配置服务器域名白名单：`https://apis.map.qq.com`
+本目录暂时不需要放置 `qqmap-wx-jssdk.min.js`。

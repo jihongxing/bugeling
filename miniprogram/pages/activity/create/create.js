@@ -131,20 +131,17 @@ function isMapServiceConfigError(errMsg) {
 function buildMapConfigHint() {
   var app = null
   var globalData = null
-  var initError = ''
+  var hasTencentMapKey = false
   try {
     app = getApp()
     globalData = app && app.globalData ? app.globalData : {}
-    initError = globalData.tencentMapInitError || ''
+    hasTencentMapKey = Boolean(globalData.tencentMapKey)
   } catch (err) {
-    initError = ''
+    hasTencentMapKey = false
   }
 
-  if (initError === 'MISSING_KEY') {
+  if (!hasTencentMapKey) {
     return '本地未读取到腾讯地图 key，请检查 miniprogram/config/local.private.js。'
-  }
-  if (initError === 'MISSING_SDK_FILE') {
-    return '缺少腾讯地图 SDK 文件，请放置 libs/qqmap-wx-jssdk.min.js。'
   }
   return '地图选点未正常加载，请确认微信公众平台已配置腾讯位置服务 Key 后重试。'
 }

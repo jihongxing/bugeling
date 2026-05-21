@@ -187,6 +187,7 @@
 
 - [ ] 设置基础库最低版本为 `2.9.0+`（Canvas 2D API 依赖）
 - [ ] 配置服务器域名白名单：`api.mch.weixin.qq.com`（微信支付）
+- [ ] 配置 request 合法域名：`apis.map.qq.com`（腾讯位置服务逆地理解析）
 - [ ] 确认 `scope.userLocation` 权限描述已在 app.json 中声明
 
 ---
